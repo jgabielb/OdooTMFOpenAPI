@@ -1,0 +1,21 @@
+{
+    'name': "TM Forum Base",
+    'summary': "Base technical module for TMF Open API compliance",
+    'description': """
+        Contains the core logic for TMF API implementation:
+        - TMF ID generation (UUID)
+        - Common Mixins (Lifecycle, HREF)
+        - Error handling utilities
+    """,
+    'author': "Joao Gabriel",
+    'website': "https://www.odoo.com",
+    'category': 'Technical',
+    'version': '0.1',
+    'depends': ['base', 'web'],
+    'data': [
+        # Security files will go here later
+    ],
+    'installable': True,
+    'application': False,
+    'license': 'LGPL-3',
+}
