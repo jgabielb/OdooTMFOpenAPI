@@ -24,5 +24,6 @@ Write-Host "Starting Odoo Development Server..."
 # & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u tmf_product_catalog
 # & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i sale_management,tmf_product_catalog
 # & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_product_ordering0
-& $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_service_inventory
+# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_service_inventory
+& $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_resource_inventory
 # & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB

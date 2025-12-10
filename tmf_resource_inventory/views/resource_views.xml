@@ -1,0 +1,32 @@
+<odoo>
+    <!-- 1. Extend TMF Service Form to show the Resource Field -->
+    <record id="view_tmf_service_form_resource" model="ir.ui.view">
+        <field name="name">tmf.service.form.resource</field>
+        <field name="model">tmf.service</field>
+        <field name="inherit_id" ref="tmf_service_inventory.view_tmf_service_form"/>
+        <field name="arch" type="xml">
+            <field name="product_specification_id" position="after">
+                <field name="resource_id" placeholder="Select Device Serial Number..."/>
+            </field>
+        </field>
+    </record>
+
+    <!-- 2. Action to view Resources (Serial Numbers) -->
+    <record id="action_tmf_resource" model="ir.actions.act_window">
+        <field name="name">Physical Resources (SN)</field>
+        <field name="res_model">stock.lot</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+          <p class="o_view_nocontent_smiling_face">
+            Create your first Physical Resource (Serial Number)
+          </p>
+        </field>
+    </record>
+
+    <!-- 3. Menu Item -->
+    <menuitem id="menu_tmf_resource"
+              name="Physical Resources"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_resource"
+              sequence="30"/>
+</odoo>
