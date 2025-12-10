@@ -19,5 +19,8 @@ $MyAddons = "C:\Users\Joao Gabriel\OneDrive\work_area\OdooBSS"
 
 # -i tmf_base installs your module immediately
 Write-Host "Starting Odoo Development Server..."
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i tmf_base,tmf_party
-& $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB
+# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i tmf_base,tmf_party,tmf_product_catalog
+# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i sale,tmf_product_catalog
+# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u tmf_product_catalog
+& $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i sale_management,tmf_product_catalog
+# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB
