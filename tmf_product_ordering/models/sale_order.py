@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+import json
 
 class SaleOrder(models.Model):
     _name = 'sale.order'
@@ -34,8 +35,57 @@ class SaleOrder(models.Model):
             else:
                 order.tmf_status = 'Acknowledged'
 
+    def write(self, vals):
+        res = super().write(vals)
+        if 'tmf_status' in vals:
+            self._notify_tmf_subscribers()
+        return res
+
+    def _notify_tmf_subscribers(self):
+        subs = self.env['tmf.hub.subscription'].sudo().search([
+            ('api_name', '=', 'productOrder')
+        ])
+        body = json.dumps({
+            "eventId": str(self.id),
+            "eventTime": fields.Datetime.now(),
+            "eventType": "ProductOrderStateChangeEvent",
+            "event": self.to_tmf_json(),
+            "@type": "ProductOrderStateChangeEvent"
+        })
+        # send HTTP POST to each sub.callback (using requests / external lib / queue)
+    
+    def to_tmf_json(self):
+        self.ensure_one()
+        return {
+            "id": self.tmf_id,
+            "href": self.tmf_href,
+            "description": self.description or self.name,
+            "state": self.tmf_status,
+            "orderDate": self.date_order.isoformat() if self.date_order else None,
+            "@type": "ProductOrder",
+            # Simplified orderItems example:
+            "orderItem": [
+                {
+                    "id": line.tmf_id,
+                    "action": line.tmf_action or "add",
+                    "product": {
+                        "id": line.product_id.id,
+                        "name": line.product_id.name
+                    },
+                    "@type": "ProductOrderItem"
+                }
+                for line in self.order_line
+            ],
+            # Add other fields from TMF622 as needed
+        }
+    
     def _get_tmf_api_path(self):
         return "/productOrderingManagement/v4/productOrder"
+    
+    @property
+    def tmf_href(self):
+        base = "/tmf-api" + self._get_tmf_api_path()
+        return f"{base}/{self.tmf_id}"
 
 class SaleOrderLine(models.Model):
     _name = 'sale.order.line'

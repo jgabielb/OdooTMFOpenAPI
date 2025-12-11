@@ -3,27 +3,34 @@ Write-Host "Stopping background Odoo service..."
 Stop-Service "odoo-server-19.0" -ErrorAction SilentlyContinue
 Stop-Service "odoo-19.0" -ErrorAction SilentlyContinue
 
-# 2. Define your paths (Based on the info you gave me)
-$Py = "C:\Program Files\Odoo 19.0.20251209\python\python.exe"
-$OdooRoot = "C:\Program Files\Odoo 19.0.20251209\server"
-$Bin = "$OdooRoot\odoo-bin"
-$Conf = "$OdooRoot\odoo.conf"
-$BaseAddons = "$OdooRoot\addons"
-# IMPORTANT: This is your custom folder
-$MyAddons = "C:\Users\Joao Gabriel\OneDrive\work_area\OdooBSS"
+# 2. Define your paths
+
+# Odoo install (adjust these if your Odoo version/path changes)
+$Py        = "C:\Program Files\Odoo 19.0.20251210\python\python.exe"
+$OdooRoot  = "C:\Program Files\Odoo 19.0.20251210\server"
+$Bin       = Join-Path $OdooRoot "odoo-bin"
+$Conf      = Join-Path $OdooRoot "odoo.conf"
+$BaseAddons = Join-Path $OdooRoot "addons"
+
+# Current user profile (no hardcoded username)
+$UserProfile = $env:USERPROFILE
+
+# IMPORTANT: custom addons folder under the current user's OneDrive
+$MyAddons = Join-Path $UserProfile "OneDrive\work_area\OdooBSS"
+
+Write-Host "Using custom addons folder: $MyAddons"
 
 # 3. Run Odoo
-# We use -c to load the database passwords from the config file
-# We append your custom folder to the addons-path
-# -d TMF_Dev creates a new DB for this project
+# -c to load config (DB passwords, etc.)
+# --addons-path appends your custom folder
+# -d TMF_Clean_DB uses that DB
+# -u all updates all installed modules
+# -i tmf_resource_inventory installs that module (and deps)
 
-# -i tmf_base installs your module immediately
 Write-Host "Starting Odoo Development Server..."
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i tmf_base,tmf_party,tmf_product_catalog
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i sale,tmf_product_catalog
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u tmf_product_catalog
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -i sale_management,tmf_product_catalog
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_product_ordering0
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_service_inventory
-& $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB -u all -i tmf_resource_inventory
-# & $Py $Bin -c $Conf --addons-path="$BaseAddons,$MyAddons" -d TMF_Clean_DB
+& $Py $Bin `
+    -c $Conf `
+    --addons-path="$BaseAddons,$MyAddons" `
+    -d TMF_Clean_DB `
+    -u all `
+    -i tmf_resource_inventory

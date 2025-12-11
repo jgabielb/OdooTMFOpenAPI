@@ -12,51 +12,19 @@ class TMFOrderingController(http.Controller):
     # =======================================================
     @http.route('/tmf-api/productOrderingManagement/v4/productOrder', type='http', auth='public', methods=['GET'], csrf=False)
     def get_orders(self, **params):
-        # Fetch Odoo Orders
-        orders = request.env['sale.order'].sudo().search([], limit=20, order='id desc')
-        
-        response_data = []
-        for o in orders:
-            order_json = {
-                "id": o.tmf_id or str(o.id),
-                "href": o.href,
-                "description": o.description or o.name,
-                "state": o.tmf_status,
-                "orderDate": o.date_order.isoformat() if o.date_order else None,
-                "@type": "ProductOrder",
-                
-                # Link to Customer
-                "relatedParty": [{
-                    "id": o.partner_id.tmf_id,
-                    "name": o.partner_id.name,
-                    "role": "Customer"
-                }],
-                
-                # Order Items (Lines)
-                "productOrderItem": []
-            }
-            
-            # Map Lines
-            for line in o.order_line:
-                order_json["productOrderItem"].append({
-                    "id": line.tmf_id or str(line.id),
-                    "quantity": line.product_uom_qty,
-                    "productOffering": {
-                        "id": line.product_template_id.tmf_id,
-                        "name": line.product_template_id.name
-                    },
-                    "itemPrice": [{
-                        "price": {
-                            "value": line.price_unit,
-                            "unit": o.currency_id.name
-                        }
-                    }]
-                })
+        offset = int(params.get('offset', 0))
+        limit = int(params.get('limit', 20))
 
-            response_data.append(order_json)
+        domain = []
+        state = params.get('state')
+        if state:
+            domain.append(('tmf_status', '=', state))
+
+        orders = request.env['sale.order'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
+        data = [o.to_tmf_json() for o in orders]
 
         return request.make_response(
-            json.dumps(response_data),
+            json.dumps(data),
             headers=[('Content-Type', 'application/json')]
         )
 
@@ -130,6 +98,129 @@ class TMFOrderingController(http.Controller):
             _logger.exception("TMF Order Creation Failed")
             return self._error(500, "Internal Server Error", str(e))
 
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/productOrder/<string:tmf_id>',
+        type='http', auth='public', methods=['GET'], csrf=False
+    )
+    def get_order(self, tmf_id, **params):
+        order = request.env['sale.order'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
+        if not order:
+            return self._error(404, "Not Found", f"ProductOrder {tmf_id} not found")
+
+        data = order.to_tmf_json()
+        return request.make_response(
+            json.dumps(data),
+            headers=[('Content-Type', 'application/json')]
+        )
+    
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/productOrder/<string:tmf_id>',
+        type='json', auth='public', methods=['PATCH'], csrf=False
+    )
+    def patch_order(self, tmf_id, **kwargs):
+        order = request.env['sale.order'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
+        if not order:
+            return self._error(404, "Not Found", f"ProductOrder {tmf_id} not found")
+
+        payload = request.jsonrequest or {}
+
+        # Minimal example: only update tmf_status
+        new_state = payload.get("state")
+        if new_state:
+            order.tmf_status = new_state
+
+        return order.to_tmf_json()
+    
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/cancelProductOrder',
+        type='json', auth='public', methods=['POST'], csrf=False
+    )
+    def cancel_product_order(self, **kwargs):
+        payload = request.jsonrequest or {}
+        related_order_id = payload.get("productOrder", {}).get("id")
+
+        if not related_order_id:
+            return self._error(400, "Bad Request", "productOrder.id is required")
+
+        order = request.env['sale.order'].sudo().search([('tmf_id', '=', related_order_id)], limit=1)
+        if not order:
+            return self._error(404, "Not Found", f"ProductOrder {related_order_id} not found")
+
+        # Business rule: mark as cancelled + cancel in Odoo
+        order.action_cancel()
+        order.tmf_status = "Cancelled"
+
+        # Response should be a CancelProductOrder according to TMF622
+        cancel_json = {
+            "id": payload.get("id") or order.tmf_id,
+            "href": f"/tmf-api/productOrderingManagement/v4/cancelProductOrder/{order.tmf_id}",
+            "productOrder": {
+                "id": order.tmf_id,
+                "href": order.tmf_href
+            },
+            "state": "Done",
+            "@type": "CancelProductOrder"
+        }
+        return cancel_json
+
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub',
+        type='json', auth='public', methods=['POST'], csrf=False
+    )
+    def subscribe_order_events(self, **kwargs):
+        """Create subscription for ProductOrder events"""
+        payload = request.jsonrequest or {}
+
+        callback = payload.get("callback")
+        if not callback:
+            return self._error(400, "Bad Request", "callback is required")
+
+        query = payload.get("query")
+        sub = request.env['tmf.hub.subscription'].sudo().create({
+            "api_name": "productOrder",
+            "callback": callback,
+            "query": query,
+        })
+
+        return {
+            "id": str(sub.id),
+            "callback": sub.callback,
+            "query": sub.query,
+            "@type": "EventSubscription"
+        }
+
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub/<string:sub_id>',
+        type='http', auth='public', methods=['DELETE'], csrf=False
+    )
+    def unsubscribe_order_events(self, sub_id, **kwargs):
+        """Delete subscription"""
+        subs = request.env['tmf.hub.subscription'].sudo().browse(int(sub_id))
+        if not subs.exists():
+            return self._error(404, "Not Found", f"Subscription {sub_id} not found")
+
+        subs.unlink()
+        return request.make_response('', status=204)
+    
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub',
+        type='http', auth='public', methods=['GET'], csrf=False
+    )
+    def list_order_subscriptions(self, **params):
+        subs = request.env['tmf.hub.subscription'].sudo().search([
+            ('api_name', '=', 'productOrder')
+        ])
+        data = [{
+            "id": str(s.id),
+            "callback": s.callback,
+            "query": s.query,
+            "@type": "EventSubscription"
+        } for s in subs]
+        return request.make_response(
+            json.dumps(data),
+            headers=[('Content-Type', 'application/json')]
+        )
+    
     def _error(self, code, reason, message):
         return request.make_response(
             json.dumps({"code": str(code), "reason": reason, "message": message}),
