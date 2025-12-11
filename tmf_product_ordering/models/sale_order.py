@@ -38,8 +38,6 @@ class SaleOrder(models.Model):
     @api.model
     def create(self, vals):
         order = super().create(vals)
-
-        # Notify TMF subscribers of ProductOrderCreateEvent
         try:
             resource = order.to_tmf_json()
             self.env['tmf.hub.subscription']._notify_subscribers(
@@ -48,16 +46,14 @@ class SaleOrder(models.Model):
                 resource_json=resource,
             )
         except Exception:
-            # don't block normal flow if event fails
             pass
-
         return order
 
     def write(self, vals):
         res = super().write(vals)
 
-        # Decide event type (simplified)
-        changed_status = 'tmf_status' in vals
+        # use 'state' instead of 'tmf_status'
+        changed_status = 'state' in vals
 
         for order in self:
             try:
@@ -73,16 +69,13 @@ class SaleOrder(models.Model):
                     resource_json=resource,
                 )
             except Exception:
-                # don't raise if event fails
                 continue
 
         return res
 
     def unlink(self):
-        # Capture payloads before delete
         payloads = [o.to_tmf_json() for o in self]
         res = super().unlink()
-
         for resource in payloads:
             try:
                 self.env['tmf.hub.subscription']._notify_subscribers(
@@ -92,7 +85,6 @@ class SaleOrder(models.Model):
                 )
             except Exception:
                 continue
-
         return res
 
     def _notify_tmf_subscribers(self):
@@ -110,18 +102,18 @@ class SaleOrder(models.Model):
     
     def to_tmf_json(self):
         self.ensure_one()
+        order_id = self.tmf_id or str(self.id)
         return {
-            "id": self.tmf_id,
+            "id": order_id,
             "href": self.tmf_href,
             "description": self.description or self.name,
             "state": self.tmf_status,
             "orderDate": self.date_order.isoformat() if self.date_order else None,
             "@type": "ProductOrder",
-            # Simplified orderItems example:
-            "orderItem": [
+            "productOrderItem": [
                 {
-                    "id": line.tmf_id,
-                    "action": line.tmf_action or "add",
+                    "id": line.tmf_id or str(line.id),
+                    "action": getattr(line, 'tmf_action', None) or "add",
                     "product": {
                         "id": line.product_id.id,
                         "name": line.product_id.name
@@ -130,7 +122,6 @@ class SaleOrder(models.Model):
                 }
                 for line in self.order_line
             ],
-            # Add other fields from TMF622 as needed
         }
     
     def _get_tmf_api_path(self):
