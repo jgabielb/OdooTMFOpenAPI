@@ -35,10 +35,64 @@ class SaleOrder(models.Model):
             else:
                 order.tmf_status = 'Acknowledged'
 
+    @api.model
+    def create(self, vals):
+        order = super().create(vals)
+
+        # Notify TMF subscribers of ProductOrderCreateEvent
+        try:
+            resource = order.to_tmf_json()
+            self.env['tmf.hub.subscription']._notify_subscribers(
+                api_name='productOrder',
+                event_type='ProductOrderCreateEvent',
+                resource_json=resource,
+            )
+        except Exception:
+            # don't block normal flow if event fails
+            pass
+
+        return order
+
     def write(self, vals):
         res = super().write(vals)
-        if 'tmf_status' in vals:
-            self._notify_tmf_subscribers()
+
+        # Decide event type (simplified)
+        changed_status = 'tmf_status' in vals
+
+        for order in self:
+            try:
+                resource = order.to_tmf_json()
+                event_type = (
+                    'ProductOrderStateChangeEvent'
+                    if changed_status
+                    else 'ProductOrderAttributeValueChangeEvent'
+                )
+                self.env['tmf.hub.subscription']._notify_subscribers(
+                    api_name='productOrder',
+                    event_type=event_type,
+                    resource_json=resource,
+                )
+            except Exception:
+                # don't raise if event fails
+                continue
+
+        return res
+
+    def unlink(self):
+        # Capture payloads before delete
+        payloads = [o.to_tmf_json() for o in self]
+        res = super().unlink()
+
+        for resource in payloads:
+            try:
+                self.env['tmf.hub.subscription']._notify_subscribers(
+                    api_name='productOrder',
+                    event_type='ProductOrderDeleteEvent',
+                    resource_json=resource,
+                )
+            except Exception:
+                continue
+
         return res
 
     def _notify_tmf_subscribers(self):

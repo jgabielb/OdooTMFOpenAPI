@@ -19,6 +19,46 @@ class ResPartner(models.Model):
     # We don't need to create new columns for Name/Email because Odoo has them,
     # but we will need logic later to map them in the API.
 
+    @api.model
+    def create(self, vals):
+        rec = super().create(vals)
+        try:
+            self.env['tmf.hub.subscription']._notify_subscribers(
+                api_name='party',
+                event_type='PartyCreateEvent',
+                resource_json=rec.to_tmf_json(),
+            )
+        except Exception:
+            pass
+        return rec
+
+    def write(self, vals):
+        res = super().write(vals)
+        for rec in self:
+            try:
+                self.env['tmf.hub.subscription']._notify_subscribers(
+                    api_name='party',
+                    event_type='PartyAttributeValueChangeEvent',
+                    resource_json=rec.to_tmf_json(),
+                )
+            except Exception:
+                continue
+        return res
+
+    def unlink(self):
+        payloads = [p.to_tmf_json() for p in self]
+        res = super().unlink()
+        for resource in payloads:
+            try:
+                self.env['tmf.hub.subscription']._notify_subscribers(
+                    api_name='party',
+                    event_type='PartyDeleteEvent',
+                    resource_json=resource,
+                )
+            except Exception:
+                continue
+        return res
+    
     def _get_tmf_api_path(self):
         """
         Override from Mixin. 

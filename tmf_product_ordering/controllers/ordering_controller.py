@@ -221,6 +221,63 @@ class TMFOrderingController(http.Controller):
             headers=[('Content-Type', 'application/json')]
         )
     
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub',
+        type='json', auth='public', methods=['POST'], csrf=False
+    )
+    def subscribe_order_events(self, **kwargs):
+        """Create subscription for ProductOrder events"""
+        payload = request.jsonrequest or {}
+
+        callback = payload.get("callback")
+        if not callback:
+            return self._error(400, "Bad Request", "callback is required")
+
+        query = payload.get("query")
+        sub = request.env['tmf.hub.subscription'].sudo().create({
+            "api_name": "productOrder",
+            "callback": callback,
+            "query": query,
+        })
+
+        return {
+            "id": str(sub.id),
+            "callback": sub.callback,
+            "query": sub.query,
+            "@type": "EventSubscription"
+        }
+
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub',
+        type='http', auth='public', methods=['GET'], csrf=False
+    )
+    def list_order_subscriptions(self, **params):
+        subs = request.env['tmf.hub.subscription'].sudo().search([
+            ('api_name', '=', 'productOrder')
+        ])
+        data = [{
+            "id": str(s.id),
+            "callback": s.callback,
+            "query": s.query,
+            "@type": "EventSubscription"
+        } for s in subs]
+        return request.make_response(
+            json.dumps(data),
+            headers=[('Content-Type', 'application/json')]
+        )
+
+    @http.route(
+        '/tmf-api/productOrderingManagement/v4/hub/<string:sub_id>',
+        type='http', auth='public', methods=['DELETE'], csrf=False
+    )
+    def unsubscribe_order_events(self, sub_id, **kwargs):
+        subs = request.env['tmf.hub.subscription'].sudo().browse(int(sub_id))
+        if not subs.exists():
+            return self._error(404, "Not Found", f"Subscription {sub_id} not found")
+
+        subs.unlink()
+        return request.make_response('', status=204)
+    
     def _error(self, code, reason, message):
         return request.make_response(
             json.dumps({"code": str(code), "reason": reason, "message": message}),
