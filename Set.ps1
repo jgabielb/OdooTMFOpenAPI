@@ -32,5 +32,6 @@ Write-Host "Starting Odoo Development Server..."
     -c $Conf `
     --addons-path="$BaseAddons,$MyAddons" `
     -d TMF_Clean_DB `
-    -u all `
-    # -i tmf_resource_inventory
+    # -u all `
+    # -i tmf_customer
+    -u tmf_customer

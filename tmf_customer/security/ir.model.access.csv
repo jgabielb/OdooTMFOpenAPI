@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_customer_user,access_tmf_customer_user,model_tmf_customer,base.group_user,1,1,1,1
+access_tmf_customer_subscription_user,access_tmf_customer_subscription_user,model_tmf_customer_subscription,base.group_user,1,1,1,1

@@ -53,7 +53,13 @@ class TMFHubSubscription(models.Model):
     active = fields.Boolean(default=True)
     last_status = fields.Char()
 
-
+    _sql_constraints = [
+    (
+        "tmf_hub_subscription_uniq",
+        "unique(api_name, callback, query, event_type)",
+        "There is already a subscription for this callback/query/event_type.",
+    ),
+]
 
     @api.model
     def _notify_subscribers(self, api_name, event_type, resource_json):
