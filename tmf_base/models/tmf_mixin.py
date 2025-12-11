@@ -1,7 +1,6 @@
 # tmf_base/models/tmf_mixin.py
 import uuid
 from odoo import models, fields, api
-from odoo.http import request
 
 class TMFModelMixin(models.AbstractModel):
     """
@@ -57,12 +56,23 @@ class TMFModelMixin(models.AbstractModel):
         for record in self:
             record.tmf_type = record._name
 
+    @api.model
     def _get_tmf_api_path(self):
         """
         Placeholder. Child models MUST override this.
         Example return: '/party/v4/individual'
         """
         return ""
+    
+    @property
+    def tmf_href(self):
+        """Default href builder using api path + tmf_id/id."""
+        self.ensure_one()
+        path = self._get_tmf_api_path() or ""
+        if not path:
+            return None
+        base = "/tmf-api" + path
+        return f"{base}/{self.tmf_id or self.id}"
     
     def _register_hook(self):
         # Register the unique constraint on the SQL table

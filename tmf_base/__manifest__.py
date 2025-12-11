@@ -13,7 +13,8 @@
     'version': '0.1',
     'depends': ['base', 'web'],
     'data': [
-        # Security files will go here later
+        'security/ir.model.access.csv',
+        'views/tmf_hub_subscription_views.xml',
     ],
     'installable': True,
     'application': False,

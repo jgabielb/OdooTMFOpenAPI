@@ -23,7 +23,7 @@ class TMFServiceInventoryController(http.Controller):
 
     @http.route(
         '/tmf-api/serviceInventory/v4/hub',
-        type='json', auth='public', methods=['POST'], csrf=False
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
     def subscribe_service_events(self, **kwargs):
         """Create subscription for Service events"""

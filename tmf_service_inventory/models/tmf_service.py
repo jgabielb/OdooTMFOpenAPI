@@ -76,7 +76,7 @@ class TMFService(models.Model):
                 "id": self.partner_id.tmf_id or str(self.partner_id.id),
                 "name": self.partner_id.name,
                 "role": "Customer",
-                "@referredType": "Individual"  # or Organization, depending on your mapping
+                "@referredType": "Individual" if not self.partner_id.is_company else "Organization",
             }]
 
         # serviceSpecification
@@ -105,8 +105,8 @@ class TMFService(models.Model):
         rec = super().create(vals)
         try:
             rec.env['tmf.hub.subscription']._notify_subscribers(
-                api_name='service',
-                event_type='ServiceCreateEvent',
+                api_name='service',          # <-- matches what you'll use in /hub
+                event_type='create',         # <-- matches selection on tmf.hub.subscription
                 resource_json=rec.to_tmf_json(),
             )
         except Exception:
@@ -119,7 +119,7 @@ class TMFService(models.Model):
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(
                     api_name='service',
-                    event_type='ServiceAttributeValueChangeEvent',
+                    event_type='update',
                     resource_json=rec.to_tmf_json(),
                 )
             except Exception:
@@ -133,7 +133,7 @@ class TMFService(models.Model):
             try:
                 self.env['tmf.hub.subscription']._notify_subscribers(
                     api_name='service',
-                    event_type='ServiceDeleteEvent',
+                    event_type='delete',
                     resource_json=resource,
                 )
             except Exception:

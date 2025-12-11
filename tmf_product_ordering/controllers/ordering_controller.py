@@ -58,7 +58,7 @@ class TMFOrderingController(http.Controller):
     # =======================================================
     @http.route(
         '/tmf-api/productOrderingManagement/v4/productOrder',
-        type='json', auth='public', methods=['POST'], csrf=False
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
     def create_order(self, **kwargs):
         try:
@@ -118,10 +118,23 @@ class TMFOrderingController(http.Controller):
                     'product_uom_qty': qty,
                 })
 
-            # 4. Optionally confirm order (if you want TMF "InProgress" immediately)
+            # 4. Opcional: confirmar la orden
             # new_order.action_confirm()
 
-            # 5. Return full TMF representation
+            # 5. NOTIFICAR HUB PRODUCT ORDERING (evento create)
+            try:
+                request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                    api_name='productOrdering',
+                    event_type='create',
+                    resource_json=new_order.to_tmf_json(),
+                )
+            except Exception as notif_e:
+                _logger.warning(
+                    "Failed to notify TMF hub (create) for order %s: %s",
+                    new_order.id, notif_e
+                )
+
+            # 6. Return full TMF representation
             return new_order.to_tmf_json()
 
         except Exception as e:
@@ -153,7 +166,7 @@ class TMFOrderingController(http.Controller):
     # =======================================================
     @http.route(
         '/tmf-api/productOrderingManagement/v4/productOrder/<string:tmf_id>',
-        type='json', auth='public', methods=['PATCH'], csrf=False
+        type='jsonrpc', auth='public', methods=['PATCH'], csrf=False
     )
     def patch_order(self, tmf_id, **kwargs):
         order = request.env['sale.order'].sudo().search(
@@ -174,6 +187,19 @@ class TMFOrderingController(http.Controller):
         if vals:
             order.sudo().write(vals)
 
+            # NOTIFICAR HUB PRODUCT ORDERING (evento update)
+            try:
+                request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                    api_name='productOrdering',
+                    event_type='update',
+                    resource_json=order.to_tmf_json(),
+                )
+            except Exception as notif_e:
+                _logger.warning(
+                    "Failed to notify TMF hub (update) for order %s: %s",
+                    order.id, notif_e
+                )
+
         return order.to_tmf_json()
 
     # =======================================================
@@ -181,7 +207,7 @@ class TMFOrderingController(http.Controller):
     # =======================================================
     @http.route(
         '/tmf-api/productOrderingManagement/v4/cancelProductOrder',
-        type='json', auth='public', methods=['POST'], csrf=False
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
     def cancel_product_order(self, **kwargs):
         payload = request.jsonrequest or {}
@@ -215,64 +241,125 @@ class TMFOrderingController(http.Controller):
             "state": "Done",
             "@type": "CancelProductOrder",
         }
+
+        # NOTIFICAR HUB PRODUCT ORDERING (evento update por cambio de estado)
+        try:
+            request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                api_name='productOrdering',
+                event_type='update',
+                resource_json=order.to_tmf_json(),
+            )
+        except Exception as notif_e:
+            _logger.warning(
+                "Failed to notify TMF hub (cancel/update) for order %s: %s",
+                order.id, notif_e
+            )
+
         return cancel_json
 
     # =======================================================
     # HUB: Event Subscriptions
     # =======================================================
     @http.route(
-        '/tmf-api/productOrderingManagement/v4/hub',
-        type='json', auth='public', methods=['POST'], csrf=False
+        '/tmf-api/productOrdering/v4/hub',
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
-    def subscribe_order_events(self, **kwargs):
-        """Create subscription for ProductOrder events"""
-        payload = request.jsonrequest or {}
+    def subscribe_product_ordering_events(self, **kwargs):
+        """
+        Crea una suscripción para eventos de Product Ordering.
+        body ej:
+        {
+          "callback": "https://mi.listener/hook",
+          "query": "status=inProgress"
+        }
+        """
+        try:
+            payload = json.loads(request.httprequest.data or b'{}')
+        except ValueError:
+            body = json.dumps({
+                "code": "400",
+                "reason": "Bad Request",
+                "message": "Invalid JSON body",
+            })
+            return request.make_response(
+                body,
+                headers=[('Content-Type', 'application/json')],
+                status=400,
+            )
 
         callback = payload.get("callback")
         if not callback:
-            return self._error(400, "Bad Request", "callback is required")
+            body = json.dumps({
+                "code": "400",
+                "reason": "Bad Request",
+                "message": "callback is required",
+            })
+            return request.make_response(
+                body,
+                headers=[('Content-Type', 'application/json')],
+                status=400,
+            )
 
         query = payload.get("query")
+        event_type = payload.get("eventType", "any")  # create/update/delete/any
+        secret = payload.get("secret")
+
         sub = request.env['tmf.hub.subscription'].sudo().create({
-            "api_name": "productOrder",
+            "name": f"ProductOrdering-{callback}",
+            "api_name": "productOrdering",
             "callback": callback,
             "query": query,
+            "event_type": event_type if event_type in ['create', 'update', 'delete', 'any'] else 'any',
+            "secret": secret,
         })
 
-        return {
+        resp = {
             "id": str(sub.id),
             "callback": sub.callback,
             "query": sub.query,
-            "@type": "EventSubscription"
+            "eventType": sub.event_type,
+            "@type": "EventSubscription",
         }
+        return resp
 
     @http.route(
-        '/tmf-api/productOrderingManagement/v4/hub',
+        '/tmf-api/productOrdering/v4/hub',
         type='http', auth='public', methods=['GET'], csrf=False
     )
-    def list_order_subscriptions(self, **params):
+    def list_product_ordering_subscriptions(self, **params):
         subs = request.env['tmf.hub.subscription'].sudo().search([
-            ('api_name', '=', 'productOrder')
+            ('api_name', '=', 'productOrdering')
         ])
         data = [{
             "id": str(s.id),
             "callback": s.callback,
             "query": s.query,
-            "@type": "EventSubscription"
+            "eventType": s.event_type,
+            "@type": "EventSubscription",
         } for s in subs]
+
         return request.make_response(
             json.dumps(data),
             headers=[('Content-Type', 'application/json')]
         )
 
     @http.route(
-        '/tmf-api/productOrderingManagement/v4/hub/<string:sub_id>',
+        '/tmf-api/productOrdering/v4/hub/<string:sub_id>',
         type='http', auth='public', methods=['DELETE'], csrf=False
     )
-    def unsubscribe_order_events(self, sub_id, **kwargs):
+    def unsubscribe_product_ordering_events(self, sub_id, **kwargs):
         subs = request.env['tmf.hub.subscription'].sudo().browse(int(sub_id))
         if not subs.exists():
-            return self._error(404, "Not Found", f"Subscription {sub_id} not found")
+            body = json.dumps({
+                "code": "404",
+                "reason": "Not Found",
+                "message": f"Subscription {sub_id} not found",
+            })
+            return request.make_response(
+                body,
+                headers=[('Content-Type', 'application/json')],
+                status=404,
+            )
 
         subs.unlink()
         return request.make_response('', status=204)

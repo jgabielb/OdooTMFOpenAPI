@@ -21,7 +21,7 @@ class TMFProductCatalogController(http.Controller):
 
     @http.route(
         '/tmf-api/productCatalogManagement/v4/hub',
-        type='json', auth='public', methods=['POST'], csrf=False
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
     def subscribe_catalog_events(self, **kwargs):
         """Create subscription for Product Catalog events"""

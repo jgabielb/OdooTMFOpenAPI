@@ -6,8 +6,8 @@ Stop-Service "odoo-19.0" -ErrorAction SilentlyContinue
 # 2. Define your paths
 
 # Odoo install (adjust these if your Odoo version/path changes)
-$Py        = "C:\Program Files\Odoo 19.0.20251210\python\python.exe"
-$OdooRoot  = "C:\Program Files\Odoo 19.0.20251210\server"
+$Py        = "C:\Program Files\Odoo 19.0.20251209\python\python.exe"
+$OdooRoot  = "C:\Program Files\Odoo 19.0.20251209\server"
 $Bin       = Join-Path $OdooRoot "odoo-bin"
 $Conf      = Join-Path $OdooRoot "odoo.conf"
 $BaseAddons = Join-Path $OdooRoot "addons"
@@ -33,4 +33,4 @@ Write-Host "Starting Odoo Development Server..."
     --addons-path="$BaseAddons,$MyAddons" `
     -d TMF_Clean_DB `
     -u all `
-    -i tmf_resource_inventory
+    # -i tmf_resource_inventory

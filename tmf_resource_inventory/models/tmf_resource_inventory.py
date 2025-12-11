@@ -68,7 +68,7 @@ class TMFResourceInventoryController(http.Controller):
 
     @http.route(
         '/tmf-api/resourceInventory/v4/hub',
-        type='json', auth='public', methods=['POST'], csrf=False
+        type='jsonrpc', auth='public', methods=['POST'], csrf=False
     )
     def subscribe_resource_events(self, **kwargs):
         """Create subscription for Resource events"""

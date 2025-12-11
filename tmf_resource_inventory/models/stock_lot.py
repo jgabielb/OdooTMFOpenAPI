@@ -1,12 +1,12 @@
-# tmf_resource_inventory/models/stock_lot.py (or similar)
+# tmf_resource_inventory/models/stock_lot.py
 
 from odoo import api, fields, models
 
 
 class StockLot(models.Model):
+    _name = 'stock.lot' 
     _inherit = ['stock.lot', 'tmf.model.mixin']
 
-    # optional TMF-specific fields
     resource_status = fields.Selection([
         ('installed', 'Installed'),
         ('available', 'Available'),
@@ -32,7 +32,7 @@ class StockLot(models.Model):
             "name": self.name or self.display_name,
             "@type": "Resource",
             "resourceStatus": self.resource_status or "installed",
-            "serialNumber": self.name or self.ref,  # adjust to your SN field
+            "serialNumber": self.name or self.ref,  # ajusta si tienes otro campo SN
             "resourceSpecification": {
                 "id": self.product_id.tmf_id or str(self.product_id.id),
                 "name": self.product_id.name,
@@ -46,12 +46,14 @@ class StockLot(models.Model):
     def create(self, vals):
         rec = super().create(vals)
         try:
-            rec.env['tmf.hub.subscription']._notify_subscribers(
-                api_name='resource',
-                event_type='ResourceCreateEvent',
+            rec.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                api_name='resourceInventory',
+                event_type='create',  # interno: create
                 resource_json=rec.to_tmf_json(),
             )
         except Exception:
+            # opcional: loggear en vez de silenciar
+            # _logger.exception("Resource create event failed")
             pass
         return rec
 
@@ -59,25 +61,28 @@ class StockLot(models.Model):
         res = super().write(vals)
         for rec in self:
             try:
-                rec.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='resource',
-                    event_type='ResourceAttributeValueChangeEvent',
+                rec.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                    api_name='resourceInventory',
+                    event_type='update',  # interno: update
                     resource_json=rec.to_tmf_json(),
                 )
             except Exception:
+                # _logger.exception("Resource update event failed")
                 continue
         return res
 
     def unlink(self):
+        # Guardamos el JSON antes de borrar
         payloads = [r.to_tmf_json() for r in self]
         res = super().unlink()
         for resource in payloads:
             try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='resource',
-                    event_type='ResourceDeleteEvent',
+                self.env['tmf.hub.subscription'].sudo()._notify_subscribers(
+                    api_name='resourceInventory',
+                    event_type='delete',  # interno: delete
                     resource_json=resource,
                 )
             except Exception:
+                # _logger.exception("Resource delete event failed")
                 continue
         return res

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <!-- List view -->
+        <record id="view_tmf_hub_subscription_list" model="ir.ui.view">
+            <field name="name">tmf.hub.subscription.list</field>
+            <field name="model">tmf.hub.subscription</field>
+            <field name="arch" type="xml">
+                <!-- list ✅ (tree ❌ in v19) -->
+                <list string="TMF Hub Subscriptions">
+                    <field name="name"/>
+                    <field name="api_name"/>
+                    <field name="callback"/>
+                    <field name="query"/>
+                    <field name="event_type"/>
+                    <field name="active"/>
+                    <field name="last_status"/>
+                    <field name="create_date"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Form view -->
+        <record id="view_tmf_hub_subscription_form" model="ir.ui.view">
+            <field name="name">tmf.hub.subscription.form</field>
+            <field name="model">tmf.hub.subscription</field>
+            <field name="arch" type="xml">
+                <form string="TMF Hub Subscription">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="api_name"/>
+                            <field name="callback"/>
+                            <field name="query"/>
+                            <field name="event_type"/>
+                            <field name="active"/>
+                            <field name="last_status" readonly="1"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_tmf_hub_subscription" model="ir.actions.act_window">
+            <field name="name">TMF Hub Subscriptions</field>
+            <field name="res_model">tmf.hub.subscription</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p>Manage TMF API hub subscriptions (callback, query, status).</p>
+            </field>
+        </record>
+
+        <!-- Menus (simple TMF → Hub → Subscriptions) -->
+        <menuitem id="menu_tmf_root"
+                  name="TMF Webhook"
+                  sequence="10"
+                  groups="base.group_system"/>
+
+        <menuitem id="menu_tmf_hub_root"
+                  name="Hub"
+                  parent="menu_tmf_root"
+                  sequence="20"
+                  groups="base.group_system"/>
+
+        <menuitem id="menu_tmf_hub_subscription"
+                  name="Subscriptions"
+                  parent="menu_tmf_hub_root"
+                  action="action_tmf_hub_subscription"
+                  sequence="10"
+                  groups="base.group_system"/>
+    </data>
+</odoo>
