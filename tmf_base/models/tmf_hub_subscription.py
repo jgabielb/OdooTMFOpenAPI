@@ -63,6 +63,21 @@ TMF_EVENT_NAME_MAP = {
         'state_change': 'TroubleTicketStatusChangeEvent',
         'delete': 'TroubleTicketDeleteEvent',
     },
+     # TMF666 - Account Management
+    'account': {
+        'create': 'AccountCreateEvent',
+        'update': 'AccountAttributeValueChangeEvent',
+        'state_change': 'AccountStateChangeEvent',
+        'delete': 'AccountDeleteEvent',
+    },
+    
+    # TMF678 - Customer Bill Management
+    'customerBill': {
+        'create': 'CustomerBillCreateEvent',
+        'update': 'CustomerBillAttributeValueChangeEvent',
+        'state_change': 'CustomerBillStateChangeEvent',
+        'delete': 'CustomerBillDeleteEvent',
+    },
 }
 
 def _strip_quotes(s: str) -> str:

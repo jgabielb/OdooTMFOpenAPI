@@ -32,7 +32,7 @@ Write-Host "Database:    TMF_Odoo_DB (Port 5433)"
 Write-Host "------------------------------------------------------" -ForegroundColor Cyan
 
 # 4. Define Modules to Update (To fix the 'create' bug)
-$ModulesToUpdate = "tmf_trouble_ticket" 
+$ModulesToUpdate = "tmf_billing_management" 
 
 # 5. Run Odoo
 Write-Host "Starting Odoo Server..." -ForegroundColor Green

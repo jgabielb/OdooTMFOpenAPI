@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_billing_account,tmf.billing.account,model_tmf_billing_account,base.group_user,1,1,1,1

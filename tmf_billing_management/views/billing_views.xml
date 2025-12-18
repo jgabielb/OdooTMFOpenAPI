@@ -1,0 +1,48 @@
+<odoo>
+    <!-- Billing Account Form -->
+    <record id="view_tmf_billing_account_form" model="ir.ui.view">
+        <field name="name">tmf.billing.account.form</field>
+        <field name="model">tmf.billing.account</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="account_balance"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="tmf_id" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_billing_account" model="ir.actions.act_window">
+        <field name="name">Billing Accounts</field>
+        <field name="res_model">tmf.billing.account</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_tmf_billing"
+              name="Billing"
+              parent="tmf_product_catalog.menu_tmf_root"
+              sequence="50"/>
+
+    <menuitem id="menu_tmf_billing_accounts"
+              name="Accounts"
+              parent="menu_tmf_billing"
+              action="action_tmf_billing_account"/>
+              
+    <!-- Link to Odoo Invoices -->
+    <menuitem id="menu_tmf_invoices"
+              name="Customer Bills"
+              parent="menu_tmf_billing"
+              action="account.action_move_out_invoice_type"/>
+</odoo>
