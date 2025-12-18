@@ -13,7 +13,7 @@ class TMFCatalogController(http.Controller):
         TMF620: List Product Specifications
         """
         # Fetch data
-        specs = request.env['product.specification'].sudo().search([])
+        specs = request.env['tmf.product.specification'].sudo().search([])
         
         response_data = []
         for s in specs:

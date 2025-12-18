@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 
 class ProductSpecification(models.Model):
-    _name = 'product.specification'
+    _name = 'tmf.product.specification'
     _description = 'TMF Product Specification'
     _inherit = ['tmf.model.mixin']
 

@@ -13,7 +13,7 @@ class TMFService(models.Model):
 
     # What kind of service is it?
     product_specification_id = fields.Many2one(
-        'product.specification',
+        'tmf.product.specification',
         string="Specification"
     )
 

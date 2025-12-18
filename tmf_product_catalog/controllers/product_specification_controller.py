@@ -31,7 +31,7 @@ class TMFProductSpecificationController(http.Controller):
             # map 'In Design'/'Active'/'Retired' if you want, or expect 'design/active/retired'
             domain.append(('lifecycle_status', '=', lifecycle))
 
-        specs = request.env['product.specification'].sudo().search(
+        specs = request.env['tmf.product.specification'].sudo().search(
             domain, offset=offset, limit=limit, order='id desc'
         )
         data = [s.to_tmf_json() for s in specs]
@@ -46,7 +46,7 @@ class TMFProductSpecificationController(http.Controller):
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def get_spec(self, tmf_id, **params):
-        spec = request.env['product.specification'].sudo().search(
+        spec = request.env['tmf.product.specification'].sudo().search(
             [('tmf_id', '=', tmf_id)], limit=1
         )
         if not spec:

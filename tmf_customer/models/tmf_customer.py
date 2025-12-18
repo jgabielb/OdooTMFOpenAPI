@@ -121,8 +121,8 @@ class TmfCustomer(models.Model):
             if name and not existing:
                 partner = self.env["res.partner"].sudo().create({"name": name})
                 vals["partner_id"] = partner.id
-            elif name and existing and existing.partner_id:
-                existing.partner_id.sudo().write({"name": name})
+            elif name and existing:
+                vals["name"] = name
 
         if (not partial) or ("status" in data):
             if "status" in data:
@@ -252,23 +252,46 @@ class TmfCustomer(models.Model):
     # -------------------------------------------------------------------------
     @api.model
     def create(self, vals):
-        record = super().create(vals)
-        if not self.env.context.get("tmf_skip_event"):
-            record._tmf_send_event("CustomerCreateEvent")
-        return record
+        rec = super().create(vals)
+        rec.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+            api_name="customer",
+            event_type="create",
+            resource_json={"resourceType": "customer", "resource": rec._tmf_to_dict()},
+        )
+        return rec
 
     def write(self, vals):
         res = super().write(vals)
-        if not self.env.context.get("tmf_skip_event"):
-            for rec in self:
-                rec._tmf_send_event("CustomerAttributeValueChangeEvent")
+
+        if self.env.context.get("tmf_skip_customer_notify"):
+            return res
+
+        # Only notify when “meaningful” customer fields changed
+        watch = {"status", "lifecycle_status", "description", "external_id", "partner_id", "name"}
+        if not (watch & set(vals.keys())):
+            return res
+
+        for rec in self:
+            rec.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name="customer",
+                event_type="update",
+                resource_json={
+                    "resourceType": "customer",
+                    "resource": rec._tmf_to_dict(),
+                },
+            )
         return res
 
     def unlink(self):
-        if not self.env.context.get("tmf_skip_event"):
-            for rec in self:
-                rec._tmf_send_event("CustomerDeleteEvent", deleted=True)
-        return super().unlink()
+        payloads = [{"resourceType": "customer", "resource": r._tmf_to_dict()} for r in self]
+        res = super().unlink()
+        for p in payloads:
+            self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name="customer",
+                event_type="delete",
+                resource_json=p,
+            )
+        return res
 
 
 class TmfCustomerSubscription(models.Model):

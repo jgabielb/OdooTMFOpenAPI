@@ -9,8 +9,10 @@
     "depends": [
         "base",
         "contacts",
+        "sale",
         "tmf_base",  # uncomment if you already have it
         "tmf_party", # uncomment if you want tight integration
+        "tmf_product_catalog",
     ],
     "data": [
         "security/ir.model.access.csv",

@@ -1,0 +1,9 @@
+<odoo>
+    <record id="seq_tmf_ticket" model="ir.sequence">
+        <field name="name">Trouble Ticket</field>
+        <field name="code">tmf.trouble.ticket</field>
+        <field name="prefix">TT-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

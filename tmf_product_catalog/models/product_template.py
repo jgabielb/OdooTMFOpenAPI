@@ -7,7 +7,7 @@ class ProductTemplate(models.Model):
 
     # Link Commercial Offering -> Technical Spec
     product_specification_id = fields.Many2one(
-        'product.specification',
+        'tmf.product.specification',
         string="Technical Specification",
         help="The technical definition behind this commercial offering"
     )
