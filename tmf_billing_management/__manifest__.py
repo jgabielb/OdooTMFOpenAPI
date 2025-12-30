@@ -9,7 +9,7 @@
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',
-    'depends': ['tmf_base', 'account', 'tmf_party'],
+    'depends': ['tmf_base', 'account', 'tmf_party', 'tmf_product_catalog'],
     'data': [
         'security/ir.model.access.csv',
         'views/billing_views.xml',

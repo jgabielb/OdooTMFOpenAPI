@@ -18,7 +18,7 @@ class TMFProductSpecificationController(http.Controller):
         )
 
     @http.route(
-        '/tmf-api/productCatalogManagement/v4/productSpecification',
+        '/tmf-api/productCatalogManagement/v5/productSpecification',
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def list_specs(self, **params):
@@ -42,7 +42,7 @@ class TMFProductSpecificationController(http.Controller):
         )
 
     @http.route(
-        '/tmf-api/productCatalogManagement/v4/productSpecification/<string:tmf_id>',
+        '/tmf-api/productCatalogManagement/v5/productSpecification/<string:tmf_id>',
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def get_spec(self, tmf_id, **params):

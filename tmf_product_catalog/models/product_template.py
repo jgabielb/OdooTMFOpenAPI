@@ -20,7 +20,7 @@ class ProductTemplate(models.Model):
 
     def _get_tmf_api_path(self):
         # used by tmf.model.mixin to build href
-        return "/productCatalogManagement/v4/productOffering"
+        return "/productCatalogManagement/v5/productOffering"
 
     # ------------- TMF620 JSON SERIALIZER -------------
 

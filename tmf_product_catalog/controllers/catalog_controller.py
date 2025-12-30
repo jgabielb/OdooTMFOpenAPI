@@ -7,7 +7,7 @@ class TMFCatalogController(http.Controller):
     # =======================================================
     # 1. Product Specification API
     # =======================================================
-    @http.route('/tmf-api/productCatalogManagement/v4/productSpecification', type='http', auth='public', methods=['GET'], csrf=False)
+    @http.route('/tmf-api/productCatalogManagement/v5/productSpecification', type='http', auth='public', methods=['GET'], csrf=False)
     def get_specifications(self, **params):
         """
         TMF620: List Product Specifications
@@ -37,7 +37,7 @@ class TMFCatalogController(http.Controller):
     # =======================================================
     # 2. Product Offering API (The most important one)
     # =======================================================
-    @http.route('/tmf-api/productCatalogManagement/v4/productOffering', type='http', auth='public', methods=['GET'], csrf=False)
+    @http.route('/tmf-api/productCatalogManagement/v5/productOffering', type='http', auth='public', methods=['GET'], csrf=False)
     def get_offerings(self, **params):
         """
         TMF620: List Product Offerings (Commercial Products)

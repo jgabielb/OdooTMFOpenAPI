@@ -91,4 +91,4 @@ class ProductSpecification(models.Model):
         self.lifecycle_status = 'design'
     
     def _get_tmf_api_path(self):
-        return "/productCatalogManagement/v4/productSpecification"
+        return "/productCatalogManagement/v5/productSpecification"
