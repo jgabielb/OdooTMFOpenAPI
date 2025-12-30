@@ -1,0 +1,58 @@
+<odoo>
+    <record id="view_tmf_usage_consumption_form" model="ir.ui.view">
+        <field name="name">tmf.usage.consumption.form</field>
+        <field name="model">tmf.usage.consumption</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="bucket_ref_or_value"/>
+                <field name="logical_resource"/>
+                <field name="party_account"/>
+                <field name="product"/>
+                <field name="related_party"/>
+                <field name="service"/>
+                <field name="state"/>
+                <field name="valid_period"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_usage_consumption_tree" model="ir.ui.view">
+        <field name="name">tmf.usage.consumption.tree</field>
+        <field name="model">tmf.usage.consumption</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="bucket_ref_or_value"/>
+                <field name="logical_resource"/>
+                <field name="party_account"/>
+                <field name="product"/>
+                <field name="related_party"/>
+                <field name="service"/>
+                <field name="state"/>
+                <field name="valid_period"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_usage_consumption" model="ir.actions.act_window">
+        <field name="name">UsageConsumption</field>
+        <field name="res_model">tmf.usage.consumption</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_usage_consumption"
+              name="UsageConsumption"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_usage_consumption"/>
+</odoo>

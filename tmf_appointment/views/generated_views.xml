@@ -1,0 +1,62 @@
+<odoo>
+    <record id="view_tmf_appointment_form" model="ir.ui.view">
+        <field name="name">tmf.appointment.form</field>
+        <field name="model">tmf.appointment</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="category"/>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="external_id"/>
+                <field name="last_update"/>
+                <field name="attachment"/>
+                <field name="calendar_event"/>
+                <field name="contact_medium"/>
+                <field name="note"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="related_place"/>
+                <field name="status"/>
+                <field name="valid_for"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_appointment_tree" model="ir.ui.view">
+        <field name="name">tmf.appointment.tree</field>
+        <field name="model">tmf.appointment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="category"/>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="external_id"/>
+                <field name="last_update"/>
+                <field name="attachment"/>
+                <field name="calendar_event"/>
+                <field name="contact_medium"/>
+                <field name="note"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="related_place"/>
+                <field name="status"/>
+                <field name="valid_for"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_appointment" model="ir.actions.act_window">
+        <field name="name">Appointment</field>
+        <field name="res_model">tmf.appointment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_appointment"
+              name="Appointment"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_appointment"/>
+</odoo>

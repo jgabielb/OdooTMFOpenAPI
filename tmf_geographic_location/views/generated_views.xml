@@ -1,0 +1,36 @@
+<odoo>
+    <record id="view_tmf_geographic_location_form" model="ir.ui.view">
+        <field name="name">tmf.geographic.location.form</field>
+        <field name="model">tmf.geographic.location</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="bbox"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_geographic_location_tree" model="ir.ui.view">
+        <field name="name">tmf.geographic.location.tree</field>
+        <field name="model">tmf.geographic.location</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="bbox"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_geographic_location" model="ir.actions.act_window">
+        <field name="name">GeographicLocation</field>
+        <field name="res_model">tmf.geographic.location</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_geographic_location"
+              name="GeographicLocation"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_geographic_location"/>
+</odoo>

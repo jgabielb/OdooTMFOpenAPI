@@ -1,0 +1,66 @@
+<odoo>
+    <record id="view_tmf_agreement_form" model="ir.ui.view">
+        <field name="name">tmf.agreement.form</field>
+        <field name="model">tmf.agreement</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="agreement_type"/>
+                <field name="description"/>
+                <field name="document_number"/>
+                <field name="initial_date"/>
+                <field name="name"/>
+                <field name="statement_of_intent"/>
+                <field name="status"/>
+                <field name="version"/>
+                <field name="agreement_authorization"/>
+                <field name="agreement_item"/>
+                <field name="agreement_period"/>
+                <field name="agreement_specification"/>
+                <field name="associated_agreement"/>
+                <field name="characteristic"/>
+                <field name="completion_date"/>
+                <field name="engaged_party"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_agreement_tree" model="ir.ui.view">
+        <field name="name">tmf.agreement.tree</field>
+        <field name="model">tmf.agreement</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="agreement_type"/>
+                <field name="description"/>
+                <field name="document_number"/>
+                <field name="initial_date"/>
+                <field name="name"/>
+                <field name="statement_of_intent"/>
+                <field name="status"/>
+                <field name="version"/>
+                <field name="agreement_authorization"/>
+                <field name="agreement_item"/>
+                <field name="agreement_period"/>
+                <field name="agreement_specification"/>
+                <field name="associated_agreement"/>
+                <field name="characteristic"/>
+                <field name="completion_date"/>
+                <field name="engaged_party"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_agreement" model="ir.actions.act_window">
+        <field name="name">Agreement</field>
+        <field name="res_model">tmf.agreement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_agreement"
+              name="Agreement"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_agreement"/>
+</odoo>

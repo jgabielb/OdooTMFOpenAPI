@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <list string="TMF Customers">
                 <field name="name"/>
-                <field name="external_id"/>
+                <field name="tmf_id"/>
                 <!-- Added badges for better visibility -->
                 <field name="status" widget="badge" decoration-success="status == 'active'"/>
                 <field name="lifecycle_status"/>
@@ -31,7 +31,7 @@
                     </div>
                     <group>
                         <group>
-                            <field name="external_id"/>
+                            <field name="tmf_id"/>
                             <field name="lifecycle_status"/>
                         </group>
                         <group>

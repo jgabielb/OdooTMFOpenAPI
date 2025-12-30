@@ -1,0 +1,56 @@
+<odoo>
+    <record id="view_tmf_service_level_objective_form" model="ir.ui.view">
+        <field name="name">tmf.service.level.objective.form</field>
+        <field name="model">tmf.service.level.objective</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="conformance_comparator"/>
+                <field name="conformance_target"/>
+                <field name="grace_times"/>
+                <field name="name"/>
+                <field name="threshold_target"/>
+                <field name="tolerance_target"/>
+                <field name="conformance_period"/>
+                <field name="service_level_objective_consequence"/>
+                <field name="service_level_objective_parameter"/>
+                <field name="tolerance_period"/>
+                <field name="valid_for"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_service_level_objective_tree" model="ir.ui.view">
+        <field name="name">tmf.service.level.objective.tree</field>
+        <field name="model">tmf.service.level.objective</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="conformance_comparator"/>
+                <field name="conformance_target"/>
+                <field name="grace_times"/>
+                <field name="name"/>
+                <field name="threshold_target"/>
+                <field name="tolerance_target"/>
+                <field name="conformance_period"/>
+                <field name="service_level_objective_consequence"/>
+                <field name="service_level_objective_parameter"/>
+                <field name="tolerance_period"/>
+                <field name="valid_for"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_service_level_objective" model="ir.actions.act_window">
+        <field name="name">ServiceLevelObjective</field>
+        <field name="res_model">tmf.service.level.objective</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_service_level_objective"
+              name="ServiceLevelObjective"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_service_level_objective"/>
+</odoo>

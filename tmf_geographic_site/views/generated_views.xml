@@ -1,0 +1,50 @@
+<odoo>
+    <record id="view_tmf_geographic_site_form" model="ir.ui.view">
+        <field name="name">tmf.geographic.site.form</field>
+        <field name="model">tmf.geographic.site</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="code"/>
+                <field name="description"/>
+                <field name="name"/>
+                <field name="status"/>
+                <field name="calendar"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="site_relationship"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_geographic_site_tree" model="ir.ui.view">
+        <field name="name">tmf.geographic.site.tree</field>
+        <field name="model">tmf.geographic.site</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="description"/>
+                <field name="name"/>
+                <field name="status"/>
+                <field name="calendar"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="site_relationship"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_geographic_site" model="ir.actions.act_window">
+        <field name="name">GeographicSite</field>
+        <field name="res_model">tmf.geographic.site</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_geographic_site"
+              name="GeographicSite"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_geographic_site"/>
+</odoo>

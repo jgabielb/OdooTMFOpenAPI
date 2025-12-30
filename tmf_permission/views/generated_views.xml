@@ -1,0 +1,48 @@
+<odoo>
+    <record id="view_tmf_permission_form" model="ir.ui.view">
+        <field name="name">tmf.permission.form</field>
+        <field name="model">tmf.permission</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="asset_user_role"/>
+                <field name="granter"/>
+                <field name="privilege"/>
+                <field name="user"/>
+                <field name="valid_for"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_permission_tree" model="ir.ui.view">
+        <field name="name">tmf.permission.tree</field>
+        <field name="model">tmf.permission</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="asset_user_role"/>
+                <field name="granter"/>
+                <field name="privilege"/>
+                <field name="user"/>
+                <field name="valid_for"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_permission" model="ir.actions.act_window">
+        <field name="name">Permission</field>
+        <field name="res_model">tmf.permission</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_permission"
+              name="Permission"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_permission"/>
+</odoo>

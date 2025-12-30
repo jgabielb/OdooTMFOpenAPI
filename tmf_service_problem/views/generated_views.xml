@@ -1,0 +1,106 @@
+<odoo>
+    <record id="view_tmf_service_problem_form" model="ir.ui.view">
+        <field name="name">tmf.service.problem.form</field>
+        <field name="model">tmf.service.problem</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="affected_number_of_services"/>
+                <field name="category"/>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="impact_importance_factor"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="originating_system"/>
+                <field name="priority"/>
+                <field name="problem_escalation"/>
+                <field name="reason"/>
+                <field name="resolution_date"/>
+                <field name="status_change_date"/>
+                <field name="status_change_reason"/>
+                <field name="affected_location"/>
+                <field name="affected_resource"/>
+                <field name="affected_service"/>
+                <field name="characteristic"/>
+                <field name="external_identifier"/>
+                <field name="first_alert"/>
+                <field name="impact_pattern"/>
+                <field name="note"/>
+                <field name="originator_party"/>
+                <field name="parent_problem"/>
+                <field name="related_entity"/>
+                <field name="related_event"/>
+                <field name="related_party"/>
+                <field name="responsible_party"/>
+                <field name="root_cause_resource"/>
+                <field name="root_cause_service"/>
+                <field name="sla_violation"/>
+                <field name="status"/>
+                <field name="tracking_record"/>
+                <field name="trouble_ticket"/>
+                <field name="underlying_alarm"/>
+                <field name="underlying_problem"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_service_problem_tree" model="ir.ui.view">
+        <field name="name">tmf.service.problem.tree</field>
+        <field name="model">tmf.service.problem</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="affected_number_of_services"/>
+                <field name="category"/>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="impact_importance_factor"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="originating_system"/>
+                <field name="priority"/>
+                <field name="problem_escalation"/>
+                <field name="reason"/>
+                <field name="resolution_date"/>
+                <field name="status_change_date"/>
+                <field name="status_change_reason"/>
+                <field name="affected_location"/>
+                <field name="affected_resource"/>
+                <field name="affected_service"/>
+                <field name="characteristic"/>
+                <field name="external_identifier"/>
+                <field name="first_alert"/>
+                <field name="impact_pattern"/>
+                <field name="note"/>
+                <field name="originator_party"/>
+                <field name="parent_problem"/>
+                <field name="related_entity"/>
+                <field name="related_event"/>
+                <field name="related_party"/>
+                <field name="responsible_party"/>
+                <field name="root_cause_resource"/>
+                <field name="root_cause_service"/>
+                <field name="sla_violation"/>
+                <field name="status"/>
+                <field name="tracking_record"/>
+                <field name="trouble_ticket"/>
+                <field name="underlying_alarm"/>
+                <field name="underlying_problem"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_service_problem" model="ir.actions.act_window">
+        <field name="name">ServiceProblem</field>
+        <field name="res_model">tmf.service.problem</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_service_problem"
+              name="ServiceProblem"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_service_problem"/>
+</odoo>

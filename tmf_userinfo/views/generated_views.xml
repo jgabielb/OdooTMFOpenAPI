@@ -1,0 +1,76 @@
+<odoo>
+    <record id="view_tmf_userinfo_form" model="ir.ui.view">
+        <field name="name">tmf.userinfo.form</field>
+        <field name="model">tmf.userinfo</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="birthdate"/>
+                <field name="email"/>
+                <field name="emailverified"/>
+                <field name="familyname"/>
+                <field name="gender"/>
+                <field name="givenname"/>
+                <field name="locale"/>
+                <field name="middlename"/>
+                <field name="name"/>
+                <field name="nickname"/>
+                <field name="phonenumber"/>
+                <field name="phonenumberverified"/>
+                <field name="picture"/>
+                <field name="preferredusername"/>
+                <field name="profile"/>
+                <field name="sub"/>
+                <field name="website"/>
+                <field name="zoneinfo"/>
+                <field name="address"/>
+                <field name="legal_id"/>
+                <field name="user_assets"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_userinfo_tree" model="ir.ui.view">
+        <field name="name">tmf.userinfo.tree</field>
+        <field name="model">tmf.userinfo</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="birthdate"/>
+                <field name="email"/>
+                <field name="emailverified"/>
+                <field name="familyname"/>
+                <field name="gender"/>
+                <field name="givenname"/>
+                <field name="locale"/>
+                <field name="middlename"/>
+                <field name="name"/>
+                <field name="nickname"/>
+                <field name="phonenumber"/>
+                <field name="phonenumberverified"/>
+                <field name="picture"/>
+                <field name="preferredusername"/>
+                <field name="profile"/>
+                <field name="sub"/>
+                <field name="website"/>
+                <field name="zoneinfo"/>
+                <field name="address"/>
+                <field name="legal_id"/>
+                <field name="user_assets"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_userinfo" model="ir.actions.act_window">
+        <field name="name">Userinfo</field>
+        <field name="res_model">tmf.userinfo</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_userinfo"
+              name="Userinfo"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_userinfo"/>
+</odoo>

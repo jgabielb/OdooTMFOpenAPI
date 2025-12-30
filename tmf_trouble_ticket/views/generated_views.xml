@@ -1,0 +1,76 @@
+<odoo>
+    <record id="view_tmf_trouble_ticket_form" model="ir.ui.view">
+        <field name="name">tmf.trouble.ticket.form</field>
+        <field name="model">tmf.trouble.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="expected_resolution_date"/>
+                <field name="external_id"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="requested_resolution_date"/>
+                <field name="resolution_date"/>
+                <field name="severity"/>
+                <field name="status_change_date"/>
+                <field name="status_change_reason"/>
+                <field name="ticket_type"/>
+                <field name="attachment"/>
+                <field name="channel"/>
+                <field name="note"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="status"/>
+                <field name="status_change"/>
+                <field name="trouble_ticket_relationship"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_trouble_ticket_tree" model="ir.ui.view">
+        <field name="name">tmf.trouble.ticket.tree</field>
+        <field name="model">tmf.trouble.ticket</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="creation_date"/>
+                <field name="description"/>
+                <field name="expected_resolution_date"/>
+                <field name="external_id"/>
+                <field name="last_update"/>
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="requested_resolution_date"/>
+                <field name="resolution_date"/>
+                <field name="severity"/>
+                <field name="status_change_date"/>
+                <field name="status_change_reason"/>
+                <field name="ticket_type"/>
+                <field name="attachment"/>
+                <field name="channel"/>
+                <field name="note"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="status"/>
+                <field name="status_change"/>
+                <field name="trouble_ticket_relationship"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_trouble_ticket" model="ir.actions.act_window">
+        <field name="name">TroubleTicket</field>
+        <field name="res_model">tmf.trouble.ticket</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_trouble_ticket"
+              name="TroubleTicket"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_trouble_ticket"/>
+</odoo>

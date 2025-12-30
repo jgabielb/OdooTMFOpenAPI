@@ -1,326 +1,159 @@
 import logging
-import uuid
-import requests
-
-from odoo import api, fields, models, _
+from odoo import models, fields, api, _
 
 _logger = logging.getLogger(__name__)
 
+class TMFCustomer(models.Model):
+    _name = 'tmf.customer'
+    _description = 'TMF Customer'
+    _inherit = ['tmf.model.mixin']
 
-class TmfCustomer(models.Model):
-    _name = "tmf.customer"
-    _description = "TMF Customer"
-
-    email = fields.Char()
-    phone = fields.Char()
-    active = fields.Boolean(default=True)
-
-    name = fields.Char(
-        string="Customer Name",
-        related="partner_id.name",
-        store=True,
-        readonly=False,
-    )
-
+    name = fields.Char(string="Name", required=True)
+    
+    # Link to Odoo's native Contact
     partner_id = fields.Many2one(
         "res.partner",
-        string="Partner",
+        string="Related Party",
         required=True,
         ondelete="cascade",
-        help="Underlying Odoo partner representing this customer.",
+        help="Underlying Odoo partner representing this customer."
     )
 
-    external_id = fields.Char(
-        string="External Customer ID",
-        help="Identifier of the customer in an external system (Siebel/BRM/etc.).",
-    )
+    # External references
+    external_id = fields.Char(string="External ID", help="ID from legacy/external systems")
+    
+    description = fields.Text(string="Description")
 
-    status = fields.Selection(
-        [
-            ("prospect", "Prospect"),
-            ("active", "Active"),
-            ("inactive", "Inactive"),
-        ],
-        string="Status",
-        default="active",
-        required=True,
-    )
+    # Lifecycle Management (Must be Selection to match DB)
+    status = fields.Selection([
+        ('initialized', 'Initialized'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive')
+    ], string="Status", default='active', required=True)
+    
+    lifecycle_status = fields.Selection([
+        ('prospect', 'Prospect'),
+        ('active', 'Active'),
+        ('terminated', 'Terminated')
+    ], string="Lifecycle Status", default='active', required=True)
 
-    lifecycle_status = fields.Selection(
-        [
-            ("created", "Created"),
-            ("validated", "Validated"),
-            ("active", "Active"),
-            ("inactive", "Inactive"),
-        ],
-        string="Lifecycle Status",
-        default="created",
-        required=True,
-    )
+    def _get_tmf_api_path(self):
+        return "/customerManagement/v4/customer"
 
-    description = fields.Text(
-        string="Description",
-        help="Free-text description or notes about the customer.",
-    )
-
-    _sql_constraints = [
-        (
-            "external_id_uniq",
-            "unique(external_id)",
-            "External customer ID must be unique.",
-        )
-    ]
-
-    # -------------------------------------------------------------------------
-    # Core TMF mapping
-    # -------------------------------------------------------------------------
-
-    def _tmf_to_dict(self):
-        """Map this record to a TMF629-style Customer representation."""
+    # ==========================================
+    # SERIALIZATION (Odoo -> TMF JSON)
+    # ==========================================
+    def to_tmf_json(self):
+        """Map this record to a TMF629 JSON representation."""
         self.ensure_one()
-
+        
+        # Base Data
         result = {
-            "id": str(self.id),
-            "href": f"/tmf-api/customerManagement/v4/customer/{self.id}",
+            "id": self.tmf_id or str(self.id),
+            "href": self.href,
             "name": self.name,
             "status": self.status,
             "lifecycleStatus": self.lifecycle_status,
+            "description": self.description or "",
+            "externalId": self.external_id or "",
+            "@type": "Customer"
         }
 
-        if self.description:
-            result["description"] = self.description
-
-        if self.external_id:
-            result["externalId"] = self.external_id
-
+        # Link to Party (Standard TMF Pattern)
         if self.partner_id:
             result["party"] = {
-                "id": str(self.partner_id.id),
-                "href": f"/tmf-api/partyManagement/v4/party/{self.partner_id.id}",
+                "id": self.partner_id.tmf_id or str(self.partner_id.id),
                 "name": self.partner_id.name,
-                "@referredType": (
-                    "Individual" if not self.partner_id.is_company else "Organization"
-                ),
+                "@type": "RelatedParty",
+                "@referredType": "Organization" if self.partner_id.is_company else "Individual"
+            }
+            # Also add EngagedParty if needed by specific consumers
+            result["engagedParty"] = {
+                "id": self.partner_id.tmf_id or str(self.partner_id.id),
+                "name": self.partner_id.name,
+                "@type": "RelatedParty",
+                "@referredType": "Organization" if self.partner_id.is_company else "Individual"
             }
 
         return result
 
+    # ==========================================
+    # DESERIALIZATION (TMF JSON -> Odoo)
+    # ==========================================
     @api.model
-    def _tmf_map_data_to_vals(self, data, partial=True, existing=None):
+    def map_tmf_to_odoo(self, data):
         """
-        Map TMF629 Customer JSON payload into Odoo create/write vals.
-        - data: dict from API
-        - partial: True when PATCH, False when POST
-        - existing: record when updating
+        Helper to parse incoming JSON for Create/Update.
         """
         vals = {}
+        
+        # Direct Mapping
+        if 'name' in data: vals['name'] = data['name']
+        if 'status' in data: vals['status'] = data['status']
+        if 'lifecycleStatus' in data: vals['lifecycle_status'] = data['lifecycleStatus']
+        if 'description' in data: vals['description'] = data['description']
+        if 'externalId' in data: vals['external_id'] = data['externalId']
 
-        # simple attributes
-        if (not partial) or ("name" in data):
-            name = data.get("name")
-            if name and not existing:
-                partner = self.env["res.partner"].sudo().create({"name": name})
-                vals["partner_id"] = partner.id
-            elif name and existing:
-                vals["name"] = name
-
-        if (not partial) or ("status" in data):
-            if "status" in data:
-                vals["status"] = data["status"]
-
-        if (not partial) or ("lifecycleStatus" in data):
-            if "lifecycleStatus" in data:
-                vals["lifecycle_status"] = data["lifecycleStatus"]
-
-        if (not partial) or ("description" in data):
-            if "description" in data:
-                vals["description"] = data["description"]
-
-        if (not partial) or ("externalId" in data):
-            if "externalId" in data:
-                vals["external_id"] = data["externalId"]
-
-        # Party / engagedParty mapping
+        # Party Logic: If generic "party" or "engagedParty" is provided
         party_data = data.get("party") or data.get("engagedParty")
-        if party_data:
-            partner_id = None
-            party_id_raw = party_data.get("id")
-            if party_id_raw:
-                try:
-                    partner_id = int(party_id_raw)
-                except (TypeError, ValueError):
-                    partner_id = None
-
-            if partner_id:
-                partner = self.env["res.partner"].sudo().browse(partner_id)
-                if partner.exists():
-                    vals["partner_id"] = partner.id
-            elif data.get("name"):
-                partner = self.env["res.partner"].sudo().create(
-                    {"name": data.get("name")}
-                )
-                vals["partner_id"] = partner.id
-
-        # If still no partner_id on create, create a generic one (for POST)
-        if not partial and not vals.get("partner_id"):
-            display_name = (
-                data.get("name")
-                or data.get("externalId")
-                or _("Unnamed TMF Customer")
-            )
-            partner = self.env["res.partner"].sudo().create({"name": display_name})
-            vals["partner_id"] = partner.id
+        
+        if party_data and 'id' in party_data:
+            # 1. Try to find existing Partner by TMF ID
+            partner = self.env['res.partner'].sudo().search([('tmf_id', '=', party_data['id'])], limit=1)
+            
+            # 2. If not found, try by Odoo ID
+            if not partner and party_data['id'].isdigit():
+                partner = self.env['res.partner'].sudo().browse(int(party_data['id']))
+            
+            if partner.exists():
+                vals['partner_id'] = partner.id
+        
+        # Fallback: If creating and no partner found, create one
+        if 'partner_id' not in vals and data.get('name'):
+            # Only do this if we are in a Create context (logic handled by controller)
+            pass 
 
         return vals
 
-    @api.model
-    def tmf_create_from_payload(self, data):
-        """Create a customer from TMF payload."""
-        vals = self._tmf_map_data_to_vals(data, partial=False, existing=None)
-
-        # IMPORTANT: skip event in create(), send manually after
-        record = self.with_context(tmf_skip_event=True).sudo().create(vals)
-        record._tmf_send_event("CustomerCreateEvent")
-        return record
-
-    def tmf_update_from_payload(self, data):
-        """Update a customer from TMF payload (PATCH)."""
-        self.ensure_one()
-        vals = self._tmf_map_data_to_vals(
-            data, partial=True, existing=self.sudo()
-        )
-        if vals:
-            # IMPORTANT: skip event in write(), send manually after
-            self.with_context(tmf_skip_event=True).sudo().write(vals)
-            self._tmf_send_event("CustomerAttributeValueChangeEvent")
-        return self
-
-
-    # -------------------------------------------------------------------------
-    # Hub event publishing (TMF Hub pattern)
-    # -------------------------------------------------------------------------
-
-    def _tmf_event_payload(self, event_type, deleted=False):
-        self.ensure_one()
-        now_str = fields.Datetime.now()
-        resource_path = f"/tmf-api/customerManagement/v4/customer/{self.id}"
-
-        if deleted:
-            customer_body = {"id": str(self.id)}
-        else:
-            customer_body = self._tmf_to_dict()
-
-        return {
-            "eventId": str(uuid.uuid4()),
-            "eventType": event_type,
-            "eventTime": now_str,
-            "resourcePath": resource_path,
-            "event": {
-                "customer": customer_body,
-            },
-        }
-
-    def _tmf_send_event(self, event_type, deleted=False):
-        self.ensure_one()
-        subscriptions = self.env["tmf.customer.subscription"].sudo().search([])
-        if not subscriptions:
-            return
-
-        payload = self._tmf_event_payload(event_type, deleted=deleted)
-
-        for sub in subscriptions:
-            if not sub.callback:
-                continue
-            body = {
-                "id": str(sub.id),
-                "callback": sub.callback,
-                "query": sub.query or "",
-                "event": payload,
-            }
-            try:
-                requests.post(sub.callback, json=body, timeout=5)
-            except Exception as e:
-                _logger.warning(
-                    "Error sending TMF Customer event %s to %s: %s",
-                    event_type,
-                    sub.callback,
-                    e,
-                )
-
-    # -------------------------------------------------------------------------
-    # CRUD hooks – fire only if NOT tmf_skip_event
-    # -------------------------------------------------------------------------
-    @api.model
-    def create(self, vals):
-        rec = super().create(vals)
-        rec.env["tmf.hub.subscription"].sudo()._notify_subscribers(
-            api_name="customer",
-            event_type="create",
-            resource_json={"resourceType": "customer", "resource": rec._tmf_to_dict()},
-        )
-        return rec
+    # ==========================================
+    # NOTIFICATION LOGIC (Central Hub)
+    # ==========================================
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        for rec in recs:
+            self._notify('customer', 'create', rec)
+        return recs
 
     def write(self, vals):
         res = super().write(vals)
-
-        if self.env.context.get("tmf_skip_customer_notify"):
-            return res
-
-        # Only notify when “meaningful” customer fields changed
-        watch = {"status", "lifecycle_status", "description", "external_id", "partner_id", "name"}
-        if not (watch & set(vals.keys())):
-            return res
-
         for rec in self:
-            rec.env["tmf.hub.subscription"].sudo()._notify_subscribers(
-                api_name="customer",
-                event_type="update",
-                resource_json={
-                    "resourceType": "customer",
-                    "resource": rec._tmf_to_dict(),
-                },
-            )
+            # Smart detection of update vs state change
+            event = 'state_change' if 'status' in vals or 'lifecycle_status' in vals else 'update'
+            self._notify('customer', event, rec)
         return res
 
     def unlink(self):
-        payloads = [{"resourceType": "customer", "resource": r._tmf_to_dict()} for r in self]
+        payloads = [r.to_tmf_json() for r in self]
         res = super().unlink()
-        for p in payloads:
-            self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
-                api_name="customer",
-                event_type="delete",
-                resource_json=p,
-            )
+        for resource in payloads:
+            try:
+                self.env['tmf.hub.subscription']._notify_subscribers(
+                    api_name='customer',
+                    event_type='delete',
+                    resource_json=resource,
+                )
+            except Exception:
+                pass
         return res
 
-
-class TmfCustomerSubscription(models.Model):
-    """
-    TMF-style hub subscription for Customer events.
-
-    Endpoint:
-      POST /tmf-api/customerManagement/v4/hub
-    """
-
-    _name = "tmf.customer.subscription"
-    _description = "TMF Customer Hub Subscription"
-
-    callback = fields.Char(
-        string="Callback URL",
-        required=True,
-        help="Listener URL where Customer events will be POSTed.",
-    )
-    query = fields.Char(
-        string="Query",
-        help="Optional filter/query as per TMF Hub pattern.",
-    )
-    # Simple enable/disable flag
-    active = fields.Boolean(default=True)
-
-    def to_tmf_dict(self):
-        self.ensure_one()
-        return {
-            "id": str(self.id),
-            "callback": self.callback,
-            "query": self.query or "",
-        }
+    def _notify(self, api_name, action, record):
+        """Delegates notification to the TMF Base Hub"""
+        try:
+            self.env['tmf.hub.subscription']._notify_subscribers(
+                api_name=api_name,
+                event_type=action,
+                resource_json=record.to_tmf_json(),
+            )
+        except Exception as e:
+            _logger.error(f"Failed to send TMF notification: {e}")

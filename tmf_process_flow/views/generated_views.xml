@@ -1,0 +1,52 @@
+<odoo>
+    <record id="view_tmf_process_flow_form" model="ir.ui.view">
+        <field name="name">tmf.process.flow.form</field>
+        <field name="model">tmf.process.flow</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="process_flow_date"/>
+                <field name="process_flow_specification"/>
+                <field name="channel"/>
+                <field name="characteristic"/>
+                <field name="process_flow_specification_ref"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="state"/>
+                <field name="task_flow"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_process_flow_tree" model="ir.ui.view">
+        <field name="name">tmf.process.flow.tree</field>
+        <field name="model">tmf.process.flow</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="process_flow_date"/>
+                <field name="process_flow_specification"/>
+                <field name="channel"/>
+                <field name="characteristic"/>
+                <field name="process_flow_specification_ref"/>
+                <field name="related_entity"/>
+                <field name="related_party"/>
+                <field name="state"/>
+                <field name="task_flow"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_process_flow" model="ir.actions.act_window">
+        <field name="name">ProcessFlow</field>
+        <field name="res_model">tmf.process.flow</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_process_flow"
+              name="ProcessFlow"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_process_flow"/>
+</odoo>

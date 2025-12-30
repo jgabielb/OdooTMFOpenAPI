@@ -1,0 +1,86 @@
+<odoo>
+    <record id="view_tmf_resource_function_form" model="ir.ui.view">
+        <field name="name">tmf.resource.function.form</field>
+        <field name="model">tmf.resource.function</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="category"/>
+                <field name="description"/>
+                <field name="end_operating_date"/>
+                <field name="function_type"/>
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="resource_version"/>
+                <field name="role"/>
+                <field name="start_operating_date"/>
+                <field name="value"/>
+                <field name="activation_feature"/>
+                <field name="administrative_state"/>
+                <field name="attachment"/>
+                <field name="auto_modification"/>
+                <field name="connection_point"/>
+                <field name="connectivity"/>
+                <field name="note"/>
+                <field name="operational_state"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_characteristic"/>
+                <field name="resource_relationship"/>
+                <field name="resource_specification"/>
+                <field name="resource_status"/>
+                <field name="schedule"/>
+                <field name="usage_state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_resource_function_tree" model="ir.ui.view">
+        <field name="name">tmf.resource.function.tree</field>
+        <field name="model">tmf.resource.function</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="category"/>
+                <field name="description"/>
+                <field name="end_operating_date"/>
+                <field name="function_type"/>
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="resource_version"/>
+                <field name="role"/>
+                <field name="start_operating_date"/>
+                <field name="value"/>
+                <field name="activation_feature"/>
+                <field name="administrative_state"/>
+                <field name="attachment"/>
+                <field name="auto_modification"/>
+                <field name="connection_point"/>
+                <field name="connectivity"/>
+                <field name="note"/>
+                <field name="operational_state"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_characteristic"/>
+                <field name="resource_relationship"/>
+                <field name="resource_specification"/>
+                <field name="resource_status"/>
+                <field name="schedule"/>
+                <field name="usage_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_resource_function" model="ir.actions.act_window">
+        <field name="name">ResourceFunction</field>
+        <field name="res_model">tmf.resource.function</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_resource_function"
+              name="ResourceFunction"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_resource_function"/>
+</odoo>

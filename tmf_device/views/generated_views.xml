@@ -1,0 +1,120 @@
+<odoo>
+    <record id="view_tmf_device_form" model="ir.ui.view">
+        <field name="name">tmf.device.form</field>
+        <field name="model">tmf.device</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="alternate_name"/>
+                <field name="area_served"/>
+                <field name="battery_level"/>
+                <field name="category"/>
+                <field name="data_provider"/>
+                <field name="date_created"/>
+                <field name="date_first_used"/>
+                <field name="date_installed"/>
+                <field name="date_last_calibration"/>
+                <field name="date_last_value_reported"/>
+                <field name="date_manufactured"/>
+                <field name="date_modified"/>
+                <field name="description"/>
+                <field name="device_state"/>
+                <field name="device_type"/>
+                <field name="end_date"/>
+                <field name="firmware_version"/>
+                <field name="hardware_version"/>
+                <field name="lifecycle_state"/>
+                <field name="manufacture_date"/>
+                <field name="mnc"/>
+                <field name="name"/>
+                <field name="os_version"/>
+                <field name="power_state"/>
+                <field name="provider"/>
+                <field name="serial_number"/>
+                <field name="software_version"/>
+                <field name="source"/>
+                <field name="start_date"/>
+                <field name="value"/>
+                <field name="version"/>
+                <field name="version_number"/>
+                <field name="address"/>
+                <field name="characteristic"/>
+                <field name="configuration"/>
+                <field name="location"/>
+                <field name="mac_address"/>
+                <field name="note"/>
+                <field name="party_role"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_relationship"/>
+                <field name="rule"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_device_tree" model="ir.ui.view">
+        <field name="name">tmf.device.tree</field>
+        <field name="model">tmf.device</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="alternate_name"/>
+                <field name="area_served"/>
+                <field name="battery_level"/>
+                <field name="category"/>
+                <field name="data_provider"/>
+                <field name="date_created"/>
+                <field name="date_first_used"/>
+                <field name="date_installed"/>
+                <field name="date_last_calibration"/>
+                <field name="date_last_value_reported"/>
+                <field name="date_manufactured"/>
+                <field name="date_modified"/>
+                <field name="description"/>
+                <field name="device_state"/>
+                <field name="device_type"/>
+                <field name="end_date"/>
+                <field name="firmware_version"/>
+                <field name="hardware_version"/>
+                <field name="lifecycle_state"/>
+                <field name="manufacture_date"/>
+                <field name="mnc"/>
+                <field name="name"/>
+                <field name="os_version"/>
+                <field name="power_state"/>
+                <field name="provider"/>
+                <field name="serial_number"/>
+                <field name="software_version"/>
+                <field name="source"/>
+                <field name="start_date"/>
+                <field name="value"/>
+                <field name="version"/>
+                <field name="version_number"/>
+                <field name="address"/>
+                <field name="characteristic"/>
+                <field name="configuration"/>
+                <field name="location"/>
+                <field name="mac_address"/>
+                <field name="note"/>
+                <field name="party_role"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_relationship"/>
+                <field name="rule"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_device" model="ir.actions.act_window">
+        <field name="name">Device</field>
+        <field name="res_model">tmf.device</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_device"
+              name="Device"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_device"/>
+</odoo>

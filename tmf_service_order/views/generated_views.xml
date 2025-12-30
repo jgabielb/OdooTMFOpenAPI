@@ -1,0 +1,78 @@
+<odoo>
+    <record id="view_tmf_service_order_form" model="ir.ui.view">
+        <field name="name">tmf.service.order.form</field>
+        <field name="model">tmf.service.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="cancellation_date"/>
+                <field name="cancellation_reason"/>
+                <field name="category"/>
+                <field name="completion_date"/>
+                <field name="description"/>
+                <field name="expected_completion_date"/>
+                <field name="external_id"/>
+                <field name="notification_contact"/>
+                <field name="order_date"/>
+                <field name="priority"/>
+                <field name="requested_completion_date"/>
+                <field name="requested_start_date"/>
+                <field name="start_date"/>
+                <field name="error_message"/>
+                <field name="external_reference"/>
+                <field name="jeopardy_alert"/>
+                <field name="milestone"/>
+                <field name="note"/>
+                <field name="order_relationship"/>
+                <field name="related_party"/>
+                <field name="service_order_item"/>
+                <field name="state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_service_order_tree" model="ir.ui.view">
+        <field name="name">tmf.service.order.tree</field>
+        <field name="model">tmf.service.order</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="cancellation_date"/>
+                <field name="cancellation_reason"/>
+                <field name="category"/>
+                <field name="completion_date"/>
+                <field name="description"/>
+                <field name="expected_completion_date"/>
+                <field name="external_id"/>
+                <field name="notification_contact"/>
+                <field name="order_date"/>
+                <field name="priority"/>
+                <field name="requested_completion_date"/>
+                <field name="requested_start_date"/>
+                <field name="start_date"/>
+                <field name="error_message"/>
+                <field name="external_reference"/>
+                <field name="jeopardy_alert"/>
+                <field name="milestone"/>
+                <field name="note"/>
+                <field name="order_relationship"/>
+                <field name="related_party"/>
+                <field name="service_order_item"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_service_order" model="ir.actions.act_window">
+        <field name="name">ServiceOrder</field>
+        <field name="res_model">tmf.service.order</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_service_order"
+              name="ServiceOrder"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_service_order"/>
+</odoo>

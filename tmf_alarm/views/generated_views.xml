@@ -1,0 +1,96 @@
+<odoo>
+    <record id="view_tmf_alarm_form" model="ir.ui.view">
+        <field name="name">tmf.alarm.form</field>
+        <field name="model">tmf.alarm</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="ack_state"/>
+                <field name="ack_system_id"/>
+                <field name="ack_user_id"/>
+                <field name="alarm_changed_time"/>
+                <field name="alarm_cleared_time"/>
+                <field name="alarm_details"/>
+                <field name="alarm_escalation"/>
+                <field name="alarm_raised_time"/>
+                <field name="alarm_reporting_time"/>
+                <field name="alarmed_object_type"/>
+                <field name="clear_system_id"/>
+                <field name="clear_user_id"/>
+                <field name="external_alarm_id"/>
+                <field name="is_root_cause"/>
+                <field name="planned_outage_indicator"/>
+                <field name="probable_cause"/>
+                <field name="proposed_repaired_actions"/>
+                <field name="reporting_system_id"/>
+                <field name="service_affecting"/>
+                <field name="source_system_id"/>
+                <field name="specific_problem"/>
+                <field name="state"/>
+                <field name="affected_service"/>
+                <field name="alarm_type"/>
+                <field name="alarmed_object"/>
+                <field name="comment"/>
+                <field name="correlated_alarm"/>
+                <field name="crossed_threshold_information"/>
+                <field name="parent_alarm"/>
+                <field name="perceived_severity"/>
+                <field name="place"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_alarm_tree" model="ir.ui.view">
+        <field name="name">tmf.alarm.tree</field>
+        <field name="model">tmf.alarm</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="ack_state"/>
+                <field name="ack_system_id"/>
+                <field name="ack_user_id"/>
+                <field name="alarm_changed_time"/>
+                <field name="alarm_cleared_time"/>
+                <field name="alarm_details"/>
+                <field name="alarm_escalation"/>
+                <field name="alarm_raised_time"/>
+                <field name="alarm_reporting_time"/>
+                <field name="alarmed_object_type"/>
+                <field name="clear_system_id"/>
+                <field name="clear_user_id"/>
+                <field name="external_alarm_id"/>
+                <field name="is_root_cause"/>
+                <field name="planned_outage_indicator"/>
+                <field name="probable_cause"/>
+                <field name="proposed_repaired_actions"/>
+                <field name="reporting_system_id"/>
+                <field name="service_affecting"/>
+                <field name="source_system_id"/>
+                <field name="specific_problem"/>
+                <field name="state"/>
+                <field name="affected_service"/>
+                <field name="alarm_type"/>
+                <field name="alarmed_object"/>
+                <field name="comment"/>
+                <field name="correlated_alarm"/>
+                <field name="crossed_threshold_information"/>
+                <field name="parent_alarm"/>
+                <field name="perceived_severity"/>
+                <field name="place"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_alarm" model="ir.actions.act_window">
+        <field name="name">Alarm</field>
+        <field name="res_model">tmf.alarm</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_alarm"
+              name="Alarm"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_alarm"/>
+</odoo>

@@ -1,23 +1,15 @@
 {
-    "name": "TMF Customer Management (TMF629)",
-    "summary": "TMF629-style Customer API on top of Odoo res.partner",
-    "version": "19.0.1.0.0",
-    "author": "You",
-    "website": "",
-    "license": "LGPL-3",
-    "category": "Telecom",
-    "depends": [
-        "base",
-        "contacts",
-        "sale",
-        "tmf_base",  # uncomment if you already have it
-        "tmf_party", # uncomment if you want tight integration
-        "tmf_product_catalog",
+    'name': "TMF Customer",
+    'summary': "Auto-generated implementation of Customer Management",
+    'description': "Implements Customer API with Hub Notifications.",
+    'author': "Joao Gabriel",
+    'category': 'TMF',
+    'version': '0.1',
+    'depends': ['tmf_base', 'tmf_product_catalog'],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/tmf_customer_views.xml',
     ],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/tmf_customer_views.xml",
-    ],
-    "installable": True,
-    "application": False,
+    'installable': True,
+    'license': 'LGPL-3',
 }

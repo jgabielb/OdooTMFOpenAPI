@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_tmf_test_execution_form" model="ir.ui.view">
+        <field name="name">tmf.test.execution.form</field>
+        <field name="model">tmf.test.execution</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="data_correlation_id"/>
+                <field name="general_test_artifact"/>
+                <field name="state"/>
+                <field name="test_data_instance"/>
+                <field name="test_environment_provisioning_execution"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_test_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.test.execution.tree</field>
+        <field name="model">tmf.test.execution</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="data_correlation_id"/>
+                <field name="general_test_artifact"/>
+                <field name="state"/>
+                <field name="test_data_instance"/>
+                <field name="test_environment_provisioning_execution"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_test_execution" model="ir.actions.act_window">
+        <field name="name">TestExecution</field>
+        <field name="res_model">tmf.test.execution</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_test_execution"
+              name="TestExecution"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_test_execution"/>
+</odoo>

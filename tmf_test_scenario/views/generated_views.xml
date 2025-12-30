@@ -1,0 +1,50 @@
+<odoo>
+    <record id="view_tmf_test_scenario_form" model="ir.ui.view">
+        <field name="name">tmf.test.scenario.form</field>
+        <field name="model">tmf.test.scenario</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="version_description"/>
+                <field name="agreement"/>
+                <field name="attribute"/>
+                <field name="related_party"/>
+                <field name="state"/>
+                <field name="test_scenario_definition"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_test_scenario_tree" model="ir.ui.view">
+        <field name="name">tmf.test.scenario.tree</field>
+        <field name="model">tmf.test.scenario</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="version_description"/>
+                <field name="agreement"/>
+                <field name="attribute"/>
+                <field name="related_party"/>
+                <field name="state"/>
+                <field name="test_scenario_definition"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_test_scenario" model="ir.actions.act_window">
+        <field name="name">TestScenario</field>
+        <field name="res_model">tmf.test.scenario</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_test_scenario"
+              name="TestScenario"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_test_scenario"/>
+</odoo>

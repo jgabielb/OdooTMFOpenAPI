@@ -1,0 +1,50 @@
+<odoo>
+    <record id="view_tmf_general_test_artifact_form" model="ir.ui.view">
+        <field name="name">tmf.general.test.artifact.form</field>
+        <field name="model">tmf.general.test.artifact</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="version_description"/>
+                <field name="agreement"/>
+                <field name="attribute"/>
+                <field name="general_artifact_definition"/>
+                <field name="related_party"/>
+                <field name="state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_general_test_artifact_tree" model="ir.ui.view">
+        <field name="name">tmf.general.test.artifact.tree</field>
+        <field name="model">tmf.general.test.artifact</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="version_description"/>
+                <field name="agreement"/>
+                <field name="attribute"/>
+                <field name="general_artifact_definition"/>
+                <field name="related_party"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_general_test_artifact" model="ir.actions.act_window">
+        <field name="name">GeneralTestArtifact</field>
+        <field name="res_model">tmf.general.test.artifact</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_general_test_artifact"
+              name="GeneralTestArtifact"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_general_test_artifact"/>
+</odoo>

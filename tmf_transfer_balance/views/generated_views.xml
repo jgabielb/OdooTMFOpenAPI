@@ -1,0 +1,80 @@
+<odoo>
+    <record id="view_tmf_transfer_balance_form" model="ir.ui.view">
+        <field name="name">tmf.transfer.balance.form</field>
+        <field name="model">tmf.transfer.balance</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="confirmation_date"/>
+                <field name="cost_owner"/>
+                <field name="description"/>
+                <field name="reason"/>
+                <field name="receiver_bucket_usage_type"/>
+                <field name="requested_date"/>
+                <field name="status"/>
+                <field name="usage_type"/>
+                <field name="amount"/>
+                <field name="bucket"/>
+                <field name="channel"/>
+                <field name="impacted_bucket"/>
+                <field name="logical_resource"/>
+                <field name="party_account"/>
+                <field name="product"/>
+                <field name="receiver"/>
+                <field name="receiver_bucket"/>
+                <field name="receiver_logical_resource"/>
+                <field name="receiver_party_account"/>
+                <field name="receiver_product"/>
+                <field name="related_party"/>
+                <field name="requestor"/>
+                <field name="transfer_cost"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_transfer_balance_tree" model="ir.ui.view">
+        <field name="name">tmf.transfer.balance.tree</field>
+        <field name="model">tmf.transfer.balance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="confirmation_date"/>
+                <field name="cost_owner"/>
+                <field name="description"/>
+                <field name="reason"/>
+                <field name="receiver_bucket_usage_type"/>
+                <field name="requested_date"/>
+                <field name="status"/>
+                <field name="usage_type"/>
+                <field name="amount"/>
+                <field name="bucket"/>
+                <field name="channel"/>
+                <field name="impacted_bucket"/>
+                <field name="logical_resource"/>
+                <field name="party_account"/>
+                <field name="product"/>
+                <field name="receiver"/>
+                <field name="receiver_bucket"/>
+                <field name="receiver_logical_resource"/>
+                <field name="receiver_party_account"/>
+                <field name="receiver_product"/>
+                <field name="related_party"/>
+                <field name="requestor"/>
+                <field name="transfer_cost"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_transfer_balance" model="ir.actions.act_window">
+        <field name="name">TransferBalance</field>
+        <field name="res_model">tmf.transfer.balance</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_transfer_balance"
+              name="TransferBalance"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_transfer_balance"/>
+</odoo>

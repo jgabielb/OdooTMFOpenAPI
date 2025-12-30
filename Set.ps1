@@ -31,8 +31,16 @@ Write-Host "Custom Code: $MyAddons"
 Write-Host "Database:    TMF_Odoo_DB (Port 5433)"
 Write-Host "------------------------------------------------------" -ForegroundColor Cyan
 
-# 4. Define Modules to Update (To fix the 'create' bug)
-$ModulesToUpdate = "tmf_billing_management" 
+# 1. Core / Manual Modules (The "Smart" Logic)
+$CoreModules = "tmf_base,tmf_party,tmf_customer,tmf_product_catalog,tmf_product_ordering,tmf_service_inventory,tmf_resource_inventory,tmf_trouble_ticket,tmf_billing_management"
+
+# 2. Generated Modules (The "Data" Layers)
+# Note: Excluded tmf_product_order, tmf_service, tmf_resource to avoid conflicts
+$GenModules = "tmf_account,tmf_agreement,tmf_alarm,tmf_appointment,tmf_communication_message,tmf_customer_bill,tmf_device,tmf_document,tmf_entity,tmf_entity_catalog,tmf_event,tmf_general_test_artifact,tmf_geographic_address,tmf_geographic_location,tmf_geographic_site,tmf_medium_characteristic,tmf_party_interaction,tmf_party_privacy_agreement,tmf_party_role,tmf_party_role_product_offering_risk_assessment,tmf_payment,tmf_permission,tmf_process_flow,tmf_product,tmf_product_offering_qualification,tmf_product_ref_or_value,tmf_resource_catalog,tmf_resource_function,tmf_resource_order,tmf_service_catalog,tmf_service_level_objective,tmf_service_order,tmf_service_problem,tmf_service_qualification,tmf_service_test,tmf_shopping_cart,tmf_test_case,tmf_test_execution,tmf_test_scenario,tmf_transfer_balance,tmf_usage,tmf_usage_consumption,tmf_userinfo"
+
+# Combine them
+$ModulesToUpdate = "base,$CoreModules,$GenModules"
+# $ModulesToUpdate = "base,tmf_attachment"
 
 # 5. Run Odoo
 Write-Host "Starting Odoo Server..." -ForegroundColor Green
