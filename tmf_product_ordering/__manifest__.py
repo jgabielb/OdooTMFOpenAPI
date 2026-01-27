@@ -11,7 +11,8 @@
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_party', 'tmf_product_catalog', 'sale_management'],
     'data': [
-        # We might add views later, but for now it's API only
+        'security/ir.model.access.csv',
+        'views/generated_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',

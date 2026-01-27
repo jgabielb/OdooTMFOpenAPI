@@ -1,0 +1,60 @@
+<odoo>
+  <record id="tmf640_service_view_tree" model="ir.ui.view">
+    <field name="name">tmf640.service.tree</field>
+    <field name="model">tmf640.service</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf640_id"/>
+        <field name="name"/>
+        <field name="state"/>
+        <field name="service_spec_id"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="tmf640_service_view_form" model="ir.ui.view">
+    <field name="name">tmf640.service.form</field>
+    <field name="model">tmf640.service</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf640_id"/>
+            <field name="href"/>
+            <field name="name"/>
+            <field name="state"/>
+            <field name="category"/>
+            <field name="service_type"/>
+          </group>
+          <group string="Service Specification">
+            <field name="service_spec_id"/>
+            <field name="service_spec_name"/>
+            <field name="service_spec_href"/>
+            <field name="service_spec_version"/>
+          </group>
+          <notebook>
+            <page string="Characteristics">
+              <field name="service_characteristic_json" widget="text"/>
+            </page>
+            <page string="Features">
+              <field name="feature_json" widget="text"/>
+            </page>
+            <page string="Related Party">
+              <field name="related_party_json" widget="text"/>
+            </page>
+            <page string="Supporting">
+              <field name="supporting_service_json" widget="text"/>
+              <field name="supporting_resource_json" widget="text"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="tmf640_service_action" model="ir.actions.act_window">
+    <field name="name">TMF640 Services</field>
+    <field name="res_model">tmf640.service</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

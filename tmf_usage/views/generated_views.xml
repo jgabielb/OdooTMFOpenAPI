@@ -3,36 +3,67 @@
         <field name="name">tmf.usage.form</field>
         <field name="model">tmf.usage</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Usage">
                 <sheet>
                     <group>
-                <field name="description"/>
-                <field name="usage_date"/>
-                <field name="usage_type"/>
-                <field name="rated_product_usage"/>
-                <field name="related_party"/>
-                <field name="status"/>
-                <field name="usage_characteristic"/>
-                <field name="usage_specification"/>
+                        <field name="description"/>
+                        <field name="usage_date"/>
+                        <field name="usage_type"/>
+                        <field name="status"/>
+                        <field name="usage_specification_id"/>
                     </group>
+
+                    <notebook>
+                        <page string="Rated Product Usage">
+                            <field name="rated_product_usage_ids">
+                                <list editable="bottom">
+                                    <field name="usage_rating_tag"/>
+                                    <field name="rating_date"/>
+                                    <field name="is_billed"/>
+                                    <field name="tax_included_rating_amount"/>
+                                    <field name="tax_excluded_rating_amount"/>
+                                    <field name="currency_code"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Related Party">
+                            <field name="related_party_ids">
+                                <list editable="bottom">
+                                    <field name="party_id"/>
+                                    <field name="name"/>
+                                    <field name="role"/>
+                                    <field name="href"/>
+                                    <field name="referred_type"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Usage Characteristics">
+                            <field name="usage_characteristic_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="value"/>
+                                    <field name="value_type"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="view_tmf_usage_tree" model="ir.ui.view">
-        <field name="name">tmf.usage.tree</field>
+    <record id="view_tmf_usage_list" model="ir.ui.view">
+        <field name="name">tmf.usage.list</field>
         <field name="model">tmf.usage</field>
         <field name="arch" type="xml">
-            <list>
+            <list string="Usage">
                 <field name="description"/>
                 <field name="usage_date"/>
                 <field name="usage_type"/>
-                <field name="rated_product_usage"/>
-                <field name="related_party"/>
                 <field name="status"/>
-                <field name="usage_characteristic"/>
-                <field name="usage_specification"/>
+                <field name="usage_specification_id"/>
             </list>
         </field>
     </record>

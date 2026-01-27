@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- =========================================================
+       TMF Root Menu
+  ========================================================== -->
+  <menuitem id="tmf_menu_root"
+            name="TMF"
+            sequence="10"/>
+
+  <menuitem id="tmf_menu_product_ordering"
+            name="Product Ordering"
+            parent="tmf_menu_root"
+            sequence="10"/>
+
+  <!-- =========================================================
+       SALE.ORDER: ProductOrder (TMF622) - Views
+  ========================================================== -->
+
+  <!-- LIST view for sale.order (Product Orders) -->
+  <record id="view_sale_order_list_tmf_product_ordering" model="ir.ui.view">
+    <field name="name">sale.order.list.tmf.product.ordering</field>
+    <field name="model">sale.order</field>
+    <field name="arch" type="xml">
+      <list string="Product Orders (TMF)" create="true" edit="true">
+        <field name="name"/>
+        <field name="partner_id"/>
+        <field name="state"/>
+        <field name="tmf_status"/>
+        <field name="date_order"/>
+        <field name="amount_total"/>
+        <field name="tmf_id" optional="show"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Inherit sale.order form to add TMF fields -->
+  <record id="view_sale_order_form_inherit_tmf_product_ordering" model="ir.ui.view">
+    <field name="name">sale.order.form.inherit.tmf.product.ordering</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//notebook" position="inside">
+        <page string="TMF">
+          <group>
+            <group string="Identifiers">
+              <field name="tmf_id" readonly="1"/>
+              <field name="tmf_status" readonly="1"/>
+            </group>
+            <group string="TMF Content">
+              <field name="description"/>
+            </group>
+          </group>
+        </page>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_tmf_product_orders" model="ir.actions.act_window">
+    <field name="name">Product Orders (TMF622)</field>
+    <field name="res_model">sale.order</field>
+    <field name="view_mode">list,form</field>
+    <field name="view_id" ref="view_sale_order_list_tmf_product_ordering"/>
+    <field name="context">{}</field>
+  </record>
+
+  <menuitem id="tmf_menu_product_orders"
+            name="Product Orders"
+            parent="tmf_menu_product_ordering"
+            action="action_tmf_product_orders"
+            sequence="10"/>
+
+  <!-- =========================================================
+       tmf.cancel.product.order - Views
+  ========================================================== -->
+
+  <!-- LIST view -->
+  <record id="view_cancel_product_order_list" model="ir.ui.view">
+    <field name="name">tmf.cancel.product.order.list</field>
+    <field name="model">tmf.cancel.product.order</field>
+    <field name="arch" type="xml">
+      <list string="Cancel Product Orders" create="true" edit="true">
+        <field name="tmf_id" optional="show"/>
+        <field name="product_order_id"/>
+        <field name="state"/>
+        <field name="requested_cancellation_date"/>
+        <field name="effective_cancellation_date"/>
+        <field name="cancellation_reason"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Form view -->
+  <record id="view_cancel_product_order_form" model="ir.ui.view">
+    <field name="name">tmf.cancel.product.order.form</field>
+    <field name="model">tmf.cancel.product.order</field>
+    <field name="arch" type="xml">
+      <form string="Cancel Product Order">
+        <sheet>
+          <group>
+            <group string="Identifiers">
+              <field name="tmf_id" readonly="1"/>
+              <field name="state"/>
+            </group>
+            <group string="References">
+              <field name="product_order_id"/>
+            </group>
+          </group>
+
+          <group>
+            <group string="Dates">
+              <field name="requested_cancellation_date"/>
+              <field name="effective_cancellation_date"/>
+            </group>
+            <group string="Details">
+              <field name="cancellation_reason"/>
+              <field name="error" readonly="1"/>
+            </group>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_cancel_product_orders" model="ir.actions.act_window">
+    <field name="name">Cancel Product Orders</field>
+    <field name="res_model">tmf.cancel.product.order</field>
+    <field name="view_mode">list,form</field>
+    <field name="view_id" ref="view_cancel_product_order_list"/>
+    <field name="context">{}</field>
+  </record>
+
+  <menuitem id="tmf_menu_cancel_product_orders"
+            name="Cancel Requests"
+            parent="tmf_menu_product_ordering"
+            action="action_cancel_product_orders"
+            sequence="20"/>
+
+</odoo>

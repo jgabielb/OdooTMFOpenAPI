@@ -1,0 +1,33 @@
+<odoo>
+  <record id="tmf640_hub_view_tree" model="ir.ui.view">
+    <field name="name">tmf640.hub.tree</field>
+    <field name="model">tmf640.hub</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="callback"/>
+        <field name="query"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="tmf640_hub_view_form" model="ir.ui.view">
+    <field name="name">tmf640.hub.form</field>
+    <field name="model">tmf640.hub</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="callback"/>
+            <field name="query"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="tmf640_hub_action" model="ir.actions.act_window">
+    <field name="name">TMF640 Hubs</field>
+    <field name="res_model">tmf640.hub</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

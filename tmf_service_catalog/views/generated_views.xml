@@ -1,48 +1,69 @@
 <odoo>
+    <!-- FORM -->
     <record id="view_tmf_service_catalog_form" model="ir.ui.view">
         <field name="name">tmf.service.catalog.form</field>
         <field name="model">tmf.service.catalog</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Service Catalog">
                 <sheet>
-                    <group>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
-                <field name="name"/>
-                <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+
+                    <!-- Header -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Service Catalog name..." required="1"/>
+                        </h1>
+                    </div>
+
+                    <group col="4">
+                        <group>
+                            <field name="description"/>
+                            <field name="version"/>
+                        </group>
+
+                        <group>
+                            <field name="lifecycle_status"/>
+                            <field name="last_update" readonly="1"/>
+                        </group>
                     </group>
+
+                    <notebook>
+                        <page string="TMF Payload">
+                            <group col="2">
+                                <field name="category" nolabel="1"/>
+                                <field name="related_party" nolabel="1"/>
+                                <field name="valid_for" nolabel="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+
                 </sheet>
             </form>
         </field>
     </record>
 
+    <!-- LIST -->
     <record id="view_tmf_service_catalog_tree" model="ir.ui.view">
         <field name="name">tmf.service.catalog.tree</field>
         <field name="model">tmf.service.catalog</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
+            <list string="Service Catalogs">
                 <field name="name"/>
+                <field name="lifecycle_status"/>
                 <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+                <field name="last_update"/>
+                <field name="description"/>
             </list>
         </field>
     </record>
 
+    <!-- ACTION -->
     <record id="action_tmf_service_catalog" model="ir.actions.act_window">
         <field name="name">ServiceCatalog</field>
         <field name="res_model">tmf.service.catalog</field>
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- MENU -->
     <menuitem id="menu_tmf_service_catalog"
               name="ServiceCatalog"
               parent="tmf_product_catalog.menu_tmf_root"

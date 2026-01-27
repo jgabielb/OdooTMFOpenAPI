@@ -3,17 +3,21 @@
         <field name="name">tmf.resource.catalog.form</field>
         <field name="model">tmf.resource.catalog</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Resource Catalog">
                 <sheet>
                     <group>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
-                <field name="name"/>
-                <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+                        <field name="name" required="1"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="lifecycle_status"/>
+                        <field name="last_update"/>
+                    </group>
+
+                    <group string="TMF Structures">
+                        <!-- TMF634 expects arrays/objects (category[], relatedParty[], validFor{}) -->
+                        <field name="category_json" widget="json"/>
+                        <field name="related_party_json" widget="json"/>
+                        <field name="valid_for_json" widget="json"/>
                     </group>
                 </sheet>
             </form>
@@ -24,15 +28,16 @@
         <field name="name">tmf.resource.catalog.tree</field>
         <field name="model">tmf.resource.catalog</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
+            <list string="Resource Catalogs">
                 <field name="name"/>
                 <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+                <field name="lifecycle_status"/>
+                <field name="last_update"/>
+                <field name="description"/>
+                <!-- Keep JSON fields visible for debugging; remove if you prefer -->
+                <field name="category_json"/>
+                <field name="related_party_json"/>
+                <field name="valid_for_json"/>
             </list>
         </field>
     </record>

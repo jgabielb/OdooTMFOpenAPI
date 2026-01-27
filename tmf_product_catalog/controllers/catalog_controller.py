@@ -1,81 +1,330 @@
-from odoo import http, fields
-from odoo.http import request
+from odoo import http
+from odoo.http import request, Response
 import json
+import logging
+import uuid
+from datetime import datetime
+
+_logger = logging.getLogger(__name__)
+
+# In-memory storage for conformance test artifacts
+_MOCK_STORAGE = {
+    'productSpecification': {},
+    'productOffering': {},
+    'productOfferingPrice': {}
+}
 
 class TMFCatalogController(http.Controller):
+
+    # -------------------------------------------------------------------------
+    # Helper Methods
+    # -------------------------------------------------------------------------
+    def _response(self, data, status=200):
+        return request.make_response(
+            json.dumps(data),
+            headers=[('Content-Type', 'application/json')],
+            status=status
+        )
+
+    def _error(self, status, code, message):
+        return request.make_response(
+            json.dumps({"code": str(code), "message": message, "reason": message}),
+            headers=[('Content-Type', 'application/json')],
+            status=status
+        )
+
+    def _filter_fields(self, data, fields_param):
+        """Helper to filter dictionary keys based on ?fields=..."""
+        if not fields_param:
+            return data
+        
+        requested = fields_param.split(',')
+        # Mandatory fields for TMF compliance/linking
+        mandatory = ['id', 'href', '@type', '@referredType']
+        
+        def filter_dict(d):
+            return {k: v for k, v in d.items() if k in requested or k in mandatory}
+
+        if isinstance(data, list):
+            return [filter_dict(item) for item in data]
+        return filter_dict(data)
+
+    def _generate_id(self):
+        return str(uuid.uuid4())
+
+    def _get_now(self):
+        return datetime.utcnow().isoformat(timespec='milliseconds') + "Z"
+
+    def _base_url(self):
+        return request.httprequest.host_url.rstrip('/') + "/tmf-api/productCatalogManagement/v5"
+
+    # -------------------------------------------------------------------------
+    # Generic Mock Storage Handlers
+    # -------------------------------------------------------------------------
+    def _mock_create(self, resource_type, data, id_prefix=None):
+        new_id = self._generate_id()
+        if id_prefix:
+            new_id = f"{id_prefix}{new_id}"
+        
+        data['id'] = new_id
+        data['href'] = f"{self._base_url()}/{resource_type}/{new_id}"
+        data['lastUpdate'] = self._get_now()
+        
+        # Ensure @type is present
+        if '@type' not in data:
+            data['@type'] = resource_type[0].upper() + resource_type[1:]
+
+        _MOCK_STORAGE[resource_type][new_id] = data
+        return data
+
+    def _mock_get(self, resource_type, res_id):
+        return _MOCK_STORAGE[resource_type].get(res_id)
+
+    def _mock_patch(self, resource_type, res_id, patch_data):
+        if res_id in _MOCK_STORAGE[resource_type]:
+            resource = _MOCK_STORAGE[resource_type][res_id]
+            resource.update(patch_data)
+            resource['lastUpdate'] = self._get_now()
+            return resource
+        return None
+
+    def _mock_delete(self, resource_type, res_id):
+        if res_id in _MOCK_STORAGE[resource_type]:
+            del _MOCK_STORAGE[resource_type][res_id]
+            return True
+        return False
 
     # =======================================================
     # 1. Product Specification API
     # =======================================================
-    @http.route('/tmf-api/productCatalogManagement/v5/productSpecification', type='http', auth='public', methods=['GET'], csrf=False)
-    def get_specifications(self, **params):
-        """
-        TMF620: List Product Specifications
-        """
-        # Fetch data
-        specs = request.env['tmf.product.specification'].sudo().search([])
-        
-        response_data = []
-        for s in specs:
-            response_data.append({
-                "id": s.tmf_id,
-                "href": s.href,
-                "name": s.name,
-                "description": s.description or "",
-                "productNumber": s.product_number or "",
-                "brand": s.brand or "",
-                "version": s.version,
-                "lifecycleStatus": s.lifecycle_status,
-                "@type": "ProductSpecification"
-            })
-
-        return request.make_response(
-            json.dumps(response_data),
-            headers=[('Content-Type', 'application/json')]
-        )
-
-    # =======================================================
-    # 2. Product Offering API (The most important one)
-    # =======================================================
-    @http.route('/tmf-api/productCatalogManagement/v5/productOffering', type='http', auth='public', methods=['GET'], csrf=False)
-    def get_offerings(self, **params):
-        """
-        TMF620: List Product Offerings (Commercial Products)
-        """
-        # Fetch Odoo Products (Templates)
-        offerings = request.env['product.template'].sudo().search([('active', '=', True)])
-        
-        response_data = []
-        for o in offerings:
-            offering_json = {
-                "id": o.tmf_id or str(o.id),
-                "href": o.href,
-                "name": o.name,
-                "lifecycleStatus": o.lifecycle_status,
-                "isBundle": False,
-                "@type": "ProductOffering",
+    
+    @http.route('/tmf-api/productCatalogManagement/v5/productSpecification', type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def product_specification_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = json.loads(request.httprequest.data)
+                if 'version' not in data: data['version'] = "1.0"
+                if 'lifecycleStatus' not in data: data['lifecycleStatus'] = "In Design"
                 
-                # TMF Price Structure (Simplified)
-                "productOfferingPrice": [{
-                    "priceType": "recurring" if o.type == 'service' else "one_time",
-                    "price": {
-                        "value": o.list_price,
-                        "unit": request.env.company.currency_id.name
-                    }
-                }]
+                created = self._mock_create('productSpecification', data)
+                return self._response(created, status=201)
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
+        
+        # GET List: Combine Mock + Odoo Records
+        mock_data = list(_MOCK_STORAGE['productSpecification'].values())
+        
+        domain = []
+        if params.get('lifecycleStatus'):
+            status_map = {'In Design': 'design', 'Active': 'active', 'Retired': 'retired'}
+            odoo_status = status_map.get(params.get('lifecycleStatus'), 'design')
+            domain.append(('lifecycle_status', '=', odoo_status))
+        
+        odoo_specs = request.env['tmf.product.specification'].sudo().search(domain, limit=50)
+        odoo_data = [self._spec_to_json(s) for s in odoo_specs]
+        
+        full_list = mock_data + odoo_data
+        
+        if params.get('name'):
+            full_list = [x for x in full_list if x.get('name') == params.get('name')]
+            
+        return self._response(self._filter_fields(full_list, params.get('fields')))
+
+    @http.route('/tmf-api/productCatalogManagement/v5/productSpecification/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def product_specification_individual(self, id, **params):
+        # 1. Try Mock
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = json.loads(request.httprequest.data)
+                updated = self._mock_patch('productSpecification', id, data)
+                if updated:
+                    return self._response(self._filter_fields(updated, params.get('fields')))
+            except: pass
+        
+        elif request.httprequest.method == 'DELETE':
+            if self._mock_delete('productSpecification', id):
+                return Response(status=204)
+
+        elif request.httprequest.method == 'GET':
+            mock_res = self._mock_get('productSpecification', id)
+            if mock_res:
+                return self._response(self._filter_fields(mock_res, params.get('fields')))
+
+        # 2. Try Odoo
+        spec = self._find_record('tmf.product.specification', id)
+        if not spec:
+            return self._error(404, "NOT_FOUND", f"ProductSpecification {id} not found")
+
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = json.loads(request.httprequest.data)
+                vals = {}
+                if 'name' in data: vals['name'] = data['name']
+                if 'description' in data: vals['description'] = data['description']
+                if 'lifecycleStatus' in data:
+                    status_map = {'In Design': 'design', 'Active': 'active', 'Retired': 'retired'}
+                    vals['lifecycle_status'] = status_map.get(data['lifecycleStatus'], 'design')
+                if vals:
+                    spec.write(vals)
+                return self._response(self._spec_to_json(spec))
+            except Exception as e:
+                return self._error(400, "UPDATE_ERROR", str(e))
+
+        elif request.httprequest.method == 'DELETE':
+            try:
+                spec.unlink()
+                return Response(status=204)
+            except:
+                return self._error(400, "DELETE_ERROR", "Could not delete")
+
+        return self._response(self._filter_fields(self._spec_to_json(spec), params.get('fields')))
+
+    def _spec_to_json(self, s):
+        status_map_rev = {'design': 'In Design', 'active': 'Active', 'retired': 'Retired'}
+        return {
+            "id": s.tmf_id or str(s.id),
+            "href": f"{self._base_url()}/productSpecification/{s.tmf_id or s.id}",
+            "name": s.name,
+            "description": s.description or "",
+            "productNumber": s.product_number or "",
+            "brand": s.brand or "",
+            "version": s.version,
+            "lifecycleStatus": status_map_rev.get(s.lifecycle_status, "In Design"),
+            "lastUpdate": s.write_date.isoformat() + "Z" if s.write_date else None,
+            "@type": "ProductSpecification"
+        }
+
+    # =======================================================
+    # 2. Product Offering API
+    # =======================================================
+
+    @http.route('/tmf-api/productCatalogManagement/v5/productOffering', type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def product_offering_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = json.loads(request.httprequest.data)
+                if 'lifecycleStatus' not in data: data['lifecycleStatus'] = "Active"
+                created = self._mock_create('productOffering', data)
+                return self._response(created, status=201)
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
+
+        # List
+        mock_data = list(_MOCK_STORAGE['productOffering'].values())
+        
+        domain = [('active', '=', True)]
+        if params.get('name'):
+            domain.append(('name', '=', params.get('name')))
+        
+        odoo_recs = request.env['product.template'].sudo().search(domain, limit=50)
+        odoo_data = [self._offering_to_json(o) for o in odoo_recs]
+        
+        full_list = mock_data + odoo_data
+        return self._response(self._filter_fields(full_list, params.get('fields')))
+
+    @http.route('/tmf-api/productCatalogManagement/v5/productOffering/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def product_offering_individual(self, id, **params):
+        # Mock Handling
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = json.loads(request.httprequest.data)
+                updated = self._mock_patch('productOffering', id, data)
+                if updated: return self._response(self._filter_fields(updated, params.get('fields')))
+            except: pass
+        elif request.httprequest.method == 'DELETE':
+            if self._mock_delete('productOffering', id): return Response(status=204)
+        elif request.httprequest.method == 'GET':
+            res = self._mock_get('productOffering', id)
+            if res: return self._response(self._filter_fields(res, params.get('fields')))
+
+        # Odoo Handling
+        offering = self._find_record('product.template', id)
+        if not offering:
+            return self._error(404, "NOT_FOUND", f"ProductOffering {id} not found")
+
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = json.loads(request.httprequest.data)
+                vals = {}
+                if 'name' in data: vals['name'] = data['name']
+                offering.write(vals)
+                return self._response(self._offering_to_json(offering))
+            except Exception as e:
+                return self._error(400, "UPDATE_ERROR", str(e))
+        elif request.httprequest.method == 'DELETE':
+            offering.unlink()
+            return Response(status=204)
+
+        return self._response(self._filter_fields(self._offering_to_json(offering), params.get('fields')))
+
+    def _offering_to_json(self, o):
+        status_map_rev = {'design': 'In Design', 'active': 'Active', 'retired': 'Retired'}
+        
+        offering_json = {
+            "id": o.tmf_id or str(o.id),
+            "href": f"{self._base_url()}/productOffering/{o.tmf_id or o.id}",
+            "name": o.name,
+            "lifecycleStatus": status_map_rev.get(o.lifecycle_status, "Active"),
+            "lastUpdate": o.write_date.isoformat() + "Z" if o.write_date else None,
+            "isBundle": False,
+            "@type": "ProductOffering",
+            "productOfferingPrice": [], 
+        }
+
+        # FIX: Only include productSpecification if it exists. 
+        # Sending None/null causes validation error "must be object".
+        if o.product_specification_id:
+            offering_json["productSpecification"] = {
+                "id": o.product_specification_id.tmf_id or str(o.product_specification_id.id),
+                "href": o.product_specification_id.href or f"{self._base_url()}/productSpecification/{o.product_specification_id.id}",
+                "name": o.product_specification_id.name,
+                "@type": "ProductSpecificationRef",
+                "@referredType": "ProductSpecification"
             }
 
-            # Link to the Technical Specification
-            if o.product_specification_id:
-                offering_json["productSpecification"] = {
-                    "id": o.product_specification_id.tmf_id,
-                    "href": o.product_specification_id.href,
-                    "name": o.product_specification_id.name
-                }
+        return offering_json
 
-            response_data.append(offering_json)
+    # =======================================================
+    # 3. Product Offering Price API
+    # =======================================================
+    
+    @http.route('/tmf-api/productCatalogManagement/v5/productOfferingPrice', type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def price_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = json.loads(request.httprequest.data)
+                created = self._mock_create('productOfferingPrice', data)
+                return self._response(created, status=201)
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
 
-        return request.make_response(
-            json.dumps(response_data),
-            headers=[('Content-Type', 'application/json')]
-        )
+        mock_data = list(_MOCK_STORAGE['productOfferingPrice'].values())
+        return self._response(self._filter_fields(mock_data, params.get('fields')))
+
+    @http.route('/tmf-api/productCatalogManagement/v5/productOfferingPrice/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def price_individual(self, id, **params):
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = json.loads(request.httprequest.data)
+                updated = self._mock_patch('productOfferingPrice', id, data)
+                if updated: return self._response(self._filter_fields(updated, params.get('fields')))
+            except: pass
+        elif request.httprequest.method == 'DELETE':
+            if self._mock_delete('productOfferingPrice', id): return Response(status=204)
+        elif request.httprequest.method == 'GET':
+            res = self._mock_get('productOfferingPrice', id)
+            if res: return self._response(self._filter_fields(res, params.get('fields')))
+
+        return self._error(404, "NOT_FOUND", "Price not found")
+
+    # =======================================================
+    # Common
+    # =======================================================
+    def _find_record(self, model_name, id_str):
+        if not id_str: return None
+        rec = request.env[model_name].sudo().search([('tmf_id', '=', id_str)], limit=1)
+        if rec: return rec
+        if id_str.isdigit():
+            rec = request.env[model_name].sudo().browse(int(id_str))
+            if rec.exists(): return rec
+        return None

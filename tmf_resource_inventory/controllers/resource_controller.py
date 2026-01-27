@@ -1,103 +1,249 @@
+# resource_controller.py (REPLACE ENTIRE FILE)
+
 from odoo import http
 from odoo.http import request
 import json
+import uuid
+
+
+API_BASE = "/tmf-api/resourceInventoryManagement/v4"
 
 
 class TMFResourceController(http.Controller):
 
+    # ---------------------------
+    # helpers
+    # ---------------------------
+    def _json_response(self, body, status=200, headers=None):
+        headers = headers or []
+        base_headers = [('Content-Type', 'application/json')]
+        return request.make_response(
+            json.dumps(body) if body is not None else '',
+            headers=base_headers + headers,
+            status=status
+        )
+
     def _error(self, status, reason, message):
-        body = json.dumps({
+        return self._json_response({
             "code": str(status),
             "reason": reason,
             "message": message,
-        })
-        return request.make_response(
-            body,
-            headers=[('Content-Type', 'application/json')],
-            status=status,
-        )
+        }, status=status)
+
+    def _apply_fields(self, data, fields_param):
+        """
+        TMF639: Attribute selection enabled for all first-level attributes via ?fields=... :contentReference[oaicite:6]{index=6}
+        """
+        if not fields_param:
+            return data
+        wanted = [f.strip() for f in fields_param.split(",") if f.strip()]
+        if not wanted:
+            return data
+
+        # only first-level keys. support @type, @baseType, etc as normal keys.
+        return {k: data.get(k) for k in wanted if k in data}
+
+    def _parse_json_body(self):
+        try:
+            raw = request.httprequest.data or b'{}'
+            return json.loads(raw.decode("utf-8"))
+        except Exception:
+            return None
+
+    def _find_resource(self, tmf_id):
+        # tmf_id in your model mixin is stored as string; fallback to numeric id.
+        res = request.env['stock.lot'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
+        if res:
+            return res
+        if str(tmf_id).isdigit():
+            return request.env['stock.lot'].sudo().browse(int(tmf_id))
+        return request.env['stock.lot'].sudo().browse([])
+    
+    def _get_default_product(self):
+        Product = request.env['product.product'].sudo()
+
+        # 1) Prefer a previously configured default_code if it exists
+        p = Product.search([('default_code', '=', 'TMF639_DEFAULT_RESOURCE')], limit=1)
+        if p:
+            return p
+
+        # 2) Otherwise just take ANY existing storable/stockable-like product
+        #    (we avoid setting product.template.type because your instance rejects 'product')
+        p = Product.search([], limit=1)
+        if p:
+            return p
+
+        raise ValueError("No product.product found. Create at least one product in Odoo.")
+
+
+    def _find_product_from_payload(self, payload):
+        # If client sends resourceSpecification.id, try to map it to product by tmf_id or numeric id
+        spec = payload.get("resourceSpecification") or {}
+        spec_id = spec.get("id")
+        if not spec_id:
+            return None
+        Product = request.env['product.product'].sudo()
+        p = Product.search([('tmf_id', '=', str(spec_id))], limit=1)
+        if p:
+            return p
+        if str(spec_id).isdigit():
+            p = Product.browse(int(spec_id))
+            if p.exists():
+                return p
+        return None
+
 
     # =======================================================
-    # RESOURCE INVENTORY – QUERY
+    # RESOURCE INVENTORY – CRUD
     # =======================================================
+
     @http.route(
-        '/tmf-api/resourceInventory/v4/resource',
+        f'{API_BASE}/resource',
         type='http', auth='public', methods=['GET'], csrf=False
     )
-    def get_resources(self, **params):
+    def list_resources(self, **params):
+        offset = int(params.get('offset', 0))
+        limit = int(params.get('limit', 20))
+        fields_param = params.get('fields')
+
         domain = []
 
-        # Pagination
-        offset = int(params.get('offset', 0))
-        limit = int(params.get('limit', 50))
+        name = params.get('name')
+        if name:
+            domain.append(('name', '=', name))
 
-        # ?serialNumber=XYZ  → usamos name como serialNumber
         serial_number = params.get('serialNumber')
         if serial_number:
             domain.append(('name', '=', serial_number))
 
-        # ?resourceStatus=installed / available / ...
         resource_status = params.get('resourceStatus')
         if resource_status:
             domain.append(('resource_status', '=', resource_status))
 
-        # ?product.id=123 (product id or tmf_id)
+        # NOTE: keeping your custom filter (not in spec, but harmless)
         product_id_param = params.get('product.id')
         if product_id_param:
             domain += ['|',
                        ('product_id.tmf_id', '=', product_id_param),
-                       ('product_id', '=', int(product_id_param)) if product_id_param.isdigit() else ('id', '=', 0)
-                      ]
+                       ('product_id', '=', int(product_id_param)) if product_id_param.isdigit() else ('id', '=', 0)]
 
-        resources = request.env['stock.lot'].sudo().search(
-            domain, offset=offset, limit=limit
-        )
-
-        data = [r.to_tmf_json() for r in resources]
-
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
+        resources = request.env['stock.lot'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
+        payload = [self._apply_fields(r.to_tmf_json(), fields_param) for r in resources]
+        return self._json_response(payload, status=200)
 
     @http.route(
-        '/tmf-api/resourceInventory/v4/resource/<string:tmf_id>',
+        f'{API_BASE}/resource/<string:tmf_id>',
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def get_resource(self, tmf_id, **params):
-        res = request.env['stock.lot'].sudo().search(
-            [('tmf_id', '=', tmf_id)], limit=1
-        )
-        if not res:
+        fields_param = params.get('fields')
+        res = self._find_resource(tmf_id)
+        if not res or not res.exists():
             return self._error(404, "Not Found", f"Resource {tmf_id} not found")
 
-        data = res.to_tmf_json()
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
+        payload = self._apply_fields(res.to_tmf_json(), fields_param)
+        return self._json_response(payload, status=200)
+
+    @http.route(f'{API_BASE}/resource', type='http', auth='public', methods=['POST'], csrf=False)
+    def create_resource(self, **params):
+        payload = self._parse_json_body()
+        if payload is None:
+            return self._error(400, "Bad Request", "Invalid JSON body")
+
+        name = payload.get("name") or payload.get("serialNumber") or payload.get("value")
+        if not name:
+            return self._error(400, "Bad Request", "name is required")
+
+        tmf_id = payload.get("id") or str(uuid.uuid4())
+
+        # product_id is mandatory for stock.lot -> must be set
+        try:
+            prod = self._find_product_from_payload(payload) or self._get_default_product()
+        except Exception as e:
+            return self._error(422, "Unprocessable Entity", str(e))
+
+        vals = {
+            "name": name,
+            "product_id": prod.id,
+            "tmf_id": tmf_id,  # from your tmf.model.mixin
+        }
+
+        if payload.get("resourceStatus"):
+            vals["resource_status"] = payload["resourceStatus"]
+
+        try:
+            rec = request.env['stock.lot'].sudo().create(vals)
+        except Exception as e:
+            # IMPORTANT: return JSON, not HTML
+            return self._error(422, "Unprocessable Entity", str(e))
+
+        body = rec.to_tmf_json()
+        location = f"{API_BASE}/resource/{body.get('id')}"
+        return self._json_response(body, status=201, headers=[('Location', location)])
+
+    @http.route(
+        f'{API_BASE}/resource/<string:tmf_id>',
+        type='http', auth='public', methods=['PATCH'], csrf=False
+    )
+    def patch_resource(self, tmf_id, **params):
+        """
+        TMF639: PATCH supports JSON Merge Patch (RFC7386) and id/href are non-patchable :contentReference[oaicite:9]{index=9}
+        """
+        content_type = (request.httprequest.headers.get('Content-Type') or '').split(';')[0].strip().lower()
+        if content_type not in ("merge-patch/json", "application/merge-patch+json", "application/json"):
+            return self._error(415, "Unsupported Media Type", "Use Content-Type: merge-patch/json")
+
+        payload = self._parse_json_body()
+        if payload is None:
+            return self._error(400, "Bad Request", "Invalid JSON body")
+
+        if "id" in payload or "href" in payload:
+            return self._error(400, "Bad Request", "id and href are not patchable")
+
+        res = self._find_resource(tmf_id)
+        if not res or not res.exists():
+            return self._error(404, "Not Found", f"Resource {tmf_id} not found")
+
+        vals = {}
+        if "name" in payload:
+            vals["name"] = payload["name"]
+        if "resourceStatus" in payload:
+            vals["resource_status"] = payload["resourceStatus"]
+
+        if vals:
+            res.sudo().write(vals)
+
+        return self._json_response(res.to_tmf_json(), status=200)
+
+    @http.route(
+        f'{API_BASE}/resource/<string:tmf_id>',
+        type='http', auth='public', methods=['DELETE'], csrf=False
+    )
+    def delete_resource(self, tmf_id, **params):
+        """
+        TMF639: DELETE /resource/{id} returns 204 :contentReference[oaicite:10]{index=10}
+        """
+        res = self._find_resource(tmf_id)
+        if not res or not res.exists():
+            return self._error(404, "Not Found", f"Resource {tmf_id} not found")
+
+        res.sudo().unlink()
+        return request.make_response('', status=204)
 
     # =======================================================
-    # HUB – RESOURCE INVENTORY EVENT SUBSCRIPTIONS
+    # HUB – EVENT SUBSCRIPTIONS
     # =======================================================
+
     @http.route(
-        '/tmf-api/resourceInventory/v4/hub',
-        type='jsonrpc', auth='public', methods=['POST'], csrf=False
+        f'{API_BASE}/hub',
+        type='http', auth='public', methods=['POST'], csrf=False
     )
     def subscribe_resource_inventory_events(self, **kwargs):
         """
-        Crea una suscripción para eventos de Resource Inventory.
-        body ej:
-        {
-          "callback": "https://mi.listener/hook",
-          "query": "resourceStatus=installed",
-          "eventType": "any" | "create" | "update" | "delete",
-          "secret": "opcional"
-        }
+        TMF hub register listener pattern: POST /hub {"callback":"..."} returns 201 + Location :contentReference[oaicite:11]{index=11}
         """
-        try:
-            payload = json.loads(request.httprequest.data or b'{}')
-        except ValueError:
+        payload = self._parse_json_body()
+        if payload is None:
             return self._error(400, "Bad Request", "Invalid JSON body")
 
         callback = payload.get("callback")
@@ -120,22 +266,22 @@ class TMFResourceController(http.Controller):
             "secret": secret,
         })
 
-        return {
+        body = {
             "id": str(sub.id),
             "callback": sub.callback,
             "query": sub.query,
             "eventType": sub.event_type,
             "@type": "EventSubscription",
         }
+        location = f"{API_BASE}/hub/{sub.id}"
+        return self._json_response(body, status=201, headers=[('Location', location)])
 
     @http.route(
-        '/tmf-api/resourceInventory/v4/hub',
+        f'{API_BASE}/hub',
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def list_resource_inventory_subscriptions(self, **params):
-        subs = request.env['tmf.hub.subscription'].sudo().search([
-            ('api_name', '=', 'resourceInventory')
-        ])
+        subs = request.env['tmf.hub.subscription'].sudo().search([('api_name', '=', 'resourceInventory')])
         data = [{
             "id": str(s.id),
             "callback": s.callback,
@@ -143,14 +289,10 @@ class TMFResourceController(http.Controller):
             "eventType": s.event_type,
             "@type": "EventSubscription",
         } for s in subs]
-
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
+        return self._json_response(data, status=200)
 
     @http.route(
-        '/tmf-api/resourceInventory/v4/hub/<string:sub_id>',
+        f'{API_BASE}/hub/<string:sub_id>',
         type='http', auth='public', methods=['DELETE'], csrf=False
     )
     def unsubscribe_resource_inventory_events(self, sub_id, **kwargs):

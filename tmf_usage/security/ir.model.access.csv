@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_usage,tmf.usage,model_tmf_usage,base.group_user,1,1,1,1
+access_tmf_usage_spec,tmf.usage.specification,model_tmf_usage_specification,base.group_user,1,1,1,1
+access_tmf_usage_char,tmf.usage.characteristic,model_tmf_usage_characteristic,base.group_user,1,1,1,1
+access_tmf_usage_party,tmf.usage.related.party,model_tmf_usage_related_party,base.group_user,1,1,1,1
+access_tmf_rated_product_usage,tmf.rated.product.usage,model_tmf_rated_product_usage,base.group_user,1,1,1,1

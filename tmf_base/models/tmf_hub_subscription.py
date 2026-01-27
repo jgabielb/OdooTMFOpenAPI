@@ -17,60 +17,82 @@ _RE_IN = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s+in\s*\((.+?)\)\s*$", re.IGN
 # Keys match the 'api_name' passed from your models.
 # =========================================================
 TMF_EVENT_NAME_MAP = {
+
     # TMF632 - Party
     'party': {
         'create': 'PartyCreateEvent',
         'update': 'PartyAttributeValueChangeEvent',
         'delete': 'PartyDeleteEvent',
     },
+
     # TMF629 - Customer
     'customer': {
         'create': 'CustomerCreateEvent',
         'update': 'CustomerAttributeValueChangeEvent',
         'delete': 'CustomerDeleteEvent',
     },
-    # TMF622 - Product Ordering (Resource: productOrder)
+
+    # TMF622 - Product Ordering (resource: productOrder)
     'productOrder': {
         'create': 'ProductOrderCreateEvent',
         'update': 'ProductOrderAttributeValueChangeEvent',
         'state_change': 'ProductOrderStateChangeEvent',
         'delete': 'ProductOrderDeleteEvent',
     },
-    # TMF620 - Product Catalog (Resource: productSpecification / productOffering)
+
+    # TMF620 - Product Catalog
+    # Usa fallback si no distingues offering/specification
     'productCatalog': {
-        'create': 'ProductOfferingCreateEvent', # Generic fallback
+        'create': 'ProductOfferingCreateEvent',
         'update': 'ProductOfferingAttributeValueChangeEvent',
         'delete': 'ProductOfferingDeleteEvent',
     },
-    # TMF638 - Service Inventory (Resource: service)
+
+    # Opcional: separación fina TMF620
+    'productOffering': {
+        'create': 'ProductOfferingCreateEvent',
+        'update': 'ProductOfferingAttributeValueChangeEvent',
+        'delete': 'ProductOfferingDeleteEvent',
+    },
+    'productSpecification': {
+        'create': 'ProductSpecificationCreateEvent',
+        'update': 'ProductSpecificationAttributeValueChangeEvent',
+        'delete': 'ProductSpecificationDeleteEvent',
+    },
+
+    # TMF638 - Service Inventory (resource: service)
     'service': {
         'create': 'ServiceCreateEvent',
         'update': 'ServiceAttributeValueChangeEvent',
         'state_change': 'ServiceStateChangeEvent',
         'delete': 'ServiceDeleteEvent',
     },
-    # TMF639 - Resource Inventory (Resource: resource)
+
+    # TMF639 - Resource Inventory (resource: resource)
     'resource': {
         'create': 'ResourceCreateEvent',
         'update': 'ResourceAttributeValueChangeEvent',
         'state_change': 'ResourceStateChangeEvent',
         'delete': 'ResourceDeleteEvent',
     },
-    # TMF621 - Trouble Ticket (Resource: troubleTicket)
+
+    # TMF621 - Trouble Ticket (resource: troubleTicket)
     'troubleTicket': {
         'create': 'TroubleTicketCreateEvent',
         'update': 'TroubleTicketAttributeValueChangeEvent',
+        # TMF621 define cambio de estado como StatusChange (no StateChange)
         'state_change': 'TroubleTicketStatusChangeEvent',
         'delete': 'TroubleTicketDeleteEvent',
     },
-     # TMF666 - Account Management
+
+    # TMF666 - Account Management
     'account': {
         'create': 'AccountCreateEvent',
         'update': 'AccountAttributeValueChangeEvent',
         'state_change': 'AccountStateChangeEvent',
         'delete': 'AccountDeleteEvent',
     },
-    
+
     # TMF678 - Customer Bill Management
     'customerBill': {
         'create': 'CustomerBillCreateEvent',

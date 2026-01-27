@@ -5,32 +5,44 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <group>
-                <field name="description"/>
-                <field name="is_bundle"/>
-                <field name="is_customer_visible"/>
-                <field name="name"/>
-                <field name="order_date"/>
-                <field name="product_serial_number"/>
-                <field name="random_att"/>
-                <field name="start_date"/>
-                <field name="termination_date"/>
-                <field name="agreement"/>
-                <field name="billing_account"/>
-                <field name="place"/>
-                <field name="product"/>
-                <field name="product_characteristic"/>
-                <field name="product_offering"/>
-                <field name="product_order_item"/>
-                <field name="product_price"/>
-                <field name="product_relationship"/>
-                <field name="product_specification"/>
-                <field name="product_term"/>
-                <field name="realizing_resource"/>
-                <field name="realizing_service"/>
-                <field name="related_party"/>
-                <field name="status"/>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_create_or_sync_odoo_product"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-refresh"
+                                string="Create/Sync Odoo Product"/>
+                    </div>
+
+                    <group string="Sales Mapping" col="2">
+                        <field name="odoo_product_id"
+                               string="Odoo Sale Product"
+                               domain="[
+                                   ('active','=',True),
+                                   ('product_tmpl_id.sale_ok','=',True),
+                                   ('product_tmpl_id.type','in',['service','consu'])
+                               ]"
+                               context="{
+                                   'default_sale_ok': True,
+                                   'default_type': 'service'
+                               }"
+                               options="{'no_create_edit': False}"/>
+                        <field name="odoo_product_tmpl_id" readonly="1"/>
                     </group>
+
+                    <group string="TMF Product" col="4">
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="status"/>
+                        <field name="is_bundle"/>
+                        <field name="is_customer_visible"/>
+                        <field name="order_date"/>
+                        <field name="start_date"/>
+                        <field name="termination_date"/>
+                        <field name="product_serial_number"/>
+                        <field name="random_att"/>
+                    </group>
+
                 </sheet>
             </form>
         </field>
@@ -41,30 +53,11 @@
         <field name="model">tmf.product</field>
         <field name="arch" type="xml">
             <list>
-                <field name="description"/>
-                <field name="is_bundle"/>
-                <field name="is_customer_visible"/>
                 <field name="name"/>
-                <field name="order_date"/>
-                <field name="product_serial_number"/>
-                <field name="random_att"/>
-                <field name="start_date"/>
-                <field name="termination_date"/>
-                <field name="agreement"/>
-                <field name="billing_account"/>
-                <field name="place"/>
-                <field name="product"/>
-                <field name="product_characteristic"/>
-                <field name="product_offering"/>
-                <field name="product_order_item"/>
-                <field name="product_price"/>
-                <field name="product_relationship"/>
-                <field name="product_specification"/>
-                <field name="product_term"/>
-                <field name="realizing_resource"/>
-                <field name="realizing_service"/>
-                <field name="related_party"/>
                 <field name="status"/>
+                <field name="odoo_product_id"/>
+                <field name="odoo_product_tmpl_id" optional="show"/>
+                <field name="description" optional="hide"/>
             </list>
         </field>
     </record>

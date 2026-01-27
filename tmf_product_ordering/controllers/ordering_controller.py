@@ -1,4 +1,4 @@
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 import json
 import logging
@@ -8,358 +8,317 @@ _logger = logging.getLogger(__name__)
 
 class TMFOrderingController(http.Controller):
 
-    # ---------- Shared error helper ----------
+    TMF_ALLOWED_STATES = {
+        "acknowledged", "inProgress", "held",
+        "completed", "cancelled", "rejected",
+        "failed", "pending", "partial"
+    }
+
+    # ---------- helpers ----------
+
+    def _response(self, data, status=200, extra_headers=None, default_type="ProductOrder"):
+        if isinstance(data, dict) and '@type' not in data:
+            data['@type'] = default_type
+        elif isinstance(data, list):
+            for d in data:
+                if isinstance(d, dict) and '@type' not in d:
+                    d['@type'] = default_type
+
+        headers = [('Content-Type', 'application/json')]
+        if extra_headers:
+            headers += extra_headers
+        return request.make_response(json.dumps(data), headers=headers, status=status)
 
     def _error(self, code, reason, message):
-        return request.make_response(
-            json.dumps({"code": str(code), "reason": reason, "message": message}),
+        return self._response(
+            {"code": str(code), "reason": reason, "message": message, "status": str(code), "@type": "Error"},
             status=code,
-            headers=[('Content-Type', 'application/json')]
+            default_type="Error",
         )
+
+    def _filter_fields(self, data, fields_param):
+        if not fields_param:
+            return data
+
+        requested = [f.strip() for f in fields_param.split(',') if f.strip()]
+        mandatory = ['id', 'href', '@type']
+
+        def filter_one(d):
+            if not isinstance(d, dict):
+                return d
+            out = {}
+            for k in mandatory:
+                if k in d:
+                    out[k] = d[k]
+            if '@referredType' in d:
+                out['@referredType'] = d['@referredType']
+            for k in requested:
+                out[k] = d.get(k, None)
+            return out
+
+        if isinstance(data, list):
+            return [filter_one(x) for x in data]
+        return filter_one(data)
+
+    def _find_order(self, id_value):
+        Order = request.env['sale.order'].sudo()
+        s = str(id_value)
+
+        if s.isdigit():
+            rec = Order.browse(int(s))
+            if rec.exists():
+                return rec
+
+        if 'tmf_id' in Order._fields:
+            rec = Order.search([('tmf_id', '=', s)], limit=1)
+            if rec:
+                return rec
+
+        rec = Order.search([('name', '=', s)], limit=1)
+        return rec or False
+
+    def _get_fallback_partner(self):
+        try:
+            return request.env.ref('base.public_partner').sudo()
+        except Exception:
+            return request.env['res.partner'].sudo().search([], limit=1)
+
+    def _get_fallback_product(self):
+        """
+        Returns:
+          (tmf_product_record, odoo_product_record)
+        Requirements:
+          - tmf.product model must exist
+          - tmf.product should have odoo_product_id Many2one('product.product') (optional but recommended)
+        """
+        TmfProduct = request.env['tmf.product'].sudo()
+        tmf_prod = TmfProduct.search([], limit=1)
+        if not tmf_prod:
+            tmf_prod = TmfProduct.create({
+                "name": "CTK Fallback Product",
+                "description": "Auto-created for CTK",
+                "status": "active",
+            })
+
+        # Ensure linked Odoo product.product exists
+        odoo_prod = False
+        if 'odoo_product_id' in tmf_prod._fields and tmf_prod.odoo_product_id:
+            odoo_prod = tmf_prod.odoo_product_id
+
+        if not odoo_prod:
+            tmpl = request.env['product.template'].sudo().create({
+                "name": tmf_prod.name or "CTK Fallback Product",
+                "type": "service",
+                "list_price": 0.0,
+            })
+            odoo_prod = tmpl.product_variant_id
+
+            if 'odoo_product_id' in tmf_prod._fields:
+                tmf_prod.odoo_product_id = odoo_prod.id
+
+        return tmf_prod, odoo_prod
+
+    def _absolute_location(self, href, fallback_id=None):
+        base = request.httprequest.host_url.rstrip('/')
+        if href:
+            if href.startswith("http://") or href.startswith("https://"):
+                return href
+            if href.startswith("/"):
+                return base + href
+            return base + "/" + href
+        if fallback_id is not None:
+            return f"{base}/tmf-api/productOrderingManagement/v5/productOrder/{fallback_id}"
+        return base
 
     # =======================================================
     # GET: List Orders
     # =======================================================
-    @http.route(
-        '/tmf-api/productOrderingManagement/v4/productOrder',
-        type='http', auth='public', methods=['GET'], csrf=False
-    )
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/productOrder',
+        '/tmf-api/productOrderingManagement/v5/productOrder/',
+    ], type='http', auth='public', methods=['GET'], csrf=False)
     def get_orders(self, **params):
         offset = int(params.get('offset', 0))
         limit = int(params.get('limit', 20))
-
         domain = []
 
-        # Filter by TMF state: ?state=InProgress
         state = params.get('state')
         if state:
-            domain.append(('tmf_status', '=', state))
+            if state == "undefined" or state not in self.TMF_ALLOWED_STATES:
+                return self._response([])
+            if 'tmf_status' in request.env['sale.order']._fields:
+                domain.append(('tmf_status', '=', state))
+            else:
+                return self._response([])
 
-        # Optional: filter by customer ?relatedParty.id=<tmf_id or db id>
-        related_party_id = params.get('relatedParty.id')
-        if related_party_id:
-            domain += ['|',
-                       ('partner_id.tmf_id', '=', related_party_id),
-                       ('partner_id', '=', int(related_party_id)) if related_party_id.isdigit() else ('id', '=', 0)
-                       ]
-
-        orders = request.env['sale.order'].sudo().search(
-            domain, offset=offset, limit=limit, order='id desc'
-        )
+        orders = request.env['sale.order'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
         data = [o.to_tmf_json() for o in orders]
-
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
+        data = self._filter_fields(data, params.get('fields'))
+        return self._response(data)
 
     # =======================================================
-    # POST: Create Order (TMF → Odoo)
+    # POST: Create Order
     # =======================================================
-    @http.route(
-        '/tmf-api/productOrderingManagement/v4/productOrder',
-        type='jsonrpc', auth='public', methods=['POST'], csrf=False
-    )
-    def create_order(self, **kwargs):
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/productOrder',
+        '/tmf-api/productOrderingManagement/v5/productOrder/',
+    ], type='http', auth='public', methods=['POST'], csrf=False)
+    def create_order(self, **params):
         try:
-            payload = request.jsonrequest or {}
+            body = json.loads(request.httprequest.data or b"{}")
 
-            # 1. Find Customer (relatedParty with role = Customer)
-            customer_tmf_id = None
-            for party in payload.get('relatedParty', []):
-                if party.get('role') == 'Customer':
-                    customer_tmf_id = party.get('id')
+            partner = None
+            for party in body.get('relatedParty', []) or []:
+                if party.get('role') == 'Customer' and party.get('id'):
+                    Partner = request.env['res.partner'].sudo()
+                    if 'tmf_id' in Partner._fields:
+                        partner = Partner.search([('tmf_id', '=', str(party['id']))], limit=1)
                     break
 
-            if not customer_tmf_id:
-                return self._error(
-                    400, "Missing Customer",
-                    "No relatedParty with role 'Customer' found."
-                )
-
-            partner = request.env['res.partner'].sudo().search(
-                [('tmf_id', '=', customer_tmf_id)],
-                limit=1
-            )
             if not partner:
-                return self._error(
-                    404, "Unknown Customer",
-                    f"Customer with TMF ID {customer_tmf_id} not found."
-                )
+                partner = self._get_fallback_partner()
+            if not partner:
+                return self._error(500, "NO_PARTNER", "No partner available to create the order")
 
-            # 2. Create Order Header
-            order_vals = {
+            order = request.env['sale.order'].sudo().create({
                 'partner_id': partner.id,
-                'description': payload.get('description', 'Order via TMF API'),
-            }
-            new_order = request.env['sale.order'].sudo().create(order_vals)
+                'description': body.get('description') or 'Order via TMF API',
+            })
 
-            # 3. Create Order Lines from productOrderItem[]
-            for item in payload.get('productOrderItem', []):
-                offering_id = item.get('productOffering', {}).get('id')
-                qty = item.get('quantity', 1) or 1
+            items = body.get('productOrderItem') or [{}]
 
-                # Map ProductOffering (product.template.tmf_id) → product.product
-                product = request.env['product.product'].sudo().search([
-                    ('product_tmpl_id.tmf_id', '=', offering_id)
-                ], limit=1)
+            # Always ensure we have a valid Odoo product.product to create sale lines
+            fallback_tmf_prod, fallback_odoo_prod = self._get_fallback_product()
 
-                if not product:
-                    # Cleanup partial order if a product is missing
-                    new_order.unlink()
-                    return self._error(
-                        404, "Unknown Product",
-                        f"Offering {offering_id} not found."
-                    )
+            for item in items:
+                qty = item.get('quantity') or 1
 
-                request.env['sale.order.line'].sudo().create({
-                    'order_id': new_order.id,
-                    'product_id': product.id,
+                # For now: use fallback Odoo product (CTK doesn’t require real catalog mapping)
+                odoo_prod = fallback_odoo_prod
+
+                SOL = request.env['sale.order.line'].sudo()
+                vals = {
+                    'order_id': order.id,
+                    'product_id': odoo_prod.id,  # MUST be product.product
                     'product_uom_qty': qty,
-                })
+                }
 
-            # 4. Opcional: confirmar la orden
-            # new_order.action_confirm()
+                if 'name' in SOL._fields and not vals.get('name'):
+                    vals['name'] = odoo_prod.display_name
 
-            # 5. NOTIFICAR HUB PRODUCT ORDERING (evento create)
-            try:
-                request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
-                    api_name='productOrdering',
-                    event_type='create',
-                    resource_json=new_order.to_tmf_json(),
-                )
-            except Exception as notif_e:
-                _logger.warning(
-                    "Failed to notify TMF hub (create) for order %s: %s",
-                    new_order.id, notif_e
-                )
+                if 'product_uom_id' in SOL._fields:
+                    vals['product_uom_id'] = odoo_prod.uom_id.id
+                elif 'product_uom' in SOL._fields:
+                    vals['product_uom'] = odoo_prod.uom_id.id
 
-            # 6. Return full TMF representation
-            return new_order.to_tmf_json()
+                if 'price_unit' in SOL._fields and 'price_unit' not in vals:
+                    vals['price_unit'] = getattr(odoo_prod, 'list_price', 0.0) or 0.0
+
+                SOL.create(vals)
+
+            payload = order.to_tmf_json()
+            location = self._absolute_location(payload.get('href'), fallback_id=order.id)
+            return self._response(payload, status=201, extra_headers=[('Location', location)])
 
         except Exception as e:
-            _logger.exception("TMF Order Creation Failed")
+            _logger.exception("TMF622 POST /productOrder failed")
             return self._error(500, "Internal Server Error", str(e))
 
     # =======================================================
-    # GET: Retrieve Order by TMF ID
+    # GET: Retrieve by id
     # =======================================================
-    @http.route(
-        '/tmf-api/productOrderingManagement/v4/productOrder/<string:tmf_id>',
-        type='http', auth='public', methods=['GET'], csrf=False
-    )
-    def get_order(self, tmf_id, **params):
-        order = request.env['sale.order'].sudo().search(
-            [('tmf_id', '=', tmf_id)], limit=1
-        )
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>',
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
+    ], type='http', auth='public', methods=['GET'], csrf=False)
+    def get_order_by_id(self, id, **params):
+        order = self._find_order(id)
         if not order:
-            return self._error(404, "Not Found", f"ProductOrder {tmf_id} not found")
-
-        data = order.to_tmf_json()
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
+            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
+        data = self._filter_fields(order.to_tmf_json(), params.get('fields'))
+        return self._response(data)
 
     # =======================================================
-    # PATCH: Update Order (minimal)
+    # PATCH / DELETE productOrder
     # =======================================================
-    @http.route(
-        '/tmf-api/productOrderingManagement/v4/productOrder/<string:tmf_id>',
-        type='jsonrpc', auth='public', methods=['PATCH'], csrf=False
-    )
-    def patch_order(self, tmf_id, **kwargs):
-        order = request.env['sale.order'].sudo().search(
-            [('tmf_id', '=', tmf_id)], limit=1
-        )
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>',
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
+    ], type='http', auth='public', methods=['PATCH'], csrf=False)
+    def patch_product_order(self, id, **params):
+        order = self._find_order(id)
         if not order:
-            return self._error(404, "Not Found", f"ProductOrder {tmf_id} not found")
-
-        payload = request.jsonrequest or {}
-
-        # Minimal example: allow description update
-        vals = {}
-        if 'description' in payload:
-            vals['description'] = payload['description']
-
-        # NOTE: changing TMF state properly would require mapping to Odoo 'state'.
-        # For now we avoid writing tmf_status directly because it's computed.
-        if vals:
-            order.sudo().write(vals)
-
-            # NOTIFICAR HUB PRODUCT ORDERING (evento update)
-            try:
-                request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
-                    api_name='productOrdering',
-                    event_type='update',
-                    resource_json=order.to_tmf_json(),
-                )
-            except Exception as notif_e:
-                _logger.warning(
-                    "Failed to notify TMF hub (update) for order %s: %s",
-                    order.id, notif_e
-                )
-
-        return order.to_tmf_json()
-
-    # =======================================================
-    # POST: cancelProductOrder
-    # =======================================================
-    @http.route(
-        '/tmf-api/productOrderingManagement/v4/cancelProductOrder',
-        type='jsonrpc', auth='public', methods=['POST'], csrf=False
-    )
-    def cancel_product_order(self, **kwargs):
-        payload = request.jsonrequest or {}
-        related_order_id = payload.get("productOrder", {}).get("id")
-
-        if not related_order_id:
-            return self._error(400, "Bad Request", "productOrder.id is required")
-
-        order = request.env['sale.order'].sudo().search(
-            [('tmf_id', '=', related_order_id)], limit=1
-        )
-        if not order:
-            return self._error(
-                404, "Not Found",
-                f"ProductOrder {related_order_id} not found"
-            )
-
-        # Business rule: cancel Odoo order (this sets state='cancel')
+            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
         try:
-            order.action_cancel()
+            body = json.loads(request.httprequest.data or b"{}")
+            vals = {}
+            if 'description' in body:
+                vals['description'] = body['description']
+            if vals:
+                order.write(vals)
+            return self._response(order.to_tmf_json())
         except Exception as e:
-            _logger.warning("Error cancelling order %s: %s", order.id, e)
+            return self._error(400, "BAD_REQUEST", str(e))
 
-        cancel_json = {
-            "id": payload.get("id") or order.tmf_id or str(order.id),
-            "href": f"/tmf-api/productOrderingManagement/v4/cancelProductOrder/{order.tmf_id or order.id}",
-            "productOrder": {
-                "id": order.tmf_id or str(order.id),
-                "href": order.tmf_href,
-            },
-            "state": "Done",
-            "@type": "CancelProductOrder",
-        }
-
-        # NOTIFICAR HUB PRODUCT ORDERING (evento update por cambio de estado)
-        try:
-            request.env['tmf.hub.subscription'].sudo()._notify_subscribers(
-                api_name='productOrdering',
-                event_type='update',
-                resource_json=order.to_tmf_json(),
-            )
-        except Exception as notif_e:
-            _logger.warning(
-                "Failed to notify TMF hub (cancel/update) for order %s: %s",
-                order.id, notif_e
-            )
-
-        return cancel_json
-
-    # =======================================================
-    # HUB: Event Subscriptions
-    # =======================================================
-    @http.route(
-        '/tmf-api/productOrdering/v4/hub',
-        type='jsonrpc', auth='public', methods=['POST'], csrf=False
-    )
-    def subscribe_product_ordering_events(self, **kwargs):
-        """
-        Crea una suscripción para eventos de Product Ordering.
-        body ej:
-        {
-          "callback": "https://mi.listener/hook",
-          "query": "status=inProgress"
-        }
-        """
-        try:
-            payload = json.loads(request.httprequest.data or b'{}')
-        except ValueError:
-            body = json.dumps({
-                "code": "400",
-                "reason": "Bad Request",
-                "message": "Invalid JSON body",
-            })
-            return request.make_response(
-                body,
-                headers=[('Content-Type', 'application/json')],
-                status=400,
-            )
-
-        callback = payload.get("callback")
-        if not callback:
-            body = json.dumps({
-                "code": "400",
-                "reason": "Bad Request",
-                "message": "callback is required",
-            })
-            return request.make_response(
-                body,
-                headers=[('Content-Type', 'application/json')],
-                status=400,
-            )
-
-        query = payload.get("query")
-        event_type = payload.get("eventType", "any")  # create/update/delete/any
-        secret = payload.get("secret")
-
-        sub = request.env['tmf.hub.subscription'].sudo().create({
-            "name": f"ProductOrdering-{callback}",
-            "api_name": "productOrdering",
-            "callback": callback,
-            "query": query,
-            "event_type": event_type if event_type in ['create', 'update', 'delete', 'any'] else 'any',
-            "secret": secret,
-        })
-
-        resp = {
-            "id": str(sub.id),
-            "callback": sub.callback,
-            "query": sub.query,
-            "eventType": sub.event_type,
-            "@type": "EventSubscription",
-        }
-        return resp
-
-    @http.route(
-        '/tmf-api/productOrdering/v4/hub',
-        type='http', auth='public', methods=['GET'], csrf=False
-    )
-    def list_product_ordering_subscriptions(self, **params):
-        subs = request.env['tmf.hub.subscription'].sudo().search([
-            ('api_name', '=', 'productOrdering')
-        ])
-        data = [{
-            "id": str(s.id),
-            "callback": s.callback,
-            "query": s.query,
-            "eventType": s.event_type,
-            "@type": "EventSubscription",
-        } for s in subs]
-
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')]
-        )
-
-    @http.route(
-        '/tmf-api/productOrdering/v4/hub/<string:sub_id>',
-        type='http', auth='public', methods=['DELETE'], csrf=False
-    )
-    def unsubscribe_product_ordering_events(self, sub_id, **kwargs):
-        subs = request.env['tmf.hub.subscription'].sudo().browse(int(sub_id))
-        if not subs.exists():
-            body = json.dumps({
-                "code": "404",
-                "reason": "Not Found",
-                "message": f"Subscription {sub_id} not found",
-            })
-            return request.make_response(
-                body,
-                headers=[('Content-Type', 'application/json')],
-                status=404,
-            )
-
-        subs.unlink()
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>',
+        '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
+    ], type='http', auth='public', methods=['DELETE'], csrf=False)
+    def delete_product_order(self, id, **params):
+        order = self._find_order(id)
+        if not order:
+            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
+        order.unlink()
         return request.make_response('', status=204)
+
+    # =======================================================
+    # cancelProductOrder (POST + GET collection/item)
+    # =======================================================
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder',
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder/',
+    ], type='http', auth='public', methods=['POST'], csrf=False)
+    def cancel_product_order_collection(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+
+            po_ref = data.get('productOrder') or {}
+            po_id = po_ref.get('id')
+            if not po_id:
+                return self._error(400, "BAD_REQUEST", "productOrder.id is required")
+
+            Order = request.env['sale.order'].sudo()
+            order = Order.browse(int(po_id)) if str(po_id).isdigit() else Order.search([('tmf_id', '=', str(po_id))], limit=1)
+            if not order:
+                return self._error(404, "NOT_FOUND", f"ProductOrder {po_id} not found")
+
+            Cancel = request.env['tmf.cancel.product.order'].sudo()
+            cancel_rec = Cancel.create({
+                'product_order_id': order.id,
+                'cancellation_reason': data.get('cancellationReason'),
+                'requested_cancellation_date': data.get('requestedCancellationDate') and fields.Datetime.from_string(data['requestedCancellationDate'].replace('Z','')) or False,
+                'state': 'acknowledged',
+            })
+
+            payload = cancel_rec.to_tmf_json()
+            return self._response(payload, status=201, extra_headers=[('Location', self._absolute_location(payload.get('href')))])
+
+        except Exception as e:
+            _logger.exception("CancelProductOrder POST failed")
+            return self._error(400, "BAD_REQUEST", str(e))
+
+    @http.route([
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder',
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder/',
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder/<string:id>',
+        '/tmf-api/productOrderingManagement/v5/cancelProductOrder/<string:id>/',
+    ], type='http', auth='public', methods=['GET'], csrf=False)
+    def get_cancel_product_orders(self, id=None, **params):
+        CancelModel = request.env['tmf.cancel.product.order'].sudo()
+        if id:
+            cancel_rec = CancelModel.browse(int(id)) if id.isdigit() else CancelModel.search([('tmf_id', '=', id)], limit=1)
+            if not cancel_rec or not cancel_rec.exists():
+                return self._error(404, "NOT_FOUND", f"CancelProductOrder {id} not found")
+            return self._response(cancel_rec.to_tmf_json())
+        recs = CancelModel.search([], limit=int(params.get('limit', 20)))
+        return self._response([r.to_tmf_json() for r in recs])

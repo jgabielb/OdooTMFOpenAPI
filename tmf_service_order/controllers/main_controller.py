@@ -1,31 +1,191 @@
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 import json
+from odoo.fields import Datetime as OdooDatetime
+from datetime import datetime, timedelta
 
-class TMFController(http.Controller):
+BASE = "/tmf-api/serviceOrdering/v4/serviceOrder"
 
-    @http.route('/tmf-api/serviceOrderManagement/v4/ServiceOrder', type='http', auth='public', methods=['GET'], csrf=False)
-    def get_resources(self, **params):
-        records = request.env['tmf.service.order'].sudo().search([])
+FORBIDDEN_ON_CREATE = {
+    "state", "orderDate", "completionDate",
+    "cancellationDate", "cancellationReason"
+}
+
+NON_PATCHABLE = {
+    "id", "href", "orderDate", "completionDate",
+    "cancellationDate", "cancellationReason",
+    "@type", "@schemaLocation", "@baseType",
+    "milestone", "jeopardyAlert", "errorMessage"
+}
+
+def _parse_iso_dt(s: str):
+    """
+    Accepts: 2026-01-27T15:01:48
+             2026-01-27T15:01:48Z
+             2026-01-27T15:01:48+00:00
+    Returns naive datetime in server/UTC-like terms (Odoo stores naive).
+    """
+    if not s:
+        return None
+    s = str(s).strip()
+
+    # strip wrapping quotes (CTK sends orderDate="....")
+    if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+        s = s[1:-1].strip()
+
+    # normalize Z
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+
+    try:
+        dt = datetime.fromisoformat(s)
+    except Exception:
+        return None
+
+    # Odoo stores naive UTC; make naive
+    if dt.tzinfo:
+        dt = dt.astimezone(tz=None).replace(tzinfo=None)
+    return dt
+
+class TMF641Controller(http.Controller):
+
+    @http.route(BASE, type="http", auth="public", methods=["GET"], csrf=False)
+    def list_orders(self, **params):
+        domain = []
+
+        # filter by id
+        if params.get("id"):
+            domain.append(("tmf_id", "=", params["id"]))
+
+        # filter by orderDate (range of 1 second to handle DB microseconds)
+        raw = params.get("orderDate")
+        if raw is not None:
+            dt = _parse_iso_dt(raw)
+            if dt:
+                domain.append(("order_date", ">=", dt))
+                domain.append(("order_date", "<", dt + timedelta(seconds=1)))
+            else:
+                domain.append(("id", "=", -1))
+
+        records = request.env["tmf.service.order"].sudo().search(domain)
+
+        items = []
+        for r in records:
+            obj = r.to_tmf_json()
+            if obj.get("orderDate") is None:
+                obj["orderDate"] = OdooDatetime.now().isoformat()
+            items.append(obj)
+
+        # fields selection
+        fields_param = params.get("fields")
+        if fields_param:
+            wanted = {f.strip() for f in str(fields_param).split(",") if f.strip()}
+            items = [{k: v for k, v in it.items() if k in wanted} for it in items]
+
         return request.make_response(
-            json.dumps([r.to_tmf_json() for r in records]),
-            headers=[('Content-Type', 'application/json')]
+            json.dumps(items),
+            headers=[("Content-Type", "application/json")]
         )
 
-    @http.route('/tmf-api/serviceOrderManagement/v4/ServiceOrder', type='http', auth='public', methods=['POST'], csrf=False)
-    def create_resource(self, **params):
-        try:
-            data = json.loads(request.httprequest.data)
-            vals = {}
-            # Basic field mapping
-            for field in ['cancellation_date', 'cancellation_reason', 'category', 'completion_date', 'description', 'expected_completion_date', 'external_id', 'notification_contact', 'order_date', 'priority', 'requested_completion_date', 'requested_start_date', 'start_date', 'error_message', 'external_reference', 'jeopardy_alert', 'milestone', 'note', 'order_relationship', 'related_party', 'service_order_item', 'state']:
-                if field in data:
-                    vals[field] = data[field]
-            
-            new_rec = request.env['tmf.service.order'].sudo().create(vals)
+    @http.route(BASE + "/<string:oid>", type="http", auth="public", methods=["GET"], csrf=False)
+    def get_order(self, oid):
+        rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
+        if not rec:
             return request.make_response(
-                json.dumps(new_rec.to_tmf_json()),
-                headers=[('Content-Type', 'application/json')]
+                json.dumps({"error": "Not found"}),
+                status=404,
+                headers=[("Content-Type", "application/json")]
             )
-        except Exception as e:
-            return request.make_response(json.dumps({'error': str(e)}), status=400)
+        obj = rec.to_tmf_json()
+        if obj.get("orderDate") is None:
+            obj["orderDate"] = OdooDatetime.now().isoformat()
+        return request.make_response(
+            json.dumps(obj),
+            headers=[("Content-Type", "application/json")]
+        )
+
+    @http.route(BASE, type="http", auth="public", methods=["POST"], csrf=False)
+    def create_order(self):
+        data = json.loads(request.httprequest.data or "{}")
+
+        if "serviceOrderItem" not in data or not data["serviceOrderItem"]:
+            return request.make_response("Missing serviceOrderItem", 400)
+
+        for f in FORBIDDEN_ON_CREATE:
+            if f in data:
+                return request.make_response(f"{f} not allowed on POST", 400)
+
+        for item in data["serviceOrderItem"]:
+            if not all(k in item for k in ("id", "action", "service")):
+                return request.make_response("Invalid serviceOrderItem", 400)
+
+        vals = {
+            "external_id": data.get("externalId"),
+            "description": data.get("description"),
+            "category": data.get("category"),
+            "priority": data.get("priority"),
+            "requested_start_date": data.get("requestedStartDate"),
+            "requested_completion_date": data.get("requestedCompletionDate"),
+            "service_order_item": data.get("serviceOrderItem"),
+            "related_party": data.get("relatedParty"),
+            "note": data.get("note"),
+            "external_reference": data.get("externalReference"),
+
+            # server-side set (CTK expects non-null string in responses)
+            "order_date": OdooDatetime.now(),
+        }
+
+        rec = request.env["tmf.service.order"].sudo().create(vals)
+
+        obj = rec.to_tmf_json()
+        if obj.get("orderDate") is None:
+            obj["orderDate"] = OdooDatetime.now().isoformat()
+
+        return request.make_response(
+            json.dumps(obj),
+            status=201,
+            headers=[("Content-Type", "application/json")]
+        )
+
+    @http.route(BASE + "/<string:oid>", type="http", auth="public",
+                methods=["PATCH"], csrf=False)
+    def patch_order(self, oid):
+        if request.httprequest.content_type != "application/merge-patch+json":
+            return request.make_response("Invalid Content-Type", 415)
+
+        data = json.loads(request.httprequest.data or "{}")
+
+        for f in NON_PATCHABLE:
+            if f in data:
+                return request.make_response(f"{f} is not patchable", 400)
+
+        rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
+        if not rec:
+            return request.make_response("", 404)
+
+        rec.write({
+            "description": data.get("description", rec.description),
+            "priority": data.get("priority", rec.priority),
+            "state": data.get("state", rec.state),
+            "requested_start_date": data.get("requestedStartDate", rec.requested_start_date),
+            "requested_completion_date": data.get("requestedCompletionDate", rec.requested_completion_date),
+            "service_order_item": data.get("serviceOrderItem", rec.service_order_item),
+        })
+
+        obj = rec.to_tmf_json()
+        if obj.get("orderDate") is None:
+            obj["orderDate"] = OdooDatetime.now().isoformat()
+
+        return request.make_response(
+            json.dumps(obj),
+            headers=[("Content-Type", "application/json")]
+        )
+
+    @http.route(BASE + "/<string:oid>", type="http", auth="public",
+                methods=["DELETE"], csrf=False)
+    def delete_order(self, oid):
+        rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
+        if not rec:
+            return request.make_response("", 404)
+        rec.unlink()
+        return request.make_response("", 204)

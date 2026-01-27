@@ -12,7 +12,7 @@
     'depends': ['tmf_base', 'tmf_party', 'tmf_service_inventory'],
     'data': [
         'security/ir.model.access.csv',
-        'views/ticket_views.xml',
+        'views/generated_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',

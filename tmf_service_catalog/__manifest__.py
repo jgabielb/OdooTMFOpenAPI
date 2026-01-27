@@ -9,6 +9,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/generated_views.xml',
+        'views/service_specification_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',

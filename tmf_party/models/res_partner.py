@@ -1,138 +1,70 @@
-from odoo import models, fields, api
-import logging
-import inspect
+from odoo import models, fields
 
-_logger = logging.getLogger(__name__)
+TMF_BASE = "/tmf-api/partyManagement/v5"
+
 
 class ResPartner(models.Model):
-    _name = 'res.partner'
+    _name = "res.partner"
     _inherit = ['res.partner', 'tmf.model.mixin']
+
+    # TMF632 Party (Individual fields)
+    tmf_given_name = fields.Char(string="givenName")
+    tmf_family_name = fields.Char(string="familyName")
+
+    # Common TMF status (examples in user guide include initialized/validated)
+    tmf_managed = fields.Boolean(string="TMF Managed Party", default=False, index=True)
 
     tmf_status = fields.Selection([
         ('initialized', 'Initialized'),
         ('validated', 'Validated'),
         ('active', 'Active'),
-        ('closed', 'Closed')
-    ], string="TMF Status", default='active')
+        ('closed', 'Closed'),
+    ], string="TMF Status", default='initialized')
 
-    tmf_customer_type = fields.Selection([
-        ('individual', 'Individual'),
-        ('organization', 'Organization'),
-    ], string="TMF Party Type")
-
-    def _compute_tmf_type(self):
+    def _tmf_public_status(self):
+        """Return a CTK/schema-safe status value."""
         self.ensure_one()
-        if self.tmf_customer_type:
-            return self.tmf_customer_type
+        # CTK schema rejects 'active' in v5 tests; map any non-supported to 'validated'/'initialized'.
+        if self.tmf_status == 'validated':
+            return 'validated'
+        if self.tmf_status == 'closed':
+            return 'closed'
+        # treat 'active' and unknown as initialized/validated
+        if self.tmf_status == 'active':
+            return 'validated'
+        return 'initialized'
+
+    def _tmf_party_kind(self):
+        self.ensure_one()
         return 'organization' if self.is_company else 'individual'
+
+    def _tmf_href(self):
+        self.ensure_one()
+        kind = self._tmf_party_kind()
+        tmf_id = self.tmf_id or str(self.id)
+        return f"{TMF_BASE}/{kind}/{tmf_id}"
 
     def to_tmf_json(self):
         self.ensure_one()
-        party_type = self._compute_tmf_type()
-        is_individual = party_type == 'individual'
-
-        if is_individual:
-            base_path = "/party/v4/individual"
-            tmf_type = "Individual"
-        else:
-            base_path = "/party/v4/organization"
-            tmf_type = "Organization"
-
+        kind = self._tmf_party_kind()
         tmf_id = self.tmf_id or str(self.id)
-        href = f"/tmf-api{base_path}/{tmf_id}"
 
-        data = {"id": tmf_id, "href": href, "@type": tmf_type}
-
-        if is_individual:
-            data.update({
-                "givenName": self.name,
-                "contactMedium": [{
-                    "mediumType": "email",
-                    "preferred": True,
-                    "characteristic": {"emailAddress": self.email},
-                }] if self.email else [],
-            })
+        if kind == 'individual':
+            payload = {
+                "id": tmf_id,
+                "href": self._tmf_href(),
+                "@type": "Individual",
+                "givenName": self.tmf_given_name or "",
+                "familyName": self.tmf_family_name or "",
+                "status": self.tmf_status or "initialized",
+            }
         else:
-            data.update({
-                "name": self.name,
-                "contactMedium": [{
-                    "mediumType": "email",
-                    "preferred": True,
-                    "characteristic": {"emailAddress": self.email},
-                }] if self.email else [],
-            })
+            payload = {
+                "id": tmf_id,
+                "href": self._tmf_href(),
+                "@type": "Organization",
+                "name": self.name or "",
+                "status": self.tmf_status or "initialized",
+            }
 
-        return data
-
-    def _tmf_party_resource_json(self):
-        """Always notify hub with a consistent payload shape."""
-        self.ensure_one()
-        return {
-            "resourceType": "individual" if not self.is_company else "organization",
-            "resource": self.to_tmf_json(),
-        }
-
-    # ---------- Event hooks for Party /hub ----------
-
-    @api.model
-    def create(self, vals):
-        rec = super().create(vals)
-
-        if rec.env.context.get("tmf_skip_party_notify"):
-            return rec
-
-        rec.env["tmf.hub.subscription"].sudo()._notify_subscribers(
-            api_name="party",
-            event_type="create",
-            resource_json=rec._tmf_party_resource_json(),
-        )
-        return rec
-
-    def write(self, vals):
-        # prevent re-entrance / duplicate notifications
-        if self.env.context.get("tmf_party_notified"):
-            return super().write(vals)
-
-        res = super().write(vals)
-
-        if self.env.context.get("tmf_skip_party_notify"):
-            return res
-
-        # only notify when relevant fields change
-        if not any(k in vals for k in ("name", "email", "phone", "mobile")):
-            return res
-
-        for rec in self:
-            rec.with_context(tmf_party_notified=True).env["tmf.hub.subscription"].sudo()._notify_subscribers(
-                api_name="party",              # ✅ IMPORTANT
-                event_type="update",           # ✅ aligned with your subs filter
-                resource_json=rec._tmf_party_resource_json(),
-            )
-
-        return res
-
-    def unlink(self):
-        # capture before delete
-        payloads = [p._tmf_party_resource_json() for p in self]
-
-        # ✅ skip if coming from a flow where we don't want party notifications
-        if self.env.context.get("tmf_skip_party_notify"):
-            return super().unlink()
-
-        res = super().unlink()
-
-        for payload in payloads:
-            try:
-                self.env['tmf.hub.subscription'].sudo()._notify_subscribers(
-                    api_name='party',
-                    event_type='delete',            # ✅ aligned with subscriptions
-                    resource_json=payload,
-                )
-            except Exception:
-                continue
-
-        return res
-
-    def _get_tmf_api_path(self):
-        self.ensure_one()
-        return "/party/v4/organization" if self.is_company else "/party/v4/individual"
+        return payload

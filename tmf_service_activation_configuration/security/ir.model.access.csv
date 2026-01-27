@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf640_service,access_tmf640_service,model_tmf640_service,,1,1,1,1
+access_tmf640_monitor,access_tmf640_monitor,model_tmf640_monitor,,1,1,1,1
+access_tmf640_hub,access_tmf640_hub,model_tmf640_hub,,1,1,1,1

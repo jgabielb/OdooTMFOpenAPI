@@ -1,17 +1,20 @@
+# tmf_service.py
 from odoo import api, fields, models
+from odoo.http import request
 
 
 class TMFService(models.Model):
     _name = 'tmf.service'
-    _description = 'TMF Customer Service (Installed Base)'
+    _description = 'TMF638 Service (Service Inventory)'
     _inherit = ['tmf.model.mixin']
 
     name = fields.Char(string="Service Name", required=True)
+    description = fields.Char(string="Description")  # ✅ add this to avoid AttributeError
 
     # Who owns this service?
     partner_id = fields.Many2one('res.partner', string="Customer", required=True)
 
-    # What kind of service is it?
+    # Service specification
     product_specification_id = fields.Many2one(
         'tmf.product.specification',
         string="Specification"
@@ -23,90 +26,148 @@ class TMFService(models.Model):
         string="Origin Order Line"
     )
 
-    start_date = fields.Datetime(
-        string="Start Date",
-        default=fields.Datetime.now
+    # TMF fields
+    service_type = fields.Char(string="Service Type")  # optional
+    category = fields.Selection(
+        [('CFS', 'CustomerFacingService'), ('RFS', 'ResourceFacingService')],
+        default='CFS',
+        string="Category (CFS/RFS)"
     )
 
-    # TMF Lifecycle
     state = fields.Selection([
-        ('feasibilityChecked', 'Feasibility Checked'),
+        ('feasabilityChecked', 'Feasability Checked'),
         ('designed', 'Designed'),
         ('reserved', 'Reserved'),
         ('inactive', 'Inactive'),
         ('active', 'Active'),
-        ('terminated', 'Terminated')
-    ], default='inactive', string="Status")
+        ('suspended', 'Suspended'),
+        ('terminated', 'Terminated'),
+    ], default='inactive', string="State")
 
-    # Link Service -> Resource (One Service uses One Main Resource for now)
+    operating_status = fields.Selection([
+        ('pending', 'Pending'),
+        ('configured', 'Configured'),
+        ('starting', 'Starting'),
+        ('running', 'Running'),
+        ('degraded', 'Degraded'),
+        ('failed', 'Failed'),
+        ('limited', 'Limited'),
+        ('stopping', 'Stopping'),
+        ('stopped', 'Stopped'),
+        ('unknown', 'Unknown'),
+    ], default='unknown', string="Operating Status")
+
+    is_service_enabled = fields.Boolean(default=True, string="Is Service Enabled")
+    has_started = fields.Boolean(default=False, string="Has Started")
+    start_mode = fields.Selection([
+        ('0', 'Unknown'),
+        ('1', 'Automatically by the managed environment'),
+        ('2', 'Automatically by the owning device'),
+        ('3', 'Manually by the Provider'),
+        ('4', 'Manually by the Customer'),
+        ('5', 'Any of the above'),
+    ], default='1', string="Start Mode")
+    is_stateful = fields.Boolean(default=True, string="Is Stateful")
+
+    service_date = fields.Datetime(string="Service Date", default=fields.Datetime.now)
+    start_date = fields.Datetime(string="Start Date", default=fields.Datetime.now)
+    end_date = fields.Datetime(string="End Date")
+
     resource_id = fields.Many2one(
-        'stock.lot',   # or 'stock.production.lot' in your DB
+        'stock.lot',
         string="Supporting Resource",
-        help="The physical device (SN) supporting this service"
+        help="The physical/virtual resource supporting this service"
     )
 
-    # ---------- TMF639 base path ----------
-
     def _get_tmf_api_path(self):
-        return "/serviceInventory/v4/service"
+        return "/serviceInventoryManagement/v5/service"
 
-    # ---------- TMF639 JSON representation ----------
+    def _abs_href(self, path: str) -> str:
+        try:
+            base = request.httprequest.host_url.rstrip("/")
+            return f"{base}{path}"
+        except Exception:
+            return path
 
     def to_tmf_json(self):
-        """Return TMF639 Service representation."""
         self.ensure_one()
 
-        href = getattr(self, 'tmf_href', None)
-        if not href:
-            href = f"/tmf-api{self._get_tmf_api_path()}/{self.tmf_id or self.id}"
+        sid = self.tmf_id or str(self.id)
+        href_path = f"/tmf-api{self._get_tmf_api_path()}/{sid}"
+        href = self._abs_href(href_path)
 
         data = {
-            "id": self.tmf_id or str(self.id),
+            "id": sid,
             "href": href,
-            "name": self.name,
-            "description": self.name,
             "@type": "Service",
+
+            "name": self.name or "",
+            "description": (self.description or self.name or ""),
+
             "state": self.state or "inactive",
+            "operatingStatus": self.operating_status or "unknown",
+
+            "category": self.category or "CFS",
+            "serviceType": self.service_type or None,
+
+            "isServiceEnabled": bool(self.is_service_enabled),
+            "hasStarted": bool(self.has_started),
+            "startMode": self.start_mode or "1",
+            "isStateful": bool(self.is_stateful),
+
+            "serviceDate": self.service_date.isoformat() if self.service_date else None,
             "startDate": self.start_date.isoformat() if self.start_date else None,
+            "endDate": self.end_date.isoformat() if self.end_date else None,
         }
 
-        # relatedParty (Customer)
         if self.partner_id:
+            party_id = self.partner_id.tmf_id or str(self.partner_id.id)
+            party_href = f"/tmf-api/partyManagement/v5/party/{party_id}"
+            party_ref = {
+                "id": party_id,
+                "href": self._abs_href(party_href),
+                "name": self.partner_id.name or "",
+                "@type": "PartyRef",
+                "@referredType": "Organization" if self.partner_id.is_company else "Individual",
+            }
             data["relatedParty"] = [{
-                "id": self.partner_id.tmf_id or str(self.partner_id.id),
-                "name": self.partner_id.name,
-                "role": "Customer",
-                "@referredType": "Individual" if not self.partner_id.is_company else "Organization",
+                "role": "customer",
+                "partyOrPartyRole": party_ref,
+                "@type": "RelatedPartyRefOrPartyRoleRef",
             }]
 
-        # serviceSpecification
         if self.product_specification_id:
+            spec_id = self.product_specification_id.tmf_id or str(self.product_specification_id.id)
+            spec_href = f"/tmf-api/serviceCatalogManagement/v5/serviceSpecification/{spec_id}"
             data["serviceSpecification"] = {
-                "id": self.product_specification_id.tmf_id
-                       or str(self.product_specification_id.id),
-                "name": self.product_specification_id.name,
+                "id": spec_id,
+                "href": self._abs_href(spec_href),
+                "name": self.product_specification_id.name or "",
+                "version": getattr(self.product_specification_id, "version", None) or None,
+                "@type": "ServiceSpecificationRef",
                 "@referredType": "ServiceSpecification",
             }
 
-        # supportingResource from resource_id
         if self.resource_id:
+            rid = getattr(self.resource_id, "tmf_id", None) or str(self.resource_id.id)
+            r_href = f"/tmf-api/resourceInventoryManagement/v5/resource/{rid}"
             data["supportingResource"] = [{
-                "id": self.resource_id.tmf_id or str(self.resource_id.id),
-                "name": self.resource_id.name or self.resource_id.display_name,
+                "id": rid,
+                "href": self._abs_href(r_href),
+                "name": self.resource_id.name or self.resource_id.display_name or "",
+                "@type": "ResourceRef",
                 "@referredType": "Resource",
             }]
 
-        return data
-
-    # ---------- Event hooks for /hub (TMF639 Service Inventory) ----------
+        return {k: v for k, v in data.items() if v is not None}
 
     @api.model
     def create(self, vals):
         rec = super().create(vals)
         try:
             rec.env['tmf.hub.subscription']._notify_subscribers(
-                api_name='service',          # <-- matches what you'll use in /hub
-                event_type='create',         # <-- matches selection on tmf.hub.subscription
+                api_name='service',
+                event_type='create',
                 resource_json=rec.to_tmf_json(),
             )
         except Exception:

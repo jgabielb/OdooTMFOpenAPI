@@ -1,10 +1,10 @@
-# tmf_resource_inventory/models/stock_lot.py
+# stock_lot.py (PATCH THIS FILE)
 
 from odoo import api, fields, models
 
 
 class StockLot(models.Model):
-    _name = 'stock.lot' 
+    _name = 'stock.lot'
     _inherit = ['stock.lot', 'tmf.model.mixin']
 
     resource_status = fields.Selection([
@@ -14,46 +14,74 @@ class StockLot(models.Model):
         ('retired', 'Retired'),
     ], string="Resource Status", default='installed')
 
+    # Optional: map these if you later add real fields
+    administrative_state = fields.Selection([
+        ('locked', 'Locked'),
+        ('unlocked', 'Unlocked'),
+        ('shutdown', 'Shutdown'),
+    ], default='unlocked')
+
+    operational_state = fields.Selection([
+        ('enable', 'Enable'),
+        ('disable', 'Disable'),
+    ], default='enable')
+
+    usage_state = fields.Selection([
+        ('idle', 'Idle'),
+        ('active', 'Active'),
+        ('busy', 'Busy'),
+    ], default='idle')
+
     def _get_tmf_api_path(self):
-        # base path for Resource Inventory
-        return "/resourceInventory/v4/resource"
+        return "/resourceInventoryManagement/v4/resource"
 
     def to_tmf_json(self):
-        """Return TMF638 Resource representation."""
         self.ensure_one()
 
         href = getattr(self, 'tmf_href', None)
         if not href:
             href = f"/tmf-api{self._get_tmf_api_path()}/{self.tmf_id or self.id}"
 
+        spec = None
+        if self.product_id:
+            spec_id = self.product_id.tmf_id or str(self.product_id.id)
+            spec = {
+                "id": spec_id,
+                "name": self.product_id.name,
+                # Provide href as shown in examples :contentReference[oaicite:16]{index=16}
+                "href": f"/tmf-api/resourceCatalogManagement/v4/resourceSpecification/{spec_id}",
+                "@referredType": "PhysicalResourceSpecification",
+            }
+
         return {
             "id": self.tmf_id or str(self.id),
             "href": href,
             "name": self.name or self.display_name,
-            "@type": "Resource",
+
+            # Polymorphism/extension meta-attributes :contentReference[oaicite:17]{index=17}
+            "@type": "Equipment",
+            "@baseType": "Resource",
+
             "resourceStatus": self.resource_status or "installed",
-            "serialNumber": self.name or self.ref,  # ajusta si tienes otro campo SN
-            "resourceSpecification": {
-                "id": self.product_id.tmf_id or str(self.product_id.id),
-                "name": self.product_id.name,
-                "@referredType": "ResourceSpecification",
-            } if self.product_id else None,
+            "administrativeState": self.administrative_state or "unlocked",
+            "operationalState": self.operational_state or "enable",
+            "usageState": self.usage_state or "idle",
+
+            "serialNumber": self.name or self.ref,
+            "resourceSpecification": spec,
         }
 
-    # ---------- Event hooks for /hub (TMF638) ----------
-
+    # ---------- Event hooks for /hub ----------
     @api.model
     def create(self, vals):
         rec = super().create(vals)
         try:
             rec.env['tmf.hub.subscription'].sudo()._notify_subscribers(
                 api_name='resourceInventory',
-                event_type='create',  # interno: create
+                event_type='create',
                 resource_json=rec.to_tmf_json(),
             )
         except Exception:
-            # opcional: loggear en vez de silenciar
-            # _logger.exception("Resource create event failed")
             pass
         return rec
 
@@ -63,26 +91,23 @@ class StockLot(models.Model):
             try:
                 rec.env['tmf.hub.subscription'].sudo()._notify_subscribers(
                     api_name='resourceInventory',
-                    event_type='update',  # interno: update
+                    event_type='update',
                     resource_json=rec.to_tmf_json(),
                 )
             except Exception:
-                # _logger.exception("Resource update event failed")
                 continue
         return res
 
     def unlink(self):
-        # Guardamos el JSON antes de borrar
         payloads = [r.to_tmf_json() for r in self]
         res = super().unlink()
         for resource in payloads:
             try:
                 self.env['tmf.hub.subscription'].sudo()._notify_subscribers(
                     api_name='resourceInventory',
-                    event_type='delete',  # interno: delete
+                    event_type='delete',
                     resource_json=resource,
                 )
             except Exception:
-                # _logger.exception("Resource delete event failed")
                 continue
         return res
