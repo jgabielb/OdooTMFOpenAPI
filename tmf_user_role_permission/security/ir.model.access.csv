@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf672_permission,access_tmf672_permission,model_tmf672_permission,,1,1,1,1
+access_tmf672_user_role,access_tmf672_user_role,model_tmf672_user_role,,1,1,1,1

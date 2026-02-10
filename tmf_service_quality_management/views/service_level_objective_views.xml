@@ -1,0 +1,64 @@
+<odoo>
+    <record id="tmf657_slo_tree" model="ir.ui.view">
+        <field name="name">tmf.service.level.objective.tree</field>
+        <field name="model">tmf.service.level.objective</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="conformance_comparator"/>
+                <field name="conformance_target"/>
+                <field name="threshold_target"/>
+                <field name="tolerance_target"/>
+                <field name="grace_times"/>
+            </list>
+        </field>
+    </record>
+
+
+    <record id="tmf657_slo_form" model="ir.ui.view">
+        <field name="name">tmf.service.level.objective.form</field>
+        <field name="model">tmf.service.level.objective</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="href"/>
+                        <field name="name"/>
+                    </group>
+
+                    <group string="Conformance">
+                        <field name="conformance_comparator"/>
+                        <field name="conformance_target"/>
+                        <field name="conformance_period_json"/>
+                        <field name="grace_times"/>
+                    </group>
+
+                    <group string="Threshold / Tolerance">
+                        <field name="threshold_target"/>
+                        <field name="tolerance_target"/>
+                        <field name="tolerance_period_json"/>
+                    </group>
+
+                    <group string="Parameter / Consequence">
+                        <field name="service_level_objective_parameter_json"/>
+                        <field name="service_level_objective_consequence_json"/>
+                    </group>
+
+                    <group string="Validity / Debug">
+                        <field name="valid_for_json"/>
+                        <field name="raw_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="tmf657_slo_action" model="ir.actions.act_window">
+        <field name="name">Service Level Objectives</field>
+        <field name="res_model">tmf.service.level.objective</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

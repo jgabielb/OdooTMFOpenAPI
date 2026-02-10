@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_tmf672_permission_list" model="ir.ui.view">
+    <field name="name">tmf672.permission.list</field>
+    <field name="model">tmf672.permission</field>
+    <field name="arch" type="xml">
+      <list string="TMF672 Permissions">
+        <field name="id"/>
+        <field name="tmf_type"/>
+        <field name="creation_date"/>
+        <field name="valid_for_start"/>
+        <field name="valid_for_end"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf672_permission_form" model="ir.ui.view">
+    <field name="name">tmf672.permission.form</field>
+    <field name="model">tmf672.permission</field>
+    <field name="arch" type="xml">
+      <form string="TMF672 Permission">
+        <sheet>
+          <group>
+            <field name="tmf_type"/>
+            <field name="base_type"/>
+            <field name="schema_location"/>
+            <field name="href"/>
+            <field name="creation_date"/>
+            <field name="description"/>
+          </group>
+          <group string="validFor">
+            <field name="valid_for_start"/>
+            <field name="valid_for_end"/>
+          </group>
+          <group string="Relationships / Collections">
+            <field name="granter_json"/>
+            <field name="user_json"/>
+            <field name="asset_user_role_json"/>
+            <field name="privilege_json"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>

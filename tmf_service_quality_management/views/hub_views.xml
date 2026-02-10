@@ -1,0 +1,36 @@
+<odoo>
+    <record id="tmf657_hub_tree" model="ir.ui.view">
+        <field name="name">tmf657.hub.subscription.tree</field>
+        <field name="model">tmf657.hub.subscription</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="id"/>
+                <field name="callback"/>
+                <field name="query"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="tmf657_hub_form" model="ir.ui.view">
+        <field name="name">tmf657.hub.subscription.form</field>
+        <field name="model">tmf657.hub.subscription</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="id"/>
+                        <field name="callback"/>
+                        <field name="query"/>
+                        <field name="headers_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="tmf657_hub_action" model="ir.actions.act_window">
+        <field name="name">Hub Subscriptions</field>
+        <field name="res_model">tmf657.hub.subscription</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_partnership_specification_user,tmf.partnership.specification,model_tmf_partnership_specification,base.group_user,1,1,1,1
+access_tmf_partnership_user,tmf.partnership,model_tmf_partnership,base.group_user,1,1,1,1
+access_tmf668_hub_subscription_user,tmf668.hub.subscription,model_tmf668_hub_subscription,base.group_user,1,1,1,1

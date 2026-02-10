@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf654_bucket,access_tmf654_bucket,model_tmf654_bucket,,1,1,1,1
+access_tmf654_topup,access_tmf654_topup,model_tmf654_topup_balance,,1,1,1,1
+access_tmf654_adjust,access_tmf654_adjust,model_tmf654_adjust_balance,,1,1,1,1
+access_tmf654_transfer,access_tmf654_transfer,model_tmf654_transfer_balance,,1,1,1,1
+access_tmf654_reserve,access_tmf654_reserve,model_tmf654_reserve_balance,,1,1,1,1

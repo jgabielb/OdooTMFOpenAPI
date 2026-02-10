@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Tree -->
+  <record id="view_tmf_change_request_tree" model="ir.ui.view">
+    <field name="name">tmf.change.request.tree</field>
+    <field name="model">tmf.change.request</field>
+    <field name="arch" type="xml">
+      <list string="Change Requests">
+        <field name="tmf_id"/>
+        <field name="priority"/>
+        <field name="request_type"/>
+        <field name="status"/>
+        <field name="planned_start_time"/>
+        <field name="planned_end_time"/>
+        <field name="last_update_date"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Form -->
+  <record id="view_tmf_change_request_form" model="ir.ui.view">
+    <field name="name">tmf.change.request.form</field>
+    <field name="model">tmf.change.request</field>
+    <field name="arch" type="xml">
+      <form string="Change Request">
+        <sheet>
+          <group>
+            <group string="Identification">
+              <field name="tmf_id"/>
+              <field name="href"/>
+              <field name="channel"/>
+            </group>
+
+            <group string="Planning">
+              <field name="priority"/>
+              <field name="request_type"/>
+              <field name="planned_start_time"/>
+              <field name="planned_end_time"/>
+              <field name="scheduled_date"/>
+            </group>
+          </group>
+
+          <group string="Status">
+            <group>
+              <field name="status"/>
+              <field name="status_change_date"/>
+              <field name="status_change_reason"/>
+            </group>
+            <group>
+              <field name="request_date"/>
+              <field name="last_update_date"/>
+              <field name="completion_date"/>
+            </group>
+          </group>
+
+          <notebook>
+            <page string="Description">
+              <group>
+                <field name="description"/>
+                <field name="impact"/>
+                <field name="risk"/>
+                <field name="risk_mitigation_plan"/>
+                <field name="risk_value"/>
+              </group>
+            </page>
+
+            <page string="Entities (JSON)">
+              <group>
+                <field name="specification_json" widget="text"/>
+                <field name="target_entity_json" widget="text"/>
+                <field name="impact_entity_json" widget="text"/>
+              </group>
+            </page>
+
+            <page string="Parties and References (JSON)">
+              <group>
+                <field name="related_party_json" widget="text"/>
+                <field name="external_reference_json" widget="text"/>
+              </group>
+            </page>
+
+            <page string="Other (JSON)">
+              <group>
+                <field name="attachment_json" widget="text"/>
+                <field name="note_json" widget="text"/>
+                <field name="work_log_json" widget="text"/>
+                <field name="resolution_json" widget="text"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_tmf_change_request" model="ir.actions.act_window">
+    <field name="name">Change Requests</field>
+    <field name="res_model">tmf.change.request</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <!-- Menu (under a TMF root menu if you have one; otherwise this creates its own) -->
+  <menuitem id="menu_tmf_change_management_root" name="TMF Change Management" sequence="80"/>
+  <menuitem id="menu_tmf_change_request"
+            name="Change Requests"
+            parent="menu_tmf_change_management_root"
+            action="action_tmf_change_request"
+            sequence="10"/>
+</odoo>

@@ -1,0 +1,43 @@
+<odoo>
+    <record id="tmf657_sls_tree" model="ir.ui.view">
+        <field name="name">tmf.service.level.specification.tree</field>
+        <field name="model">tmf.service.level.specification</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="tmf657_sls_form" model="ir.ui.view">
+        <field name="name">tmf.service.level.specification.form</field>
+        <field name="model">tmf.service.level.specification</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="href"/>
+                        <field name="name"/>
+                        <field name="description"/>
+                    </group>
+                    <group string="Relations">
+                        <field name="related_service_level_objective_json"/>
+                        <field name="valid_for_json"/>
+                    </group>
+                    <group string="Raw">
+                        <field name="raw_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="tmf657_sls_action" model="ir.actions.act_window">
+        <field name="name">Service Level Specifications</field>
+        <field name="res_model">tmf.service.level.specification</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

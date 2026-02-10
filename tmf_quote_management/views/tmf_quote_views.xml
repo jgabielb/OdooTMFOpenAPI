@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_tmf_quote_tree" model="ir.ui.view">
+    <field name="name">tmf.quote.tree</field>
+    <field name="model">tmf.quote</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_external_id"/>
+        <field name="category"/>
+        <field name="state"/>
+        <field name="version"/>
+        <field name="quote_date"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_quote_form" model="ir.ui.view">
+    <field name="name">tmf.quote.form</field>
+    <field name="model">tmf.quote</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id" readonly="1"/>
+            <field name="tmf_external_id"/>
+            <field name="category"/>
+            <field name="state"/>
+            <field name="version"/>
+          </group>
+
+          <notebook>
+            <page string="Quote Items">
+              <field name="quote_item_ids">
+                <list editable="bottom">
+                  <field name="item_id"/>
+                  <field name="action"/>
+                  <field name="quantity"/>
+                </list>
+              </field>
+            </page>
+
+            <page string="Raw JSON">
+              <group>
+                <field name="related_party_json"/>
+                <field name="agreement_json"/>
+                <field name="billing_account_json"/>
+                <field name="quote_total_price_json"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>

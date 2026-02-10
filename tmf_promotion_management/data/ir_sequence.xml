@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="seq_tmf_promotion" model="ir.sequence">
+        <field name="name">TMF Promotion</field>
+        <field name="code">tmf.promotion</field>
+        <field name="prefix">PROMO_</field>
+        <field name="padding">6</field>
+    </record>
+</odoo>

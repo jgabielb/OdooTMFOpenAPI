@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tmf_payment_method_tree" model="ir.ui.view">
+        <field name="name">tmf.payment.method.tree</field>
+        <field name="model">tmf.payment.method</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="tmf_type"/>
+                <field name="status"/>
+                <field name="is_preferred"/>
+                <field name="status_date"/>
+                <field name="valid_for_start"/>
+                <field name="valid_for_end"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_payment_method_form" model="ir.ui.view">
+        <field name="name">tmf.payment.method.form</field>
+        <field name="model">tmf.payment.method</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id" readonly="1"/>
+                        <field name="href" readonly="1"/>
+                        <field name="base_type"/>
+                        <field name="schema_location"/>
+                        <field name="tmf_type"/>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="is_preferred"/>
+                    </group>
+
+                    <group string="Status">
+                        <field name="status"/>
+                        <field name="status_date"/>
+                        <field name="status_reason"/>
+                    </group>
+
+                    <group string="Validity">
+                        <field name="valid_for_start"/>
+                        <field name="valid_for_end"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Account">
+                            <field name="account_json" widget="text"/>
+                        </page>
+                        <page string="Related Party">
+                            <field name="related_party_json" widget="text"/>
+                        </page>
+                        <page string="Related Place">
+                            <field name="related_place_json" widget="text"/>
+                        </page>
+                        <page string="Subtype / Extra Attributes">
+                            <field name="extra_attrs_json" widget="text"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_payment_method" model="ir.actions.act_window">
+        <field name="name">Payment Methods (TMF670)</field>
+        <field name="res_model">tmf.payment.method</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_payment_method_root" name="TMF / Payment Method" sequence="60"/>
+    <menuitem id="menu_tmf_payment_method" name="Payment Methods" parent="menu_tmf_payment_method_root"
+              action="action_tmf_payment_method" sequence="10"/>
+</odoo>

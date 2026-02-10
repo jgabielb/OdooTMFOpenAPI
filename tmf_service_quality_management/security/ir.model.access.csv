@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_slo,access_tmf_slo,model_tmf_service_level_objective,base.group_user,1,1,1,1
+access_tmf_sls,access_tmf_sls,model_tmf_service_level_specification,base.group_user,1,1,1,1
+access_tmf657_hub,access_tmf657_hub,model_tmf657_hub_subscription,base.group_user,1,1,1,1

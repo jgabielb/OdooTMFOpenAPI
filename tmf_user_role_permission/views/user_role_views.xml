@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_tmf672_user_role_list" model="ir.ui.view">
+    <field name="name">tmf672.user.role.list</field>
+    <field name="model">tmf672.user.role</field>
+    <field name="arch" type="xml">
+      <list string="TMF672 UserRoles">
+        <field name="id"/>
+        <field name="tmf_type"/>
+        <field name="involvement_role"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf672_user_role_form" model="ir.ui.view">
+    <field name="name">tmf672.user.role.form</field>
+    <field name="model">tmf672.user.role</field>
+    <field name="arch" type="xml">
+      <form string="TMF672 UserRole">
+        <sheet>
+          <group>
+            <field name="tmf_type"/>
+            <field name="base_type"/>
+            <field name="schema_location"/>
+            <field name="href"/>
+            <field name="involvement_role"/>
+          </group>
+          <group string="Entitlements">
+            <field name="entitlement_json"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>

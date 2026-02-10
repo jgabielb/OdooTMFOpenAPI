@@ -1,0 +1,93 @@
+<odoo>
+    <!-- PartnershipSpecification -->
+    <record id="view_tmf_partnership_specification_tree" model="ir.ui.view">
+        <field name="name">tmf.partnership.specification.tree</field>
+        <field name="model">tmf.partnership.specification</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="href"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_partnership_specification_form" model="ir.ui.view">
+        <field name="name">tmf.partnership.specification.form</field>
+        <field name="model">tmf.partnership.specification</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="name"/>
+                        <field name="href"/>
+                        <field name="description"/>
+                        <field name="role_specification_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Partnership -->
+    <record id="view_tmf_partnership_tree" model="ir.ui.view">
+        <field name="name">tmf.partnership.tree</field>
+        <field name="model">tmf.partnership</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="href"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_partnership_form" model="ir.ui.view">
+        <field name="name">tmf.partnership.form</field>
+        <field name="model">tmf.partnership</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="name"/>
+                        <field name="href"/>
+                        <field name="description"/>
+                        <field name="specification_json"/>
+                        <field name="partner_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Hub subscription -->
+    <record id="view_tmf668_hub_tree" model="ir.ui.view">
+        <field name="name">tmf668.hub.subscription.tree</field>
+        <field name="model">tmf668.hub.subscription</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="callback"/>
+                <field name="query"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf668_hub_form" model="ir.ui.view">
+        <field name="name">tmf668.hub.subscription.form</field>
+        <field name="model">tmf668.hub.subscription</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="callback"/>
+                        <field name="query"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
