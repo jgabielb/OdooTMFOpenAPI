@@ -1,58 +1,101 @@
 <odoo>
-    <record id="view_tmf_usage_consumption_form" model="ir.ui.view">
-        <field name="name">tmf.usage.consumption.form</field>
-        <field name="model">tmf.usage.consumption</field>
-        <field name="arch" type="xml">
-            <form>
-                <sheet>
-                    <group>
-                <field name="creation_date"/>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="name"/>
-                <field name="bucket_ref_or_value"/>
-                <field name="logical_resource"/>
-                <field name="party_account"/>
-                <field name="product"/>
-                <field name="related_party"/>
-                <field name="service"/>
-                <field name="state"/>
-                <field name="valid_period"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
+  <!-- QueryUsageConsumption -->
+  <record id="view_tmf_query_usage_consumption_form" model="ir.ui.view">
+    <field name="name">tmf.query.usage.consumption.form</field>
+    <field name="model">tmf.query.usage.consumption</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id" readonly="1"/>
+            <field name="href" readonly="1"/>
+            <field name="tmf_type"/>
+          </group>
+          <notebook>
+            <page string="Payload">
+              <group>
+                <field name="usage_consumption_json"/>
+                <field name="party_account_json"/>
+                <field name="related_party_json"/>
+                <field name="search_criteria_json"/>
+                <field name="error_message_json"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
 
-    <record id="view_tmf_usage_consumption_tree" model="ir.ui.view">
-        <field name="name">tmf.usage.consumption.tree</field>
-        <field name="model">tmf.usage.consumption</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="creation_date"/>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="name"/>
-                <field name="bucket_ref_or_value"/>
-                <field name="logical_resource"/>
-                <field name="party_account"/>
-                <field name="product"/>
-                <field name="related_party"/>
-                <field name="service"/>
-                <field name="state"/>
-                <field name="valid_period"/>
-            </list>
-        </field>
-    </record>
+  <record id="view_tmf_query_usage_consumption_list" model="ir.ui.view">
+    <field name="name">tmf.query.usage.consumption.list</field>
+    <field name="model">tmf.query.usage.consumption</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="href"/>
+      </list>
+    </field>
+  </record>
 
-    <record id="action_tmf_usage_consumption" model="ir.actions.act_window">
-        <field name="name">UsageConsumption</field>
-        <field name="res_model">tmf.usage.consumption</field>
-        <field name="view_mode">list,form</field>
-    </record>
+  <record id="action_tmf_query_usage_consumption" model="ir.actions.act_window">
+    <field name="name">QueryUsageConsumption</field>
+    <field name="res_model">tmf.query.usage.consumption</field>
+    <field name="view_mode">list,form</field>
+  </record>
 
-    <menuitem id="menu_tmf_usage_consumption"
-              name="UsageConsumption"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_usage_consumption"/>
+  <!-- UsageConsumptionReport -->
+  <record id="view_tmf_usage_consumption_report_form" model="ir.ui.view">
+    <field name="name">tmf.usage.consumption.report.form</field>
+    <field name="model">tmf.usage.consumption.report</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id" readonly="1"/>
+            <field name="href" readonly="1"/>
+            <field name="tmf_type"/>
+          </group>
+          <group>
+            <field name="bucket_json"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="view_tmf_usage_consumption_report_list" model="ir.ui.view">
+    <field name="name">tmf.usage.consumption.report.list</field>
+    <field name="model">tmf.usage.consumption.report</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="href"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="action_tmf_usage_consumption_report" model="ir.actions.act_window">
+    <field name="name">UsageConsumptionReport</field>
+    <field name="res_model">tmf.usage.consumption.report</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <!-- Menus -->
+  <menuitem id="menu_tmf_usage_consumption_root"
+            name="Usage Consumption (TMF677)"
+            parent="tmf_product_catalog.menu_tmf_root"
+            sequence="50"/>
+
+  <menuitem id="menu_tmf_query_usage_consumption"
+            name="QueryUsageConsumption"
+            parent="menu_tmf_usage_consumption_root"
+            action="action_tmf_query_usage_consumption"/>
+
+  <menuitem id="menu_tmf_usage_consumption_report"
+            name="UsageConsumptionReport"
+            parent="menu_tmf_usage_consumption_root"
+            action="action_tmf_usage_consumption_report"/>
 </odoo>

@@ -6,19 +6,31 @@
             <form>
                 <sheet>
                     <group>
-                <field name="bbox"/>
+                        <field name="name"/>
+                        <field name="tmf_type"/>
+                        <field name="geometry_type"/>
+                        <field name="accuracy"/>
+                        <field name="spatial_ref"/>
+                    </group>
+                    <group>
+                        <field name="geometry" widget="text"/>
+                        <field name="bbox"/>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="view_tmf_geographic_location_tree" model="ir.ui.view">
-        <field name="name">tmf.geographic.location.tree</field>
+    <record id="view_tmf_geographic_location_list" model="ir.ui.view">
+        <field name="name">tmf.geographic.location.list</field>
         <field name="model">tmf.geographic.location</field>
         <field name="arch" type="xml">
             <list>
-                <field name="bbox"/>
+                <field name="name"/>
+                <field name="tmf_type"/>
+                <field name="geometry_type"/>
+                <field name="spatial_ref"/>
+                <field name="accuracy"/>
             </list>
         </field>
     </record>

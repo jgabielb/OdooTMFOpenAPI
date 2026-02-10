@@ -1,81 +1,160 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
 import json
+import uuid
+from datetime import datetime
 
-class TMFModel(models.Model):
-    _name = 'tmf.usage.consumption'
-    _description = 'UsageConsumption'
-    _inherit = ['tmf.model.mixin']
+API_BASE = "/tmf-api/usageConsumptionManagement/v5"
 
-    creation_date = fields.Datetime(string="creationDate", help="Date and time of the request creation")
-    description = fields.Char(string="description", help="Free short text describing the usage consumption content")
-    last_update = fields.Datetime(string="lastUpdate", help="Date when the status was last changed")
-    name = fields.Char(string="name", help="Usage consumption name")
-    bucket_ref_or_value = fields.Char(string="bucketRefOrValue", help="Bucket(s) included in the offer or option subscribed.")
-    logical_resource = fields.Char(string="logicalResource", help="")
-    party_account = fields.Char(string="partyAccount", help="A reference to the account that owns the bucket")
-    product = fields.Char(string="product", help="")
-    related_party = fields.Char(string="relatedParty", help="Reference and role of the related parties for which the usage consumption is requested")
-    service = fields.Char(string="service", help="")
-    state = fields.Char(string="state", help="State of the report report defined in the state engine")
-    valid_period = fields.Char(string="validPeriod", help="Validity period")
+def _now_z():
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+def _as_dict(val):
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return None
+        try:
+            return json.loads(s)
+        except Exception:
+            return None
+    return None
+
+def _filter_top_level_fields(payload, fields_filter):
+    """
+    TMF677: attribute selection via ?fields= applies to first-level attributes.
+    We must always preserve 'href', 'id', and '@type' as these are critical identifiers.
+    """
+    if not fields_filter:
+        return payload
+    allowed = set([f.strip() for f in fields_filter.split(",") if f.strip()])
+    allowed.add("href")
+    allowed.add("id")
+    allowed.add("@type")
+    return {k: v for k, v in payload.items() if k in allowed}
+
+class TMFQueryUsageConsumption(models.Model):
+    _name = "tmf.query.usage.consumption"
+    _description = "QueryUsageConsumption"
+    _inherit = ["tmf.model.mixin"]
+
+    # Store whole TMF payload (except id/href/@type which we manage)
+    tmf_type = fields.Char(string="@type", default="QueryUsageConsumption", required=True)
+    usage_consumption_json = fields.Text(string="usageConsumption(JSON)")  # list of objects
+    party_account_json = fields.Text(string="partyAccount(JSON)")          # dict
+    related_party_json = fields.Text(string="relatedParty(JSON)")          # dict
+    search_criteria_json = fields.Text(string="searchCriteria(JSON)")      # dict
+    error_message_json = fields.Text(string="errorMessage(JSON)")          # dict
 
     def _get_tmf_api_path(self):
-        return "/usage_consumptionManagement/v4/UsageConsumption"
+        return f"{API_BASE}/queryUsageConsumption"
 
-    def to_tmf_json(self):
+    def to_tmf_json(self, fields_filter=None):
         self.ensure_one()
-        return {
+
+        out = {
             "id": self.tmf_id,
             "href": self.href,
-            "@type": "UsageConsumption",
-            "creationDate": self.creation_date.isoformat() if self.creation_date else None,
-            "description": self.description,
-            "lastUpdate": self.last_update.isoformat() if self.last_update else None,
-            "name": self.name,
-            "bucketRefOrValue": self.bucket_ref_or_value,
-            "logicalResource": self.logical_resource,
-            "partyAccount": self.party_account,
-            "product": self.product,
-            "relatedParty": self.related_party,
-            "service": self.service,
-            "state": self.state,
-            "validPeriod": self.valid_period,
-
+            "@type": "QueryUsageConsumption",
         }
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        recs = super().create(vals_list)
-        for rec in recs:
-            self._notify('usageConsumption', 'create', rec)
-        return recs
+        # 1. Handle usageConsumption as a list of UsageConsumptionReport items
+        uc_val = _as_dict(self.usage_consumption_json)
+        if uc_val is None:
+            uc_val = []
+        elif isinstance(uc_val, dict):
+            uc_val = [uc_val]
+        
+        # Ensure items in the list have correct type and id/href
+        out["usageConsumption"] = []
+        for item in uc_val:
+            if not isinstance(item, dict):
+                continue
+            # Ensure mandatory fields for the item
+            if not item.get("id"):
+                item["id"] = str(uuid.uuid4())
+            if not item.get("@type"):
+                item["@type"] = "UsageConsumptionReport"
+            if not item.get("href"):
+                item["href"] = f"{API_BASE}/usageConsumptionReport/{item['id']}"
+            out["usageConsumption"].append(item)
 
-    def write(self, vals):
-        res = super().write(vals)
-        for rec in self:
-            self._notify('usageConsumption', 'update', rec)
-        return res
+        # 2. Handle searchCriteria
+        sc = _as_dict(self.search_criteria_json)
+        # Default searchCriteria points to a report with the same ID
+        if sc is None:
+            sc = {
+                "id": self.tmf_id,
+                "@type": "UsageConsumptionReport",
+                "href": f"{API_BASE}/usageConsumptionReport/{self.tmf_id}"
+            }
+        else:
+            if not sc.get("id"):
+                sc["id"] = self.tmf_id
+            if not sc.get("@type"):
+                sc["@type"] = "UsageConsumptionReport"
+            if not sc.get("href"):
+                sc["href"] = f"{API_BASE}/usageConsumptionReport/{sc['id']}"
+        
+        out["searchCriteria"] = sc
 
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='usageConsumption',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
+        # 3. Optional fields
+        pa = _as_dict(self.party_account_json)
+        rp = _as_dict(self.related_party_json)
+        em = _as_dict(self.error_message_json)
 
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass
+        if pa is not None:
+            out["partyAccount"] = pa
+        if rp is not None:
+            out["relatedParty"] = rp
+        if em is not None:
+            out["errorMessage"] = em
+
+        return _filter_top_level_fields(out, fields_filter)
+
+
+class TMFUsageConsumptionReport(models.Model):
+    _name = "tmf.usage.consumption.report"
+    _description = "UsageConsumptionReport"
+    _inherit = ["tmf.model.mixin"]
+
+    tmf_type = fields.Char(string="@type", default="UsageConsumptionReport", required=True)
+    bucket_json = fields.Text(string="bucket(JSON)")
+
+    def _get_tmf_api_path(self):
+        return f"{API_BASE}/usageConsumptionReport"
+
+    def to_tmf_json(self, fields_filter=None):
+        self.ensure_one()
+        out = {
+            "id": self.tmf_id,
+            "href": self.href,
+            "@type": "UsageConsumptionReport",
+        }
+        
+        # Handle bucket as a List of BucketRefOrValue
+        b_val = _as_dict(self.bucket_json)
+        if b_val is not None:
+            # Spec expects a list. If we have a single dict, wrap it.
+            if isinstance(b_val, dict):
+                b_val = [b_val]
+            
+            if isinstance(b_val, list):
+                valid_buckets = []
+                for b in b_val:
+                    if not isinstance(b, dict):
+                        continue
+                    if not b.get("id"):
+                        b["id"] = str(uuid.uuid4())
+                    if not b.get("@type"):
+                        b["@type"] = "Bucket"
+                    if not b.get("href"):
+                        b["href"] = f"{API_BASE}/bucket/{b['id']}"
+                    valid_buckets.append(b)
+                out["bucket"] = valid_buckets
+
+        return _filter_top_level_fields(out, fields_filter)

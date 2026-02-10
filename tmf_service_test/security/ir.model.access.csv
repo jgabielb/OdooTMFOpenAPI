@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_service_test,tmf.service.test,model_tmf_service_test,base.group_user,1,1,1,1
+access_tmf_service_test_all,tmf.service.test all,model_tmf_service_test,,1,1,1,1
+access_tmf_service_test_spec_all,tmf.service.test.specification all,model_tmf_service_test_specification,,1,1,1,1

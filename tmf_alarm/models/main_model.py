@@ -1,108 +1,234 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
-import json
+import datetime
 
-class TMFModel(models.Model):
-    _name = 'tmf.alarm'
-    _description = 'Alarm'
-    _inherit = ['tmf.model.mixin']
 
-    ack_state = fields.Char(string="ackState", help="Provides the Acknowledgement State of the alarm (unacknowledged | acknowledged).")
-    ack_system_id = fields.Char(string="ackSystemId", help="Provides the name of the system that last changed the ackState of an alarm, i.e. acknowledged or una")
-    ack_user_id = fields.Char(string="ackUserId", help="Provides the id of the user who has last changed the ack state of the alarm, i.e. acknowledged or un")
-    alarm_changed_time = fields.Datetime(string="alarmChangedTime", help="Indicates the last date and time when the alarm is changed on the alarm-owning system. Any change to")
-    alarm_cleared_time = fields.Datetime(string="alarmClearedTime", help="Indicates the time (as a date + time) at which the alarm is cleared at the source. ")
-    alarm_details = fields.Char(string="alarmDetails", help="Contains further information on the alarm.")
-    alarm_escalation = fields.Boolean(string="alarmEscalation", help="Indicates if this alarm has been escalated or not. ")
-    alarm_raised_time = fields.Datetime(string="alarmRaisedTime", help="Indicates the time (as a date + time) at which the alarm occurred at its source.")
-    alarm_reporting_time = fields.Datetime(string="alarmReportingTime", help="Indicates the time (as a date + time) at which the alarm was reported by the owning OSS. It might be")
-    alarmed_object_type = fields.Char(string="alarmedObjectType", help="The type (class) of the managed object associated with the event.")
-    clear_system_id = fields.Char(string="clearSystemId", help="Provides the id of the system where the user who invoked the alarmCleared operation is located. ")
-    clear_user_id = fields.Char(string="clearUserId", help="Provides the id of the user who invoked the alarmCleared operation")
-    external_alarm_id = fields.Char(string="externalAlarmId", help="An identifier of the alarm in the source system.")
-    is_root_cause = fields.Boolean(string="isRootCause", help="Indicates whether the alarm is a root cause alarm.. ")
-    planned_outage_indicator = fields.Char(string="plannedOutageIndicator", help="Indicates that the Managed Object (related to this alarm) is in planned outage (in planned maintenan")
-    probable_cause = fields.Char(string="probableCause", help="Provides the probable cause of the alarm. The values are consistent with ITU-T Recommendation X.733 ")
-    proposed_repaired_actions = fields.Char(string="proposedRepairedActions", help="Indicates proposed repair actions, if known to the system emitting the alarm.")
-    reporting_system_id = fields.Char(string="reportingSystemId", help="Reporting system identity.")
-    service_affecting = fields.Boolean(string="serviceAffecting", help="Indicates whether the alarm affects service or not.")
-    source_system_id = fields.Char(string="sourceSystemId", help="Source system identity.")
-    specific_problem = fields.Char(string="specificProblem", help="Provides more specific information about the alarm.")
-    state = fields.Char(string="state", help="Defines the alarm state during its life cycle (raised | updated | cleared).")
-    affected_service = fields.Char(string="affectedService", help="")
-    alarm_type = fields.Char(string="alarmType", help="")
-    alarmed_object = fields.Char(string="alarmedObject", help="")
-    comment = fields.Char(string="comment", help="")
-    correlated_alarm = fields.Char(string="correlatedAlarm", help="")
-    crossed_threshold_information = fields.Char(string="crossedThresholdInformation", help="")
-    parent_alarm = fields.Char(string="parentAlarm", help="")
-    perceived_severity = fields.Char(string="perceivedSeverity", help="")
-    place = fields.Char(string="place", help="")
+ALARM_TYPE = [
+    ("communicationsAlarm", "communicationsAlarm"),
+    ("processingErrorAlarm", "processingErrorAlarm"),
+    ("environmentalAlarm", "environmentalAlarm"),
+    ("qualityOfServiceAlarm", "qualityOfServiceAlarm"),
+    ("equipmentAlarm", "equipmentAlarm"),
+    ("integrityViolation", "integrityViolation"),
+    ("operationalViolation", "operationalViolation"),
+    ("physicalViolation", "physicalViolation"),
+    ("securityService", "securityService"),
+    ("mechanismViolation", "mechanismViolation"),
+    ("timeDomainViolation", "timeDomainViolation"),
+]
 
+PERCEIVED_SEVERITY = [
+    ("critical", "critical"),
+    ("major", "major"),
+    ("minor", "minor"),
+    ("warning", "warning"),
+    ("indeterminate", "indeterminate"),
+    ("cleared", "cleared"),
+]
+
+ACK_STATE = [
+    ("unacknowledged", "unacknowledged"),
+    ("acknowledged", "acknowledged"),
+]
+
+PLANNED_OUTAGE = [
+    ("InService", "InService"),
+    ("OutOfService", "OutOfService"),
+]
+
+ALARM_STATE = [
+    ("raised", "raised"),
+    ("updated", "updated"),
+    ("cleared", "cleared"),
+]
+
+
+class TMFAlarm(models.Model):
+    _name = "tmf.alarm"
+    _description = "TMF642 Alarm"
+    _inherit = ["tmf.model.mixin"]
+
+    # ---- Enumerations / mandatory fields ----
+    ack_state = fields.Selection(ACK_STATE, string="ackState", default="unacknowledged")
+    alarm_type = fields.Selection(ALARM_TYPE, string="alarmType", required=True)
+    perceived_severity = fields.Selection(PERCEIVED_SEVERITY, string="perceivedSeverity", required=True)
+    planned_outage_indicator = fields.Selection(PLANNED_OUTAGE, string="plannedOutageIndicator")
+    state = fields.Selection(ALARM_STATE, string="state", required=True, default="raised")
+
+    probable_cause = fields.Char(string="probableCause", required=True)
+    source_system_id = fields.Char(string="sourceSystemId", required=True)
+    alarm_raised_time = fields.Datetime(string="alarmRaisedTime", required=True)
+
+    # ---- Other scalar fields ----
+    ack_system_id = fields.Char(string="ackSystemId")
+    ack_user_id = fields.Char(string="ackUserId")
+
+    alarm_changed_time = fields.Datetime(string="alarmChangedTime")
+    alarm_cleared_time = fields.Datetime(string="alarmClearedTime")
+    alarm_details = fields.Char(string="alarmDetails")
+    alarm_escalation = fields.Boolean(string="alarmEscalation")
+    alarm_reporting_time = fields.Datetime(string="alarmReportingTime")
+
+    alarmed_object_type = fields.Char(string="alarmedObjectType")
+    clear_system_id = fields.Char(string="clearSystemId")
+    clear_user_id = fields.Char(string="clearUserId")
+    external_alarm_id = fields.Char(string="externalAlarmId")
+    is_root_cause = fields.Boolean(string="isRootCause")
+    proposed_repaired_actions = fields.Char(string="proposedRepairedActions")
+    reporting_system_id = fields.Char(string="reportingSystemId")
+    service_affecting = fields.Boolean(string="serviceAffecting")
+    specific_problem = fields.Char(string="specificProblem")
+
+    # ---- Complex fields (store JSON) ----
+    affected_service = fields.Json(string="affectedService", default=list)  # [ServiceRef]
+    alarmed_object = fields.Json(string="alarmedObject")                    # AlarmedObjectRef
+    comment = fields.Json(string="comment", default=list)                   # [Comment]
+    correlated_alarm = fields.Json(string="correlatedAlarm", default=list)  # [AlarmRef]
+    crossed_threshold_information = fields.Json(string="crossedThresholdInformation")  # CrossedThresholdInformation
+    parent_alarm = fields.Json(string="parentAlarm", default=list)          # [AlarmRef]
+    place = fields.Json(string="place", default=list)                       # [RelatedPlace]
+
+    # -------------------------
+    # TMF helpers
+    # -------------------------
     def _get_tmf_api_path(self):
-        return "/alarmManagement/v4/Alarm"
+        return "/alarmManagement/v5/alarm"
 
+    def _iso(self, dt):
+        """
+        Serialize an Odoo datetime (naive UTC or string) to ISO-8601 with Z.
+        """
+        if not dt:
+            return None
+        if isinstance(dt, str):
+            dt = fields.Datetime.to_datetime(dt)
+        if not dt:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        else:
+            dt = dt.astimezone(datetime.timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
+
+    # -------------------------
+    # Serialization
+    # -------------------------
     def to_tmf_json(self):
         self.ensure_one()
-        return {
-            "id": self.tmf_id,
-            "href": self.href,
-            "@type": "Alarm",
-            "ackState": self.ack_state,
-            "ackSystemId": self.ack_system_id,
-            "ackUserId": self.ack_user_id,
-            "alarmChangedTime": self.alarm_changed_time.isoformat() if self.alarm_changed_time else None,
-            "alarmClearedTime": self.alarm_cleared_time.isoformat() if self.alarm_cleared_time else None,
-            "alarmDetails": self.alarm_details,
-            "alarmEscalation": self.alarm_escalation,
-            "alarmRaisedTime": self.alarm_raised_time.isoformat() if self.alarm_raised_time else None,
-            "alarmReportingTime": self.alarm_reporting_time.isoformat() if self.alarm_reporting_time else None,
-            "alarmedObjectType": self.alarmed_object_type,
-            "clearSystemId": self.clear_system_id,
-            "clearUserId": self.clear_user_id,
-            "externalAlarmId": self.external_alarm_id,
-            "isRootCause": self.is_root_cause,
-            "plannedOutageIndicator": self.planned_outage_indicator,
-            "probableCause": self.probable_cause,
-            "proposedRepairedActions": self.proposed_repaired_actions,
-            "reportingSystemId": self.reporting_system_id,
-            "serviceAffecting": self.service_affecting,
-            "sourceSystemId": self.source_system_id,
-            "specificProblem": self.specific_problem,
-            "state": self.state,
-            "affectedService": self.affected_service,
-            "alarmType": self.alarm_type,
-            "alarmedObject": self.alarmed_object,
-            "comment": self.comment,
-            "correlatedAlarm": self.correlated_alarm,
-            "crossedThresholdInformation": self.crossed_threshold_information,
-            "parentAlarm": self.parent_alarm,
-            "perceivedSeverity": self.perceived_severity,
-            "place": self.place,
+        rid = self.tmf_id or str(self.id)
+        href = self.href or f"{self._get_tmf_api_path()}/{rid}"
 
+        payload = {
+            "id": rid,
+            "href": href,
+            "@type": "Alarm",
+
+            # Mandatory (per TMF642)
+            "alarmRaisedTime": self._iso(self.alarm_raised_time),
+            "alarmType": self.alarm_type,
+            "perceivedSeverity": self.perceived_severity,
+            "probableCause": self.probable_cause,
+            "sourceSystemId": self.source_system_id,
+            "state": self.state,
+
+            # Enums / common
+            "ackState": self.ack_state,
         }
 
+        # Optional strings (ONLY include if non-empty string)
+        def _add_str(k, v):
+            if isinstance(v, str) and v.strip():
+                payload[k] = v.strip()
+
+        # Optional booleans (only include when True)
+        def _add_bool(k, v):
+            if v is True:
+                payload[k] = True
+
+        # Optional datetimes (ISO or omit)
+        def _add_dt(k, v):
+            iso = self._iso(v)
+            if iso:
+                payload[k] = iso
+
+        _add_str("ackSystemId", self.ack_system_id)
+        _add_str("ackUserId", self.ack_user_id)
+        _add_dt("alarmChangedTime", self.alarm_changed_time)
+        _add_dt("alarmClearedTime", self.alarm_cleared_time)
+        _add_str("alarmDetails", self.alarm_details)
+        _add_bool("alarmEscalation", self.alarm_escalation)
+        _add_dt("alarmReportingTime", self.alarm_reporting_time)
+        _add_str("alarmedObjectType", self.alarmed_object_type)
+        _add_str("clearSystemId", self.clear_system_id)
+        _add_str("clearUserId", self.clear_user_id)
+        _add_str("externalAlarmId", self.external_alarm_id)
+        _add_bool("isRootCause", self.is_root_cause)
+        _add_str("plannedOutageIndicator", self.planned_outage_indicator)
+        _add_str("proposedRepairedActions", self.proposed_repaired_actions)
+        _add_str("reportingSystemId", self.reporting_system_id)  # <-- fixes "must be string"
+        _add_bool("serviceAffecting", self.service_affecting)
+        _add_str("specificProblem", self.specific_problem)
+
+        # Complex (arrays/objects) - include only when present and well-typed
+        if isinstance(self.affected_service, list) and self.affected_service:
+            payload["affectedService"] = self.affected_service
+        if isinstance(self.alarmed_object, dict) and self.alarmed_object:
+            payload["alarmedObject"] = self.alarmed_object
+        if isinstance(self.comment, list) and self.comment:
+            payload["comment"] = self.comment
+        if isinstance(self.correlated_alarm, list) and self.correlated_alarm:
+            payload["correlatedAlarm"] = self.correlated_alarm
+        if isinstance(self.crossed_threshold_information, dict) and self.crossed_threshold_information:
+            payload["crossedThresholdInformation"] = self.crossed_threshold_information
+        if isinstance(self.parent_alarm, list) and self.parent_alarm:
+            payload["parentAlarm"] = self.parent_alarm
+        if isinstance(self.place, list) and self.place:
+            payload["place"] = self.place
+
+        return payload
+
+    # -------------------------
+    # CRUD hooks + notifications
+    # -------------------------
     @api.model_create_multi
     def create(self, vals_list):
+        now = fields.Datetime.now()
+        for vals in vals_list:
+            if not vals.get("alarm_reporting_time"):
+                vals["alarm_reporting_time"] = vals.get("alarm_raised_time")
+            if not vals.get("alarm_changed_time"):
+                vals["alarm_changed_time"] = now
+
         recs = super().create(vals_list)
         for rec in recs:
-            self._notify('alarm', 'create', rec)
+            rec._notify("alarm", "raise", rec)
         return recs
 
     def write(self, vals):
+        vals = dict(vals or {})
+        vals.setdefault("alarm_changed_time", fields.Datetime.now())
         res = super().write(vals)
+
         for rec in self:
-            self._notify('alarm', 'update', rec)
+            if rec.state == "cleared":
+                updates = {}
+                if not rec.alarm_cleared_time:
+                    updates["alarm_cleared_time"] = fields.Datetime.now()
+                if rec.perceived_severity != "cleared":
+                    updates["perceived_severity"] = "cleared"
+                if updates:
+                    super(TMFAlarm, rec).write(updates)
+
+            rec._notify("alarm", "change", rec)
         return res
 
     def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
+        payloads = [rec.to_tmf_json() for rec in self]
         res = super().unlink()
-        for resource in payloads:
+        for payload in payloads:
             try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='alarm',
-                    event_type='delete',
-                    resource_json=resource,
+                self.env["tmf.hub.subscription"]._notify_subscribers(
+                    api_name="alarm", event_type="delete", resource_json=payload
                 )
             except Exception:
                 pass
@@ -110,7 +236,7 @@ class TMFModel(models.Model):
 
     def _notify(self, api_name, action, record):
         try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
+            self.env["tmf.hub.subscription"]._notify_subscribers(
                 api_name=api_name,
                 event_type=action,
                 resource_json=record.to_tmf_json(),

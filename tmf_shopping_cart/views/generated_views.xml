@@ -1,44 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
+  <data>
+
     <record id="view_tmf_shopping_cart_form" model="ir.ui.view">
-        <field name="name">tmf.shopping.cart.form</field>
-        <field name="model">tmf.shopping.cart</field>
-        <field name="arch" type="xml">
-            <form>
-                <sheet>
-                    <group>
-                <field name="cart_item"/>
-                <field name="cart_total_price"/>
-                <field name="contact_medium"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
+      <field name="name">tmf.shopping.cart.form</field>
+      <field name="model">tmf.shopping.cart</field>
+      <field name="arch" type="xml">
+        <form string="Shopping Cart">
+          <sheet>
+            <group>
+              <field name="tmf_id" readonly="1"/>
+              <field name="tmf_type"/>
+              <field name="tmf_base_type"/>
+              <field name="tmf_schema_location"/>
+              <field name="creation_date" readonly="1"/>
+              <field name="last_update" readonly="1"/>
+            </group>
+
+            <group string="Validity">
+              <field name="valid_for_start"/>
+              <field name="valid_for_end"/>
+            </group>
+
+            <notebook>
+              <page string="Cart Items">
+                <field name="cart_item_ids">
+                  <list editable="bottom">
+                    <field name="item_id"/>
+                    <field name="action"/>
+                    <field name="quantity"/>
+                    <field name="status"/>
+                    <field name="tmf_type"/>
+                  </list>
+                </field>
+              </page>
+
+              <page string="Total Price">
+                <field name="cart_total_price_ids">
+                  <list editable="bottom">
+                    <field name="name"/>
+                    <field name="price_type"/>
+                    <field name="price_amount"/>
+                    <field name="price_currency"/>
+                    <field name="recurring_charge_period"/>
+                    <field name="unit_of_measure"/>
+                  </list>
+                </field>
+              </page>
+
+              <page string="Related Party">
+                <field name="related_party_ids">
+                  <list editable="bottom">
+                    <field name="name"/>
+                    <field name="role"/>
+                  </list>
+                </field>
+              </page>
+
+              <page string="Contact Medium">
+                <field name="contact_medium_ids">
+                  <list editable="bottom">
+                    <field name="tmf_id"/>
+                    <field name="contact_type"/>
+                    <field name="preferred"/>
+                    <field name="email_address"/>
+                    <field name="phone_number"/>
+                    <field name="valid_for_start"/>
+                    <field name="valid_for_end"/>
+                    <field name="tmf_type"/>
+                  </list>
+                </field>
+              </page>
+            </notebook>
+          </sheet>
+        </form>
+      </field>
     </record>
 
-    <record id="view_tmf_shopping_cart_tree" model="ir.ui.view">
-        <field name="name">tmf.shopping.cart.tree</field>
-        <field name="model">tmf.shopping.cart</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="cart_item"/>
-                <field name="cart_total_price"/>
-                <field name="contact_medium"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
-            </list>
-        </field>
-    </record>
-
-    <record id="action_tmf_shopping_cart" model="ir.actions.act_window">
-        <field name="name">ShoppingCart</field>
-        <field name="res_model">tmf.shopping.cart</field>
-        <field name="view_mode">list,form</field>
-    </record>
-
-    <menuitem id="menu_tmf_shopping_cart"
-              name="ShoppingCart"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_shopping_cart"/>
+  </data>
 </odoo>

@@ -1,72 +1,60 @@
 <odoo>
-    <record id="view_tmf_resource_order_form" model="ir.ui.view">
-        <field name="name">tmf.resource.order.form</field>
-        <field name="model">tmf.resource.order</field>
-        <field name="arch" type="xml">
-            <form>
-                <sheet>
-                    <group>
-                <field name="cancellation_date"/>
-                <field name="cancellation_reason"/>
-                <field name="category"/>
-                <field name="completion_date"/>
-                <field name="description"/>
-                <field name="expected_completion_date"/>
-                <field name="external_id"/>
-                <field name="name"/>
-                <field name="order_date"/>
-                <field name="order_type"/>
-                <field name="priority"/>
-                <field name="requested_completion_date"/>
-                <field name="requested_start_date"/>
-                <field name="start_date"/>
-                <field name="external_reference"/>
-                <field name="note"/>
-                <field name="order_item"/>
-                <field name="related_party"/>
-                <field name="state"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
+  <record id="view_tmf_resource_order_form" model="ir.ui.view">
+    <field name="name">tmf.resource.order.form</field>
+    <field name="model">tmf.resource.order</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="cancellation_date"/>
+            <field name="cancellation_reason"/>
+            <field name="category"/>
+            <field name="completion_date"/>
+            <field name="description"/>
+            <field name="expected_completion_date"/>
+            <field name="name"/>
+            <field name="order_date"/>
+            <field name="order_type"/>
+            <field name="priority"/>
+            <field name="requested_completion_date"/>
+            <field name="requested_start_date"/>
+            <field name="start_date"/>
+            <field name="state"/>
 
-    <record id="view_tmf_resource_order_tree" model="ir.ui.view">
-        <field name="name">tmf.resource.order.tree</field>
-        <field name="model">tmf.resource.order</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="cancellation_date"/>
-                <field name="cancellation_reason"/>
-                <field name="category"/>
-                <field name="completion_date"/>
-                <field name="description"/>
-                <field name="expected_completion_date"/>
-                <field name="external_id"/>
-                <field name="name"/>
-                <field name="order_date"/>
-                <field name="order_type"/>
-                <field name="priority"/>
-                <field name="requested_completion_date"/>
-                <field name="requested_start_date"/>
-                <field name="start_date"/>
-                <field name="external_reference"/>
-                <field name="note"/>
-                <field name="order_item"/>
-                <field name="related_party"/>
-                <field name="state"/>
-            </list>
-        </field>
-    </record>
+            <field name="external_reference_ids"/>
+            <field name="note_ids"/>
+            <field name="order_item_ids"/>
+            <field name="related_party_ids"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
 
-    <record id="action_tmf_resource_order" model="ir.actions.act_window">
-        <field name="name">ResourceOrder</field>
-        <field name="res_model">tmf.resource.order</field>
-        <field name="view_mode">list,form</field>
-    </record>
+  <record id="view_tmf_resource_order_tree" model="ir.ui.view">
+    <field name="name">tmf.resource.order.tree</field>
+    <field name="model">tmf.resource.order</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="category"/>
+        <field name="name"/>
+        <field name="priority"/>
+        <field name="state"/>
+        <field name="order_date"/>
+        <field name="expected_completion_date"/>
+        <field name="completion_date"/>
+      </list>
+    </field>
+  </record>
 
-    <menuitem id="menu_tmf_resource_order"
-              name="ResourceOrder"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_resource_order"/>
+  <record id="action_tmf_resource_order" model="ir.actions.act_window">
+    <field name="name">ResourceOrder</field>
+    <field name="res_model">tmf.resource.order</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <menuitem id="menu_tmf_resource_order"
+            name="ResourceOrder"
+            parent="tmf_product_catalog.menu_tmf_root"
+            action="action_tmf_resource_order"/>
 </odoo>

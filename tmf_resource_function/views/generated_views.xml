@@ -3,36 +3,66 @@
         <field name="name">tmf.resource.function.form</field>
         <field name="model">tmf.resource.function</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="ResourceFunction">
                 <sheet>
-                    <group>
-                <field name="category"/>
-                <field name="description"/>
-                <field name="end_operating_date"/>
-                <field name="function_type"/>
-                <field name="name"/>
-                <field name="priority"/>
-                <field name="resource_version"/>
-                <field name="role"/>
-                <field name="start_operating_date"/>
-                <field name="value"/>
-                <field name="activation_feature"/>
-                <field name="administrative_state"/>
-                <field name="attachment"/>
-                <field name="auto_modification"/>
-                <field name="connection_point"/>
-                <field name="connectivity"/>
-                <field name="note"/>
-                <field name="operational_state"/>
-                <field name="place"/>
-                <field name="related_party"/>
-                <field name="resource_characteristic"/>
-                <field name="resource_relationship"/>
-                <field name="resource_specification"/>
-                <field name="resource_status"/>
-                <field name="schedule"/>
-                <field name="usage_state"/>
-                    </group>
+                    <notebook>
+
+                        <page string="General">
+                            <group>
+                                <field name="name" required="1"/>
+                                <field name="description"/>
+                                <field name="category"/>
+                                <field name="value"/>
+                                <field name="function_type"/>
+                                <field name="priority"/>
+                                <field name="role"/>
+                                <field name="resource_version"/>
+                                <field name="start_operating_date"/>
+                                <field name="end_operating_date"/>
+                            </group>
+                        </page>
+
+                        <page string="States">
+                            <group>
+                                <field name="administrative_state"/>
+                                <field name="operational_state"/>
+                                <field name="resource_status"/>
+                                <!-- TMF664: usageState is NON-patchable -->
+                                <field name="usage_state" readonly="1"/>
+                            </group>
+                        </page>
+
+                        <page string="Spec and Config">
+                            <group>
+                                <!-- NOTE: these are structured objects/arrays in TMF664.
+                                     If you keep them as Char in the model, you’ll store JSON strings here.
+                                     Better is to convert them to fields.Text later. -->
+                                <field name="resource_specification_json"/>
+                                <field name="resource_characteristic_json"/>
+                                <field name="activation_feature_json"/>
+                                <field name="auto_modification_json"/>
+                                <field name="schedule_json"/>
+                            </group>
+                        </page>
+
+                        <page string="Topology and Relationships">
+                            <group>
+                                <field name="connection_point_json"/>
+                                <field name="connectivity_json"/>
+                                <field name="resource_relationship_json"/>
+                                <field name="related_party_json"/>
+                                <field name="place_json"/>
+                            </group>
+                        </page>
+
+                        <page string="Attachments and Notes">
+                            <group>
+                                <field name="attachment_json"/>
+                                <field name="note_json"/>
+                            </group>
+                        </page>
+
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -42,33 +72,14 @@
         <field name="name">tmf.resource.function.tree</field>
         <field name="model">tmf.resource.function</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="category"/>
-                <field name="description"/>
-                <field name="end_operating_date"/>
-                <field name="function_type"/>
+            <list string="ResourceFunction">
                 <field name="name"/>
-                <field name="priority"/>
-                <field name="resource_version"/>
-                <field name="role"/>
-                <field name="start_operating_date"/>
-                <field name="value"/>
-                <field name="activation_feature"/>
-                <field name="administrative_state"/>
-                <field name="attachment"/>
-                <field name="auto_modification"/>
-                <field name="connection_point"/>
-                <field name="connectivity"/>
-                <field name="note"/>
-                <field name="operational_state"/>
-                <field name="place"/>
-                <field name="related_party"/>
-                <field name="resource_characteristic"/>
-                <field name="resource_relationship"/>
-                <field name="resource_specification"/>
+                <field name="category"/>
+                <field name="function_type"/>
                 <field name="resource_status"/>
-                <field name="schedule"/>
-                <field name="usage_state"/>
+                <field name="operational_state"/>
+                <field name="administrative_state"/>
+                <field name="usage_state" readonly="1"/>
             </list>
         </field>
     </record>
@@ -79,8 +90,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_function"
-              name="ResourceFunction"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_resource_function"/>
+    <menuitem id="menu_tmf_resource_function" name="ResourceFunction" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_function"/>
 </odoo>

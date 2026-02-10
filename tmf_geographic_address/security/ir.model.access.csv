@@ -1,2 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_geographic_address,tmf.geographic.address,model_tmf_geographic_address,base.group_user,1,1,1,1
+access_tmf_geographic_address_user,tmf.geographic.address user,model_tmf_geographic_address,base.group_user,1,1,1,1
+access_tmf_geographic_sub_address_user,tmf.geographic.sub.address user,model_tmf_geographic_sub_address,base.group_user,1,1,1,1
+access_tmf_geographic_address_validation_user,tmf.geographic.address.validation user,model_tmf_geographic_address_validation,base.group_user,1,1,1,1
+access_tmf_geographic_address_public,tmf.geographic.address public,model_tmf_geographic_address,base.group_public,1,0,0,0
+access_tmf_geographic_sub_address_public,tmf.geographic.sub.address public,model_tmf_geographic_sub_address,base.group_public,1,0,0,0
+access_tmf_geographic_address_validation_public,tmf.geographic.address.validation public,model_tmf_geographic_address_validation,base.group_public,1,1,1,0

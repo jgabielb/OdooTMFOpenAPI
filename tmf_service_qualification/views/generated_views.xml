@@ -7,28 +7,45 @@
                 <header>
                     <field name="state" widget="statusbar"/>
                 </header>
+
                 <sheet>
                     <div class="oe_title">
                         <h1>
-                            <field name="qualification_result" 
-                                   widget="badge" 
-                                   decoration-success="qualification_result == 'qualified'"
-                                   decoration-danger="qualification_result == 'unqualified'"/>
+                            <field name="qualification_result" widget="badge"/>
                         </h1>
                     </div>
+
                     <group>
                         <group>
-                            <field name="place_id"/>
-                            <field name="service_specification_id"/>
+                            <field name="qualification_kind"/>
+                            <field name="external_id"/>
+                            <field name="instant_sync_qualification"/>
+                            <field name="provide_alternative"/>
+                            <field name="provide_unavailability_reason"/>
                         </group>
                         <group>
+                            <field name="expected_qualification_date"/>
+                            <field name="estimated_response_date"/>
+                            <field name="effective_qualification_date"/>
                             <field name="expiration_date"/>
-                            <field name="tmf_id" readonly="1"/>
                         </group>
                     </group>
+
+                    <group string="Convenience links (optional)">
+                        <field name="place_id"/>
+                        <field name="service_specification_id"/>
+                    </group>
+
                     <notebook>
                         <page string="Description">
                             <field name="description"/>
+                        </page>
+                        <page string="Payload">
+                            <group>
+                                <field name="related_party_json"/>
+                                <field name="search_criteria_json"/>
+                                <field name="service_qualification_item_json"/>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

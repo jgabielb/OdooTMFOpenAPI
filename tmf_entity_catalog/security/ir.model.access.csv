@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_entity_catalog,tmf.entity.catalog,model_tmf_entity_catalog,base.group_user,1,1,1,1
+access_tmf_entity_catalog_public,tmf.entity.catalog public,model_tmf_entity_catalog,,1,0,0,0
+access_tmf_entity_catalog_admin,tmf.entity.catalog admin,model_tmf_entity_catalog,base.group_system,1,1,1,1
+access_tmf_entity_specification_public,tmf.entity.specification public,model_tmf_entity_specification,,1,0,0,0
+access_tmf_entity_specification_admin,tmf.entity.specification admin,model_tmf_entity_specification,base.group_system,1,1,1,1

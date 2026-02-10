@@ -1,79 +1,259 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
 import json
 
-class TMFModel(models.Model):
-    _name = 'tmf.account'
-    _description = 'Account'
-    _inherit = ['tmf.model.mixin']
+TMF_API_BASE = "/tmf-api/accountManagement/v5"
 
-    account_type = fields.Char(string="accountType", help="A categorization of an account, such as individual, joint, and so forth, whose instances share some ")
-    description = fields.Char(string="description", help="Detailed description of the party account")
-    last_modified = fields.Datetime(string="lastModified", help="Date of last modification of the account")
-    name = fields.Char(string="name", help="Name of the account")
-    state = fields.Char(string="state", help="Contains the lifecycle state such as: Active, Closed, Suspended and so on.")
-    account_balance = fields.Char(string="accountBalance", help="")
-    account_relationship = fields.Char(string="accountRelationship", help="")
-    contact = fields.Char(string="contact", help="")
-    credit_limit = fields.Char(string="creditLimit", help="The maximum amount of money that may be charged on an account")
-    related_party = fields.Char(string="relatedParty", help="")
-    tax_exemption = fields.Char(string="taxExemption", help="")
+RESOURCE_TO_PATH = {
+    "PartyAccount": "partyAccount",
+    "BillingAccount": "billingAccount",
+    "FinancialAccount": "financialAccount",
+    "SettlementAccount": "settlementAccount",
+    "BillFormat": "billFormat",
+    "BillingCycleSpecification": "billingCycleSpecification",
+    "BillPresentationMedia": "billPresentationMedia",
+}
 
-    def _get_tmf_api_path(self):
-        return "/accountManagement/v4/Account"
+IMMUTABLE_KEYS = {"id", "href", "@type", "@baseType", "@schemaLocation", "lastUpdate", "lastModified"}
+
+
+def _json_loads(s, default):
+    if not s:
+        return default
+    try:
+        return json.loads(s)
+    except Exception:
+        return default
+
+
+class TMFAccount(models.Model):
+    _name = "tmf.account"
+    _description = "TMF666 Account (Party/Billing/Financial/Settlement)"
+    _inherit = ["tmf.model.mixin"]
+
+    # Which TMF666 resource this record represents
+    resource_type = fields.Selection(
+        selection=[
+            ("PartyAccount", "PartyAccount"),
+            ("BillingAccount", "BillingAccount"),
+            ("FinancialAccount", "FinancialAccount"),
+            ("SettlementAccount", "SettlementAccount"),
+        ],
+        required=True,
+        default="PartyAccount",
+        string="@type",
+    )
+
+    # Common fields used across the account types
+    name = fields.Char(string="name", required=True)
+    description = fields.Char(string="description")
+    account_type = fields.Char(string="accountType")
+    state = fields.Char(string="state")
+    payment_status = fields.Char(string="paymentStatus")
+    rating_type = fields.Char(string="ratingType")
+
+    # timestamps
+    last_update = fields.Datetime(string="lastUpdate")
+
+    # Complex structures stored as JSON strings
+    related_party_json = fields.Text(string="relatedParty")          # array
+    credit_limit_json = fields.Text(string="creditLimit")            # object
+    account_balance_json = fields.Text(string="accountBalance")      # array
+    account_relationship_json = fields.Text(string="accountRelationship")  # array
+    contact_json = fields.Text(string="contact")                     # array
+    tax_exemption_json = fields.Text(string="taxExemption")          # array
+    financial_account_json = fields.Text(string="financialAccount")  # ref object
+    bill_structure_json = fields.Text(string="billStructure")        # object
+    default_payment_method_json = fields.Text(string="defaultPaymentMethod")  # ref object
+    payment_plan_json = fields.Text(string="paymentPlan")            # array
+
+    def _resource_path(self):
+        return RESOURCE_TO_PATH.get(self.resource_type, "partyAccount")
+
+    def _href_for(self):
+        rid = self.tmf_id or str(self.id)
+        return f"{TMF_API_BASE}/{self._resource_path()}/{rid}"
 
     def to_tmf_json(self):
         self.ensure_one()
-        return {
-            "id": self.tmf_id,
-            "href": self.href,
-            "@type": "Account",
-            "accountType": self.account_type,
-            "description": self.description,
-            "lastModified": self.last_modified.isoformat() if self.last_modified else None,
-            "name": self.name,
-            "state": self.state,
-            "accountBalance": self.account_balance,
-            "accountRelationship": self.account_relationship,
-            "contact": self.contact,
-            "creditLimit": self.credit_limit,
-            "relatedParty": self.related_party,
-            "taxExemption": self.tax_exemption,
 
+        # IMPORTANT: never return description=False (breaks CTK schema "must be string")
+        desc = self.description if self.description else None
+
+        payload = {
+            "@type": self.resource_type,
+            "id": self.tmf_id or str(self.id),
+            "href": self._href_for(),
+            "name": self.name,
+            "description": desc,
+            "accountType": self.account_type if self.account_type else None,
+            "state": self.state if self.state else None,
+            "paymentStatus": self.payment_status if self.payment_status else None,
+            "ratingType": self.rating_type if self.rating_type else None,
+            "lastUpdate": self.last_update.isoformat() if self.last_update else None,
+            "relatedParty": _json_loads(self.related_party_json, []),
+            "creditLimit": _json_loads(self.credit_limit_json, None),
+            "accountBalance": _json_loads(self.account_balance_json, []),
+            "accountRelationship": _json_loads(self.account_relationship_json, []),
+            "contact": _json_loads(self.contact_json, []),
+            "taxExemption": _json_loads(self.tax_exemption_json, []),
+            "financialAccount": _json_loads(self.financial_account_json, None),
+            "billStructure": _json_loads(self.bill_structure_json, None),
+            "defaultPaymentMethod": _json_loads(self.default_payment_method_json, None),
+            "paymentPlan": _json_loads(self.payment_plan_json, []),
         }
+
+        return {k: v for k, v in payload.items() if v not in (None, [], "")}
 
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
-        for rec in recs:
-            self._notify('account', 'create', rec)
+        now = fields.Datetime.now()
+        recs.write({"last_update": now})
         return recs
 
     def write(self, vals):
-        res = super().write(vals)
-        for rec in self:
-            self._notify('account', 'update', rec)
-        return res
+        vals = dict(vals)
+        vals["last_update"] = fields.Datetime.now()
+        return super().write(vals)
 
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='account',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
 
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass
+# -----------------------------
+# TMF666 BillFormat
+# -----------------------------
+class TMFBillFormat(models.Model):
+    _name = "tmf.bill.format"
+    _description = "TMF666 BillFormat"
+    _inherit = ["tmf.model.mixin"]
+
+    name = fields.Char(string="name", required=True)
+    description = fields.Char(string="description")
+    last_update = fields.Datetime(string="lastUpdate")
+
+    def _href_for(self):
+        rid = self.tmf_id or str(self.id)
+        return f"{TMF_API_BASE}/billFormat/{rid}"
+
+    def to_tmf_json(self):
+        self.ensure_one()
+        payload = {
+            "@type": "BillFormat",
+            "id": self.tmf_id or str(self.id),
+            "href": self._href_for(),
+            "name": self.name,
+            "description": self.description if self.description else None,
+            "lastUpdate": self.last_update.isoformat() if self.last_update else None,
+        }
+        return {k: v for k, v in payload.items() if v not in (None, [], "")}
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        now = fields.Datetime.now()
+        recs.write({"last_update": now})
+        return recs
+
+    def write(self, vals):
+        vals = dict(vals)
+        vals["last_update"] = fields.Datetime.now()
+        return super().write(vals)
+
+
+# -----------------------------
+# TMF666 BillingCycleSpecification
+# -----------------------------
+class TMFBillingCycleSpecification(models.Model):
+    _name = "tmf.billing.cycle.spec"
+    _description = "TMF666 BillingCycleSpecification"
+    _inherit = ["tmf.model.mixin"]
+
+    name = fields.Char(string="name", required=True)
+    description = fields.Char(string="description")
+
+    frequency = fields.Char(string="frequency")
+    billing_period = fields.Char(string="billingPeriod")
+    billing_date_shift = fields.Integer(string="billingDateShift")
+    charge_date_offset = fields.Integer(string="chargeDateOffset")
+    credit_date_offset = fields.Integer(string="creditDateOffset")
+    mailing_date_offset = fields.Integer(string="mailingDateOffset")
+    payment_due_date_offset = fields.Integer(string="paymentDueDateOffset")
+
+    valid_for_json = fields.Text(string="validFor")  # TimePeriod object
+    last_update = fields.Datetime(string="lastUpdate")
+
+    def _href_for(self):
+        rid = self.tmf_id or str(self.id)
+        return f"{TMF_API_BASE}/billingCycleSpecification/{rid}"
+
+    def to_tmf_json(self):
+        self.ensure_one()
+        payload = {
+            "@type": "BillingCycleSpecification",
+            "id": self.tmf_id or str(self.id),
+            "href": self._href_for(),
+            "name": self.name,
+            "description": self.description if self.description else None,
+            "frequency": self.frequency if self.frequency else None,
+            "billingPeriod": self.billing_period if self.billing_period else None,
+            "billingDateShift": self.billing_date_shift,
+            "chargeDateOffset": self.charge_date_offset,
+            "creditDateOffset": self.credit_date_offset,
+            "mailingDateOffset": self.mailing_date_offset,
+            "paymentDueDateOffset": self.payment_due_date_offset,
+            "validFor": _json_loads(self.valid_for_json, None),
+            "lastUpdate": self.last_update.isoformat() if self.last_update else None,
+        }
+        return {k: v for k, v in payload.items() if v not in (None, [], "")}
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        now = fields.Datetime.now()
+        recs.write({"last_update": now})
+        return recs
+
+    def write(self, vals):
+        vals = dict(vals)
+        vals["last_update"] = fields.Datetime.now()
+        return super().write(vals)
+
+
+# -----------------------------
+# TMF666 BillPresentationMedia
+# -----------------------------
+class TMFBillPresentationMedia(models.Model):
+    _name = "tmf.bill.presentation.media"
+    _description = "TMF666 BillPresentationMedia"
+    _inherit = ["tmf.model.mixin"]
+
+    name = fields.Char(string="name", required=True)
+    description = fields.Char(string="description")
+    last_update = fields.Datetime(string="lastUpdate")
+
+    def _href_for(self):
+        rid = self.tmf_id or str(self.id)
+        return f"{TMF_API_BASE}/billPresentationMedia/{rid}"
+
+    def to_tmf_json(self):
+        self.ensure_one()
+        payload = {
+            "@type": "BillPresentationMedia",
+            "id": self.tmf_id or str(self.id),
+            "href": self._href_for(),
+            "name": self.name,
+            "description": self.description if self.description else None,
+            "lastUpdate": self.last_update.isoformat() if self.last_update else None,
+        }
+        return {k: v for k, v in payload.items() if v not in (None, [], "")}
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        now = fields.Datetime.now()
+        recs.write({"last_update": now})
+        return recs
+
+    def write(self, vals):
+        vals = dict(vals)
+        vals["last_update"] = fields.Datetime.now()
+        return super().write(vals)

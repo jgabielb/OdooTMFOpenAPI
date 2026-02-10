@@ -1,64 +1,75 @@
 <odoo>
+
+    <!-- ============================= -->
+    <!-- Geographic Address FORM VIEW -->
+    <!-- ============================= -->
     <record id="view_tmf_geographic_address_form" model="ir.ui.view">
         <field name="name">tmf.geographic.address.form</field>
         <field name="model">tmf.geographic.address</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Geographic Address">
                 <sheet>
                     <group>
-                <field name="city"/>
-                <field name="country"/>
-                <field name="locality"/>
-                <field name="name"/>
-                <field name="postcode"/>
-                <field name="state_or_province"/>
-                <field name="street_name"/>
-                <field name="street_nr"/>
-                <field name="street_nr_last"/>
-                <field name="street_nr_last_suffix"/>
-                <field name="street_nr_suffix"/>
-                <field name="street_suffix"/>
-                <field name="street_type"/>
-                <field name="geographic_location"/>
-                <field name="geographic_sub_address"/>
+                        <field name="name"/>
+                        <field name="city"/>
+                        <field name="country"/>
+                        <field name="locality"/>
+                        <field name="postcode"/>
+                        <field name="state_or_province"/>
+                        <field name="street_name"/>
+                        <field name="street_nr"/>
+                        <field name="street_type"/>
+                        <field name="geographic_location_json"/>
                     </group>
+
+                    <notebook>
+                        <page string="Sub Addresses">
+                            <field name="sub_address_ids">
+                                <list>
+                                    <field name="level_number"/>
+                                    <field name="level_type"/>
+                                    <field name="private_street_name"/>
+                                    <field name="private_street_number"/>
+                                    <field name="sub_address_type"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="view_tmf_geographic_address_tree" model="ir.ui.view">
-        <field name="name">tmf.geographic.address.tree</field>
+    <!-- ============================= -->
+    <!-- Geographic Address LIST VIEW -->
+    <!-- ============================= -->
+    <record id="view_tmf_geographic_address_list" model="ir.ui.view">
+        <field name="name">tmf.geographic.address.list</field>
         <field name="model">tmf.geographic.address</field>
         <field name="arch" type="xml">
-            <list>
+            <list string="Geographic Addresses">
+                <field name="name"/>
                 <field name="city"/>
                 <field name="country"/>
-                <field name="locality"/>
-                <field name="name"/>
                 <field name="postcode"/>
-                <field name="state_or_province"/>
                 <field name="street_name"/>
                 <field name="street_nr"/>
-                <field name="street_nr_last"/>
-                <field name="street_nr_last_suffix"/>
-                <field name="street_nr_suffix"/>
-                <field name="street_suffix"/>
                 <field name="street_type"/>
-                <field name="geographic_location"/>
-                <field name="geographic_sub_address"/>
             </list>
         </field>
     </record>
 
+    <!-- ============================= -->
+    <!-- Action + Menu -->
+    <!-- ============================= -->
     <record id="action_tmf_geographic_address" model="ir.actions.act_window">
-        <field name="name">GeographicAddress</field>
+        <field name="name">Geographic Addresses</field>
         <field name="res_model">tmf.geographic.address</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_geographic_address"
-              name="GeographicAddress"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_geographic_address"/>
+              name="Geographic Addresses"
+              action="action_tmf_geographic_address"
+              sequence="10"/>
 </odoo>

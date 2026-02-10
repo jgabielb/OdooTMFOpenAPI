@@ -1,109 +1,169 @@
 from odoo import models, fields, api
 import json
 
-class TMFModel(models.Model):
-    _name = 'tmf.resource.function'
-    _description = 'ResourceFunction'
-    _inherit = ['tmf.model.mixin']
+API_BASE = "/tmf-api/resourceFunctionActivation/v4"
+RESOURCE = "resourceFunction"
+BASE_PATH = f"{API_BASE}/{RESOURCE}"
 
-    category = fields.Char(string="category", help="Category of the concrete resource. e.g Gold, Silver for MSISDN concrete resource")
-    description = fields.Char(string="description", help="free-text description of the resource")
-    end_operating_date = fields.Datetime(string="endOperatingDate", help="A date time( DateTime). The date till the resource is operating")
-    function_type = fields.Char(string="functionType", help="A type of the Resource Function as specified by the provider of the API.")
-    name = fields.Char(string="name", help="A string used to give a name to the resource")
-    priority = fields.Integer(string="priority", help="Priority of the Resource Function. Decides what happens in a contention scenario.")
-    resource_version = fields.Char(string="resourceVersion", help="A field that identifies the specific version of an instance of a resource.")
-    role = fields.Char(string="role", help="Role of the Resource Function. Used when Resource Function is a component of a composite Resource Fu")
-    start_operating_date = fields.Datetime(string="startOperatingDate", help="A date time( DateTime). The date from which the resource is operating")
-    value = fields.Char(string="value", help="the value of the logical resource. E.g '0746712345' for  MSISDN's")
-    activation_feature = fields.Char(string="activationFeature", help="Configuration features")
-    administrative_state = fields.Char(string="administrativeState", help="Tracks the lifecycle status of the resource, such as planning, installing, opereating, retiring and ")
-    attachment = fields.Char(string="attachment", help="")
-    auto_modification = fields.Char(string="autoModification", help="List of the kinds of auto-modifications that are applied to a given network service e.g what can be ")
-    connection_point = fields.Char(string="connectionPoint", help="External connection points of the resource function. These are the service access points (SAP) where")
-    connectivity = fields.Char(string="connectivity", help="Internal connectivity of contained resource functions.")
-    note = fields.Char(string="note", help="")
-    operational_state = fields.Char(string="operationalState", help="Tracks the lifecycle status of the resource, such as planning, installing, opereating, retiring and ")
-    place = fields.Char(string="place", help="")
-    related_party = fields.Char(string="relatedParty", help="")
-    resource_characteristic = fields.Char(string="resourceCharacteristic", help="")
-    resource_relationship = fields.Char(string="resourceRelationship", help="")
-    resource_specification = fields.Char(string="resourceSpecification", help="")
-    resource_status = fields.Char(string="resourceStatus", help="Tracks the lifecycle status of the resource, such as planning, installing, opereating, retiring and ")
-    schedule = fields.Char(string="schedule", help="This is a reference to a schedule. Allows consumers to schedule modifications to the service at cert")
-    usage_state = fields.Char(string="usageState", help="Tracks the lifecycle status of the resource, such as planning, installing, opereating, retiring and ")
+def _dumps(v):
+    return json.dumps(v, ensure_ascii=False) if v is not None else False
+
+def _loads(v):
+    if not v:
+        return None
+    try:
+        return json.loads(v)
+    except Exception:
+        return None
+
+class TMFResourceFunction(models.Model):
+    _name = "tmf.resource.function"
+    _description = "ResourceFunction"
+    _inherit = ["tmf.model.mixin"]
+
+    # Simple scalar fields
+    category = fields.Char(string="category")
+    description = fields.Char(string="description")
+    end_operating_date = fields.Datetime(string="endOperatingDate")
+    function_type = fields.Char(string="functionType")
+    name = fields.Char(string="name")
+    priority = fields.Integer(string="priority")
+    resource_version = fields.Char(string="resourceVersion")
+    role = fields.Char(string="role")
+    start_operating_date = fields.Datetime(string="startOperatingDate")
+    value = fields.Char(string="value")
+
+    administrative_state = fields.Char(string="administrativeState")
+    operational_state = fields.Char(string="operationalState")
+    resource_status = fields.Char(string="resourceStatus")
+
+    # usageState exists in resource model, but is NON-PATCHABLE; typically managed by system
+    usage_state = fields.Char(string="usageState")
+
+    # Complex TMF fields -> JSON text
+    resource_specification_json = fields.Text(string="resourceSpecification")     # object
+    resource_characteristic_json = fields.Text(string="resourceCharacteristic")   # array
+    activation_feature_json = fields.Text(string="activationFeature")             # array
+    attachment_json = fields.Text(string="attachment")                            # array
+    note_json = fields.Text(string="note")                                        # array
+    related_party_json = fields.Text(string="relatedParty")                       # array
+    place_json = fields.Text(string="place")                                      # object
+    resource_relationship_json = fields.Text(string="resourceRelationship")       # array
+    connection_point_json = fields.Text(string="connectionPoint")                 # array
+    connectivity_json = fields.Text(string="connectivity")                        # array
+    schedule_json = fields.Text(string="schedule")                                # array
+    auto_modification_json = fields.Text(string="autoModification")               # array
 
     def _get_tmf_api_path(self):
-        return "/resource_functionManagement/v4/ResourceFunction"
+        # TMF664 base path
+        return BASE_PATH
 
     def to_tmf_json(self):
         self.ensure_one()
+        rid = self.tmf_id
+        href = f"{BASE_PATH}/{rid}" if rid else None
+
         return {
-            "id": self.tmf_id,
-            "href": self.href,
+            "id": rid,
+            "href": href,
             "@type": "ResourceFunction",
-            "category": self.category,
-            "description": self.description,
-            "endOperatingDate": self.end_operating_date.isoformat() if self.end_operating_date else None,
-            "functionType": self.function_type,
             "name": self.name,
-            "priority": self.priority,
-            "resourceVersion": self.resource_version,
-            "role": self.role,
-            "startOperatingDate": self.start_operating_date.isoformat() if self.start_operating_date else None,
+            "description": self.description,
+            "category": self.category,
             "value": self.value,
-            "activationFeature": self.activation_feature,
+            "priority": self.priority,
+            "role": self.role,
+            "functionType": self.function_type,
+            "resourceVersion": self.resource_version,
+            "startOperatingDate": self.start_operating_date.isoformat() if self.start_operating_date else None,
+            "endOperatingDate": self.end_operating_date.isoformat() if self.end_operating_date else None,
             "administrativeState": self.administrative_state,
-            "attachment": self.attachment,
-            "autoModification": self.auto_modification,
-            "connectionPoint": self.connection_point,
-            "connectivity": self.connectivity,
-            "note": self.note,
             "operationalState": self.operational_state,
-            "place": self.place,
-            "relatedParty": self.related_party,
-            "resourceCharacteristic": self.resource_characteristic,
-            "resourceRelationship": self.resource_relationship,
-            "resourceSpecification": self.resource_specification,
             "resourceStatus": self.resource_status,
-            "schedule": self.schedule,
             "usageState": self.usage_state,
 
+            "resourceSpecification": _loads(self.resource_specification_json),
+            "resourceCharacteristic": _loads(self.resource_characteristic_json),
+            "activationFeature": _loads(self.activation_feature_json),
+            "attachment": _loads(self.attachment_json),
+            "note": _loads(self.note_json),
+            "relatedParty": _loads(self.related_party_json),
+            "place": _loads(self.place_json),
+            "resourceRelationship": _loads(self.resource_relationship_json),
+            "connectionPoint": _loads(self.connection_point_json),
+            "connectivity": _loads(self.connectivity_json),
+            "schedule": _loads(self.schedule_json),
+            "autoModification": _loads(self.auto_modification_json),
         }
+
+    def from_tmf_json(self, data, partial=False):
+        """
+        Map TMF664 JSON -> Odoo create/write vals.
+        - Enforces that resourceSpecification is stored as JSON.
+        - Does NOT allow client to set id/href here (controller blocks).
+        """
+        vals = {}
+
+        # simple scalars
+        for k, field_name in [
+            ("category", "category"),
+            ("description", "description"),
+            ("functionType", "function_type"),
+            ("name", "name"),
+            ("priority", "priority"),
+            ("resourceVersion", "resource_version"),
+            ("role", "role"),
+            ("value", "value"),
+            ("administrativeState", "administrative_state"),
+            ("operationalState", "operational_state"),
+            ("resourceStatus", "resource_status"),
+        ]:
+            if k in data:
+                vals[field_name] = data.get(k)
+
+        # datetimes as-is; adapt if your other modules already normalize TZ
+        if "startOperatingDate" in data:
+            vals["start_operating_date"] = data.get("startOperatingDate")
+        if "endOperatingDate" in data:
+            vals["end_operating_date"] = data.get("endOperatingDate")
+
+        # complex structures
+        if "resourceSpecification" in data:
+            vals["resource_specification_json"] = _dumps(data.get("resourceSpecification"))
+        if "resourceCharacteristic" in data:
+            vals["resource_characteristic_json"] = _dumps(data.get("resourceCharacteristic"))
+        if "activationFeature" in data:
+            vals["activation_feature_json"] = _dumps(data.get("activationFeature"))
+        if "attachment" in data:
+            vals["attachment_json"] = _dumps(data.get("attachment"))
+        if "note" in data:
+            vals["note_json"] = _dumps(data.get("note"))
+        if "relatedParty" in data:
+            vals["related_party_json"] = _dumps(data.get("relatedParty"))
+        if "place" in data:
+            vals["place_json"] = _dumps(data.get("place"))
+        if "resourceRelationship" in data:
+            vals["resource_relationship_json"] = _dumps(data.get("resourceRelationship"))
+        if "connectionPoint" in data:
+            vals["connection_point_json"] = _dumps(data.get("connectionPoint"))
+        if "connectivity" in data:
+            vals["connectivity_json"] = _dumps(data.get("connectivity"))
+        if "schedule" in data:
+            vals["schedule_json"] = _dumps(data.get("schedule"))
+        if "autoModification" in data:
+            vals["auto_modification_json"] = _dumps(data.get("autoModification"))
+
+        return vals
 
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
         for rec in recs:
-            self._notify('resourceFunction', 'create', rec)
+            self._notify("resourceFunction", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
         for rec in self:
-            self._notify('resourceFunction', 'update', rec)
+            self._notify("resourceFunction", "update", rec)
         return res
-
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='resourceFunction',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
-
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass

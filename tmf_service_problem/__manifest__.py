@@ -8,7 +8,7 @@
     'depends': ['tmf_base', 'tmf_product_catalog'],
     'data': [
         'security/ir.model.access.csv',
-        'views/generated_views.xml',
+        # 'views/generated_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',

@@ -1,2 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_shopping_cart,tmf.shopping.cart,model_tmf_shopping_cart,base.group_user,1,1,1,1
+access_tmf_shopping_cart,tmf.shopping.cart,model_tmf_shopping_cart,,1,1,1,1
+access_tmf_cart_item,tmf.shopping.cart.item,model_tmf_shopping_cart_item,,1,1,1,1
+access_tmf_cart_price,tmf.shopping.cart.price,model_tmf_shopping_cart_price,,1,1,1,1
+access_tmf_contact_medium,tmf.contact.medium,model_tmf_contact_medium,,1,1,1,1
+access_tmf_related_party,tmf.related.party,model_tmf_related_party,,1,1,1,1
+access_tmf_product_offering_ref,tmf.product.offering.ref,model_tmf_product_offering_ref,,1,1,1,1
+access_tmf_product_ref_or_value,tmf.product.ref.or.value,model_tmf_product_ref_or_value,,1,1,1,1

@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_usage_consumption,tmf.usage.consumption,model_tmf_usage_consumption,base.group_user,1,1,1,1
+access_tmf_query_usage_consumption,tmf.query.usage.consumption,model_tmf_query_usage_consumption,base.group_user,1,1,1,1
+access_tmf_usage_consumption_report,tmf.usage.consumption.report,model_tmf_usage_consumption_report,base.group_user,1,1,1,1

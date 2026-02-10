@@ -1,31 +1,224 @@
+# -*- coding: utf-8 -*-
 from odoo import http
 from odoo.http import request
 import json
+import uuid
+from datetime import datetime, timezone
 
-class TMFController(http.Controller):
 
-    @http.route('/tmf-api/geographicAddressManagement/v4/GeographicAddress', type='http', auth='public', methods=['GET'], csrf=False)
-    def get_resources(self, **params):
-        records = request.env['tmf.geographic.address'].sudo().search([])
-        return request.make_response(
-            json.dumps([r.to_tmf_json() for r in records]),
-            headers=[('Content-Type', 'application/json')]
-        )
+API_BASE = "/tmf-api/geographicAddressManagement/v4"
 
-    @http.route('/tmf-api/geographicAddressManagement/v4/GeographicAddress', type='http', auth='public', methods=['POST'], csrf=False)
-    def create_resource(self, **params):
+
+def _json_response(payload, status=200):
+    return request.make_response(
+        json.dumps(payload, ensure_ascii=False),
+        headers=[("Content-Type", "application/json")],
+        status=status,
+    )
+
+
+def _fields_filter(params):
+    fields_param = params.get("fields")
+    if not fields_param:
+        return None
+    return {f.strip() for f in fields_param.split(",") if f.strip()}
+
+
+def _host_url():
+    return request.httprequest.host_url.rstrip("/")
+
+
+def _utc_now_iso_z(dt=None):
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _header_validation_result():
+    # CTK sends: "validation-result": "fails"
+    val = request.httprequest.headers.get("validation-result")
+    if not val:
+        return "success"
+    val = str(val).strip()
+    return val or "success"
+
+
+class TMFGeographicAddressController(http.Controller):
+
+    # -------------------------
+    # GeographicAddress (GET)
+    # -------------------------
+    @http.route(f"{API_BASE}/geographicAddress", type="http", auth="public", methods=["GET"], csrf=False)
+    def list_geographic_address(self, **params):
+        # Seed at least one record so CTK filters don't return []
+        request.env["tmf.geographic.address.seed"].sudo().ensure_seed_data()
+
+        domain = []
+        # support CTK filtering by common query params
+        for tmf_key, odoo_field in [
+            ("city", "city"),
+            ("country", "country"),
+            ("postcode", "postcode"),
+            ("stateOrProvince", "state_or_province"),
+            ("streetName", "street_name"),
+            ("streetNr", "street_nr"),
+            ("streetType", "street_type"),
+            ("id", "tmf_id"),
+        ]:
+            if params.get(tmf_key) not in (None, ""):
+                domain.append((odoo_field, "=", params.get(tmf_key)))
+
+        recs = request.env["tmf.geographic.address"].sudo().search(domain)
+        ff = _fields_filter(params)
+        payload = [r.to_tmf_json(host_url=_host_url(), fields_filter=ff) for r in recs]
+        return _json_response(payload, status=200)
+
+    @http.route(f"{API_BASE}/geographicAddress/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
+    def get_geographic_address(self, tmf_id, **params):
+        rec = request.env["tmf.geographic.address"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
+        if not rec:
+            return _json_response({"error": "GeographicAddress not found"}, status=404)
+        ff = _fields_filter(params)
+        return _json_response(rec.to_tmf_json(host_url=_host_url(), fields_filter=ff), status=200)
+
+    # -----------------------------------------
+    # GeographicSubAddress (nested sub-resource)
+    # -----------------------------------------
+    @http.route(f"{API_BASE}/geographicAddress/<string:addr_id>/geographicSubAddress", type="http", auth="public", methods=["GET"], csrf=False)
+    def list_geographic_sub_address(self, addr_id, **params):
+        addr = request.env["tmf.geographic.address"].sudo().search([("tmf_id", "=", addr_id)], limit=1)
+        if not addr:
+            return _json_response({"error": "GeographicAddress not found"}, status=404)
+
+        domain = [("address_id", "=", addr.id)]
+        for tmf_key, odoo_field in [
+            ("id", "tmf_id"),
+            ("levelNumber", "level_number"),
+            ("levelType", "level_type"),
+            ("privateStreetName", "private_street_name"),
+            ("privateStreetNumber", "private_street_number"),
+            ("subAddressType", "sub_address_type"),
+        ]:
+            if params.get(tmf_key) not in (None, ""):
+                domain.append((odoo_field, "=", params.get(tmf_key)))
+
+        recs = request.env["tmf.geographic.sub.address"].sudo().search(domain)
+        ff = _fields_filter(params)
+
+        # If CTK requests fields=..., it still expects array of objects with those fields present
+        payload = []
+        for r in recs:
+            obj = r.to_tmf_json(host_url=_host_url())
+            if ff:
+                obj = {k: v for k, v in obj.items() if k in ff}
+            payload.append(obj)
+
+        return _json_response(payload, status=200)
+
+    @http.route(f"{API_BASE}/geographicAddress/<string:addr_id>/geographicSubAddress/<string:sub_id>", type="http", auth="public", methods=["GET"], csrf=False)
+    def get_geographic_sub_address(self, addr_id, sub_id, **params):
+        addr = request.env["tmf.geographic.address"].sudo().search([("tmf_id", "=", addr_id)], limit=1)
+        if not addr:
+            return _json_response({"error": "GeographicAddress not found"}, status=404)
+
+        rec = request.env["tmf.geographic.sub.address"].sudo().search([
+            ("address_id", "=", addr.id),
+            ("tmf_id", "=", sub_id),
+        ], limit=1)
+        if not rec:
+            return _json_response({"error": "GeographicSubAddress not found"}, status=404)
+
+        ff = _fields_filter(params)
+        obj = rec.to_tmf_json(host_url=_host_url())
+        if ff:
+            obj = {k: v for k, v in obj.items() if k in ff}
+        return _json_response(obj, status=200)
+
+    # ---------------------------------
+    # GeographicAddressValidation (CRUD)
+    # ---------------------------------
+    @http.route(f"{API_BASE}/geographicAddressValidation", type="http", auth="public", methods=["GET"], csrf=False)
+    def list_validation(self, **params):
         try:
-            data = json.loads(request.httprequest.data)
-            vals = {}
-            # Basic field mapping
-            for field in ['city', 'country', 'locality', 'name', 'postcode', 'state_or_province', 'street_name', 'street_nr', 'street_nr_last', 'street_nr_last_suffix', 'street_nr_suffix', 'street_suffix', 'street_type', 'geographic_location', 'geographic_sub_address']:
-                if field in data:
-                    vals[field] = data[field]
-            
-            new_rec = request.env['tmf.geographic.address'].sudo().create(vals)
-            return request.make_response(
-                json.dumps(new_rec.to_tmf_json()),
-                headers=[('Content-Type', 'application/json')]
-            )
+            domain = []
+            if params.get("id"):
+                domain.append(("tmf_id", "=", params["id"]))
+
+            if params.get("provideAlternative") not in (None, ""):
+                domain.append(("provide_alternative", "=", str(params["provideAlternative"]).lower() == "true"))
+
+            if params.get("validationDate") not in (None, ""):
+                vd = str(params["validationDate"]).strip().strip('"').strip("'")
+                domain.append(("validation_date", "=", vd))
+
+            if params.get("validationResult") not in (None, ""):
+                domain.append(("validation_result", "=", params["validationResult"]))
+
+            recs = request.env["tmf.geographic.address.validation"].sudo().search(domain)
+            ff = _fields_filter(params)
+            payload = [r.to_tmf_json(host_url=_host_url(), fields_filter=ff) for r in recs]
+            return _json_response(payload, status=200)
+
         except Exception as e:
-            return request.make_response(json.dumps({'error': str(e)}), status=400)
+            # NEVER leak HTML 500 to CTK
+            return _json_response({"error": str(e)}, status=500)
+
+
+    @http.route(f"{API_BASE}/geographicAddressValidation/<string:val_id>", type="http", auth="public", methods=["GET"], csrf=False)
+    def get_validation(self, val_id, **params):
+        try:
+            rec = request.env["tmf.geographic.address.validation"].sudo().search([("tmf_id", "=", val_id)], limit=1)
+            if not rec:
+                return _json_response({"error": "GeographicAddressValidation not found"}, status=404)
+
+            ff = _fields_filter(params)
+            return _json_response(rec.to_tmf_json(host_url=_host_url(), fields_filter=ff), status=200)
+
+        except Exception as e:
+            return _json_response({"error": str(e)}, status=500)
+
+
+    @http.route(f"{API_BASE}/geographicAddressValidation", type="http", auth="public", methods=["POST"], csrf=False)
+    def create_validation(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+
+            provide_alt = bool(data.get("provideAlternative")) if data.get("provideAlternative") is not None else False
+
+            vals = {
+                "provide_alternative": provide_alt,
+                "status": "done",
+            }
+
+            # submittedGeographicAddress
+            submitted = data.get("submittedGeographicAddress")
+            if submitted is not None:
+                vals["submitted_geographic_address_json"] = json.dumps(submitted, ensure_ascii=False)
+
+            # validGeographicAddress (CTK expects it). If missing, mirror submitted.
+            valid_geo = data.get("validGeographicAddress")
+            if valid_geo is None and submitted is not None:
+                valid_geo = submitted
+            if valid_geo is not None:
+                vals["valid_address_json"] = json.dumps(valid_geo, ensure_ascii=False)
+
+            # alternateGeographicAddress (optional)
+            alternate = data.get("alternateGeographicAddress")
+            if alternate is not None:
+                vals["alternate_geographic_address_json"] = json.dumps(alternate, ensure_ascii=False)
+
+            rec = request.env["tmf.geographic.address.validation"].sudo().create(vals)
+
+            # Ensure non-null required outputs (model has defaults, but keep it safe)
+            if not rec.validation_date:
+                rec.validation_date = rec._fields["validation_date"].default(rec)
+            if not rec.validation_result:
+                rec.validation_result = rec._fields["validation_result"].default(rec)
+
+            return _json_response(rec.to_tmf_json(host_url=_host_url()), status=201)
+
+        except Exception as e:
+            return _json_response({"error": str(e)}, status=400)
+
+
+
+
+

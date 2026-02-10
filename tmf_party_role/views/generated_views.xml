@@ -1,60 +1,66 @@
 <odoo>
-    <record id="view_tmf_party_role_form" model="ir.ui.view">
-        <field name="name">tmf.party.role.form</field>
-        <field name="model">tmf.party.role</field>
-        <field name="arch" type="xml">
-            <form>
-                <sheet>
-                    <group>
-                <field name="name"/>
-                <field name="status"/>
-                <field name="status_reason"/>
-                <field name="account"/>
-                <field name="agreement"/>
-                <field name="characteristic"/>
-                <field name="contact_medium"/>
-                <field name="credit_profile"/>
-                <field name="engaged_party"/>
-                <field name="payment_method"/>
-                <field name="related_party"/>
-                <field name="role_type"/>
-                <field name="valid_for"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
+  <!-- LIST (not tree) -->
+  <record id="view_tmf_party_role_list" model="ir.ui.view">
+    <field name="name">tmf.party.role.list</field>
+    <field name="model">tmf.party.role</field>
+    <field name="arch" type="xml">
+      <list string="Party Roles">
+        <field name="tmf_id"/>
+        <field name="name"/>
+        <field name="type_name"/>
+        <field name="role"/>
+        <field name="status"/>
+      </list>
+    </field>
+  </record>
 
-    <record id="view_tmf_party_role_tree" model="ir.ui.view">
-        <field name="name">tmf.party.role.tree</field>
-        <field name="model">tmf.party.role</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
-                <field name="status"/>
-                <field name="status_reason"/>
-                <field name="account"/>
-                <field name="agreement"/>
-                <field name="characteristic"/>
-                <field name="contact_medium"/>
-                <field name="credit_profile"/>
-                <field name="engaged_party"/>
-                <field name="payment_method"/>
-                <field name="related_party"/>
-                <field name="role_type"/>
-                <field name="valid_for"/>
-            </list>
-        </field>
-    </record>
+  <!-- FORM -->
+  <record id="view_tmf_party_role_form" model="ir.ui.view">
+    <field name="name">tmf.party.role.form</field>
+    <field name="model">tmf.party.role</field>
+    <field name="arch" type="xml">
+      <form string="Party Role">
+        <sheet>
+          <group>
+            <field name="tmf_id" readonly="1"/>
+            <field name="href" readonly="1"/>
+            <field name="type_name"/>
+            <field name="name"/>
+            <field name="role"/>
+            <field name="status"/>
+            <field name="status_reason"/>
+          </group>
 
-    <record id="action_tmf_party_role" model="ir.actions.act_window">
-        <field name="name">PartyRole</field>
-        <field name="res_model">tmf.party.role</field>
-        <field name="view_mode">list,form</field>
-    </record>
+          <notebook>
+            <page string="Engaged Party">
+              <field name="engaged_party_json" widget="text"/>
+            </page>
+            <page string="Specification">
+              <field name="party_role_spec_json" widget="text"/>
+            </page>
+            <page string="Other">
+              <group>
+                <field name="account_json" widget="text"/>
+                <field name="agreement_json" widget="text"/>
+                <field name="payment_method_json" widget="text"/>
+                <field name="related_party_json" widget="text"/>
+                <field name="valid_for_json" widget="text"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
 
-    <menuitem id="menu_tmf_party_role"
-              name="PartyRole"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_party_role"/>
+  <!-- ACTION -->
+  <record id="action_tmf_party_role" model="ir.actions.act_window">
+    <field name="name">Party Roles</field>
+    <field name="res_model">tmf.party.role</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <!-- MENU (optional) -->
+  <menuitem id="menu_tmf_root" name="TMF"/>
+  <menuitem id="menu_tmf_party_role" name="Party Roles" parent="menu_tmf_root" action="action_tmf_party_role"/>
 </odoo>

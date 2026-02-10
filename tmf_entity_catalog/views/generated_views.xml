@@ -1,50 +1,61 @@
 <odoo>
+
+    <!-- ============================= -->
+    <!-- Form View -->
+    <!-- ============================= -->
     <record id="view_tmf_entity_catalog_form" model="ir.ui.view">
         <field name="name">tmf.entity.catalog.form</field>
         <field name="model">tmf.entity.catalog</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Entity Catalog">
                 <sheet>
+
                     <group>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
-                <field name="name"/>
-                <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+                        <field name="name" required="1"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="lifecycle_status"/>
                     </group>
+
+                    <group string="Validity">
+                        <field name="valid_for_json"
+                               widget="text"
+                               placeholder='{"startDateTime": "...", "endDateTime": "..."}'/>
+                    </group>
+
+                    <group string="Relations">
+                        <field name="category_json"
+                               widget="text"
+                               placeholder='[{"id": "...", "name": "..."}]'/>
+                        <field name="related_party_json"
+                               widget="text"
+                               placeholder='[{"id": "...", "role": "..."}]'/>
+                    </group>
+
+                    <group string="System" col="2">
+                        <field name="tmf_id" readonly="1"/>
+                        <field name="last_update" readonly="1"/>
+                    </group>
+
                 </sheet>
             </form>
         </field>
     </record>
 
+    <!-- ============================= -->
+    <!-- Tree View -->
+    <!-- ============================= -->
     <record id="view_tmf_entity_catalog_tree" model="ir.ui.view">
         <field name="name">tmf.entity.catalog.tree</field>
         <field name="model">tmf.entity.catalog</field>
         <field name="arch" type="xml">
             <list>
-                <field name="description"/>
-                <field name="last_update"/>
-                <field name="lifecycle_status"/>
                 <field name="name"/>
                 <field name="version"/>
-                <field name="category"/>
-                <field name="related_party"/>
-                <field name="valid_for"/>
+                <field name="lifecycle_status"/>
+                <field name="last_update"/>
             </list>
         </field>
     </record>
 
-    <record id="action_tmf_entity_catalog" model="ir.actions.act_window">
-        <field name="name">EntityCatalog</field>
-        <field name="res_model">tmf.entity.catalog</field>
-        <field name="view_mode">list,form</field>
-    </record>
-
-    <menuitem id="menu_tmf_entity_catalog"
-              name="EntityCatalog"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_entity_catalog"/>
 </odoo>
