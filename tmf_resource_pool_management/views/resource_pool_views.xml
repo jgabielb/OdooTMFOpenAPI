@@ -1,0 +1,58 @@
+<odoo>
+  <record id="view_tmf_resource_pool_tree" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.tree</field>
+    <field name="model">tmf.resource.pool</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="name"/>
+        <field name="tmf_type"/>
+        <field name="href"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_resource_pool_form" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.form</field>
+    <field name="model">tmf.resource.pool</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id"/>
+            <field name="name"/>
+            <field name="tmf_type"/>
+            <field name="href"/>
+          </group>
+          <group>
+            <field name="description"/>
+            <field name="capacity"/>
+            <field name="pooled_resource"/>
+            <field name="pooled_resource_specification"/>
+          </group>
+          <group string="Optional JSON">
+            <field name="activation_feature"/>
+            <field name="related_party"/>
+            <field name="place"/>
+            <field name="resource_characteristic"/>
+            <field name="resource_relationship"/>
+            <field name="supporting_resource"/>
+            <field name="resource_specification"/>
+          </group>
+          <group string="States">
+            <field name="administrative_state"/>
+            <field name="operational_state"/>
+            <field name="usage_state"/>
+            <field name="resource_status"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_tmf_resource_pool" model="ir.actions.act_window">
+    <field name="name">ResourcePool</field>
+    <field name="res_model">tmf.resource.pool</field>
+    <field name="view_mode">list,form</field>
+  </record>
+</odoo>

@@ -38,7 +38,7 @@ class TMFCustomer(models.Model):
     ], string="Lifecycle Status", default='active', required=True)
 
     def _get_tmf_api_path(self):
-        return "/customerManagement/v4/customer"
+        return "/customerManagement/v5/customer"
 
     # ==========================================
     # SERIALIZATION (Odoo -> TMF JSON)

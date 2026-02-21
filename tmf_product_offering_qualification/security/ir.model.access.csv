@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_product_offering_qualification,tmf.product.offering.qualification,model_tmf_product_offering_qualification,base.group_user,1,1,1,1
+access_tmf_check_poq,tmf.check.product.offering.qualification,model_tmf_check_product_offering_qualification,base.group_user,1,1,1,1
+access_tmf_check_poq_item,tmf.check.poq.item,model_tmf_check_poq_item,base.group_user,1,1,1,1
+access_tmf_query_poq,tmf.query.product.offering.qualification,model_tmf_query_product_offering_qualification,base.group_user,1,1,1,1

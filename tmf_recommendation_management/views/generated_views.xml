@@ -1,0 +1,17 @@
+<odoo>
+    <record id="view_tmf_query_product_recommendation_form" model="ir.ui.view">
+        <field name="name">tmf.query.product.recommendation.form</field>
+        <field name="model">tmf.query.product.recommendation</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="tmf_id"/>
+                        <field name="state"/>
+                        <field name="recommendation_item"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

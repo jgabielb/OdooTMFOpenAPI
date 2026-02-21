@@ -42,14 +42,36 @@ class TMFCustomerController(http.Controller):
     def create_customer(self, **params):
         try:
             data = json.loads(request.httprequest.data)
-            
+            if not isinstance(data, dict):
+                return request.make_response(
+                    json.dumps({'code': 400, 'reason': 'Bad Request', 'message': 'Payload must be a JSON object'}),
+                    status=400,
+                    headers=[('Content-Type', 'application/json')]
+                )
+
+            # TMF629 v5 FVO minimum set
+            if not data.get("name"):
+                return request.make_response(
+                    json.dumps({'code': 400, 'reason': 'Bad Request', 'message': "Missing mandatory field: name"}),
+                    status=400,
+                    headers=[('Content-Type', 'application/json')]
+                )
+            if not data.get("engagedParty"):
+                return request.make_response(
+                    json.dumps({'code': 400, 'reason': 'Bad Request', 'message': "Missing mandatory field: engagedParty"}),
+                    status=400,
+                    headers=[('Content-Type', 'application/json')]
+                )
+             
             # 1. Delegate Logic to Model (We wrote this helper in the previous step)
             vals = request.env['tmf.customer'].sudo().map_tmf_to_odoo(data)
-            
+             
             # 2. Handle Mandatory Partner creation if missing
             if 'partner_id' not in vals:
                 # Basic logic: create a partner if we don't have one linked
-                new_partner = request.env['res.partner'].sudo().create({'name': vals.get('name', 'New TMF Customer')})
+                ep = data.get("engagedParty") or {}
+                partner_name = ep.get("name") or vals.get('name') or data.get("name") or 'New TMF Customer'
+                new_partner = request.env['res.partner'].sudo().create({'name': partner_name})
                 vals['partner_id'] = new_partner.id
 
             # 3. Create (Triggers Notification automatically via Model)

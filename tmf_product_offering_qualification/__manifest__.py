@@ -1,15 +1,20 @@
 {
-    'name': "TMF ProductOfferingQualification",
-    'summary': "Auto-generated implementation of Product Offering Qualification",
-    'description': "Implements ProductOfferingQualification API with Hub Notifications.",
-    'author': "Joao Gabriel",
-    'category': 'TMF',
-    'version': '0.1',
-    'depends': ['tmf_base', 'tmf_product_catalog'],
+    'name': 'TMF Product Offering Qualification',
+    'version': '1.0',
+    'category': 'TMF/Sales',
+    'summary': 'TMF679 Check Product Offering Qualification',
+    'description': 'Implementation of TMF679 Check Product Offering Qualification API v5.0.0',
+    'depends': [
+        'base',
+        'web',
+        'tmf_base', # Critical: Required for tmf.model.mixin
+        'tmf_product_catalog' # Optional: if you link to products
+    ],
     'data': [
         'security/ir.model.access.csv',
         'views/generated_views.xml',
     ],
     'installable': True,
-    'license': 'LGPL-3',
+    'application': True,
+    'auto_install': False,
 }

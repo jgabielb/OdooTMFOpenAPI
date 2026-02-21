@@ -1,83 +1,85 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
-import json
+import uuid
 
-class TMFModel(models.Model):
-    _name = 'tmf.party.interaction'
-    _description = 'PartyInteraction'
-    _inherit = ['tmf.model.mixin']
+API_BASE = "/tmf-api/partyInteractionManagement/v5"
+RESOURCE = "partyInteraction"
 
-    creation_date = fields.Datetime(string="creationDate", help="Date when the interaction is created in the system")
-    description = fields.Char(string="description", help="Description of the interaction")
-    direction = fields.Char(string="direction", help="Specifies who started the interaction. It might be the party or the enterprise exposing this API. Po")
-    reason = fields.Char(string="reason", help="Reason why the interaction happened")
-    status = fields.Char(string="status", help="Status of the interaction (opened, inProgress, completed)")
-    status_change_date = fields.Datetime(string="statusChangeDate", help="Last time the status changed")
-    attachment = fields.Char(string="attachment", help="")
-    channel = fields.Char(string="channel", help="Where the interaction took place (e.g. web, mobile app, store, kiosk, etc.)")
-    interaction_date = fields.Char(string="interactionDate", help="The period during which the interaction took place. Start and end will be different in case of a cal")
-    interaction_item = fields.Char(string="interactionItem", help="")
-    interaction_relationship = fields.Char(string="interactionRelationship", help="")
-    note = fields.Char(string="note", help="")
-    related_party = fields.Char(string="relatedParty", help="")
+def _as_list(v):
+    if v is None or v == "":
+        return []
+    if isinstance(v, list):
+        return v
+    if isinstance(v, dict):
+        return [v]
+    return []
+
+
+class TMFPartyInteraction(models.Model):
+    _name = "tmf.party.interaction"
+    _description = "TMF683 PartyInteraction"
+    _inherit = ["tmf.model.mixin"]
+
+    # Core TMF fields
+    creation_date = fields.Datetime(string="creationDate")
+    description = fields.Char(string="description")
+
+    direction = fields.Char(string="direction", required=True)
+    reason = fields.Char(string="reason", required=True)
+
+    status = fields.Char(string="status")
+    status_change_date = fields.Datetime(string="statusChangeDate")
+
+    interaction_date = fields.Json(string="interactionDate")
+
+    # TMF683 requires relatedChannel object (not "channel" string) :contentReference[oaicite:5]{index=5}
+    related_channel = fields.Json(string="relatedChannel", required=True)
+
+    # Optional complex fields (store as JSON to avoid schema/type mismatches)
+    attachment = fields.Json(string="attachment")
+    external_identifier = fields.Json(string="externalIdentifier")
+    interaction_item = fields.Json(string="interactionItem")
+    interaction_relationship = fields.Json(string="interactionRelationship")
+    note = fields.Json(string="note")
+    related_party = fields.Json(string="relatedParty")
+
+    tmf_type = fields.Char(string="@type", required=True, default="PartyInteraction")
 
     def _get_tmf_api_path(self):
-        return "/party_interactionManagement/v4/PartyInteraction"
+        return f"{API_BASE}/{RESOURCE}"
 
-    def to_tmf_json(self):
+    def to_tmf_json(self, host_url=""):
         self.ensure_one()
-        return {
+        host_url = (host_url or "").rstrip("/")
+        href = self.href or f"{host_url}{API_BASE}/{RESOURCE}/{self.tmf_id}"
+
+        payload = {
             "id": self.tmf_id,
-            "href": self.href,
-            "@type": "PartyInteraction",
+            "href": href,
+            "@type": self.tmf_type or "PartyInteraction",
             "creationDate": self.creation_date.isoformat() if self.creation_date else None,
             "description": self.description,
             "direction": self.direction,
             "reason": self.reason,
-            "status": self.status,
+            "status": None if self.status in (None, "") else str(self.status),
             "statusChangeDate": self.status_change_date.isoformat() if self.status_change_date else None,
-            "attachment": self.attachment,
-            "channel": self.channel,
             "interactionDate": self.interaction_date,
+            "relatedChannel": self.related_channel,
+            "attachment": self.attachment,
+            "externalIdentifier": _as_list(self.external_identifier),
             "interactionItem": self.interaction_item,
             "interactionRelationship": self.interaction_relationship,
             "note": self.note,
             "relatedParty": self.related_party,
-
         }
+        if payload.get("interactionDate") in ("", None):
+            payload.pop("interactionDate", None)
+
+        return {k: v for k, v in payload.items() if v is not None}
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
-        for rec in recs:
-            self._notify('partyInteraction', 'create', rec)
-        return recs
-
-    def write(self, vals):
-        res = super().write(vals)
-        for rec in self:
-            self._notify('partyInteraction', 'update', rec)
-        return res
-
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='partyInteraction',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
-
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass
+        # ensure tmf_id exists if your mixin doesn't set it (safe)
+        for vals in vals_list:
+            vals.setdefault("tmf_id", str(uuid.uuid4()))
+        return super().create(vals_list)

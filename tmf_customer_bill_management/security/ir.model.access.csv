@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_bill_cycle,access_tmf_bill_cycle,model_tmf_bill_cycle,,1,1,1,1
+access_tmf_bill_cycle_spec,access_tmf_bill_cycle_spec,model_tmf_bill_cycle_spec,,1,1,1,1
+access_tmf_applied_customer_billing_rate,access_tmf_applied_customer_billing_rate,model_tmf_applied_customer_billing_rate,,1,1,1,1
+access_tmf_customer_bill,access_tmf_customer_bill,model_tmf_customer_bill,,1,1,1,1
+access_tmf_customer_bill_on_demand,access_tmf_customer_bill_on_demand,model_tmf_customer_bill_on_demand,,1,1,1,1

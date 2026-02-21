@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 BASE = "/tmf-api/serviceOrdering/v4/serviceOrder"
 
 FORBIDDEN_ON_CREATE = {
-    "state", "orderDate", "completionDate",
-    "cancellationDate", "cancellationReason"
+    "state", "orderDate", "completionDate"
 }
 
 NON_PATCHABLE = {
@@ -47,6 +46,17 @@ def _parse_iso_dt(s: str):
         dt = dt.astimezone(tz=None).replace(tzinfo=None)
     return dt
 
+
+def _json_response(payload, status=200, extra_headers=None):
+    headers = [("Content-Type", "application/json")]
+    if extra_headers:
+        headers.extend(extra_headers)
+    return request.make_response(json.dumps(payload), status=status, headers=headers)
+
+
+def _json_error(status, reason, message):
+    return _json_response({"code": str(status), "reason": reason, "message": message}, status=status)
+
 class TMF641Controller(http.Controller):
 
     @http.route(BASE, type="http", auth="public", methods=["GET"], csrf=False)
@@ -81,43 +91,32 @@ class TMF641Controller(http.Controller):
         if fields_param:
             wanted = {f.strip() for f in str(fields_param).split(",") if f.strip()}
             items = [{k: v for k, v in it.items() if k in wanted} for it in items]
-
-        return request.make_response(
-            json.dumps(items),
-            headers=[("Content-Type", "application/json")]
-        )
+        return _json_response(items)
 
     @http.route(BASE + "/<string:oid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_order(self, oid):
         rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
         if not rec:
-            return request.make_response(
-                json.dumps({"error": "Not found"}),
-                status=404,
-                headers=[("Content-Type", "application/json")]
-            )
+            return _json_error(404, "Not Found", "ServiceOrder not found")
         obj = rec.to_tmf_json()
         if obj.get("orderDate") is None:
             obj["orderDate"] = OdooDatetime.now().isoformat()
-        return request.make_response(
-            json.dumps(obj),
-            headers=[("Content-Type", "application/json")]
-        )
+        return _json_response(obj)
 
     @http.route(BASE, type="http", auth="public", methods=["POST"], csrf=False)
     def create_order(self):
         data = json.loads(request.httprequest.data or "{}")
 
         if "serviceOrderItem" not in data or not data["serviceOrderItem"]:
-            return request.make_response("Missing serviceOrderItem", 400)
+            return _json_error(400, "Bad Request", "Missing serviceOrderItem")
 
         for f in FORBIDDEN_ON_CREATE:
             if f in data:
-                return request.make_response(f"{f} not allowed on POST", 400)
+                return _json_error(400, "Bad Request", f"{f} not allowed on POST")
 
         for item in data["serviceOrderItem"]:
             if not all(k in item for k in ("id", "action", "service")):
-                return request.make_response("Invalid serviceOrderItem", 400)
+                return _json_error(400, "Bad Request", "Invalid serviceOrderItem")
 
         vals = {
             "external_id": data.get("externalId"),
@@ -141,27 +140,30 @@ class TMF641Controller(http.Controller):
         if obj.get("orderDate") is None:
             obj["orderDate"] = OdooDatetime.now().isoformat()
 
-        return request.make_response(
-            json.dumps(obj),
-            status=201,
-            headers=[("Content-Type", "application/json")]
-        )
+        return _json_response(obj, status=201)
 
     @http.route(BASE + "/<string:oid>", type="http", auth="public",
                 methods=["PATCH"], csrf=False)
     def patch_order(self, oid):
-        if request.httprequest.content_type != "application/merge-patch+json":
-            return request.make_response("Invalid Content-Type", 415)
+        allowed_content_types = {
+            "application/merge-patch+json",
+            "application/json",
+            "application/json-patch+json",
+            "application/json-patch-query+json",
+        }
+        content_type = (request.httprequest.content_type or "").split(";")[0].strip().lower()
+        if content_type and content_type not in allowed_content_types:
+            return _json_error(415, "Unsupported Media Type", "Invalid Content-Type for PATCH")
 
         data = json.loads(request.httprequest.data or "{}")
 
         for f in NON_PATCHABLE:
             if f in data:
-                return request.make_response(f"{f} is not patchable", 400)
+                return _json_error(400, "Bad Request", f"{f} is not patchable")
 
         rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
         if not rec:
-            return request.make_response("", 404)
+            return _json_error(404, "Not Found", "ServiceOrder not found")
 
         rec.write({
             "description": data.get("description", rec.description),
@@ -176,16 +178,13 @@ class TMF641Controller(http.Controller):
         if obj.get("orderDate") is None:
             obj["orderDate"] = OdooDatetime.now().isoformat()
 
-        return request.make_response(
-            json.dumps(obj),
-            headers=[("Content-Type", "application/json")]
-        )
+        return _json_response(obj)
 
     @http.route(BASE + "/<string:oid>", type="http", auth="public",
                 methods=["DELETE"], csrf=False)
     def delete_order(self, oid):
         rec = request.env["tmf.service.order"].sudo().search([("tmf_id", "=", oid)], limit=1)
         if not rec:
-            return request.make_response("", 404)
+            return _json_error(404, "Not Found", "ServiceOrder not found")
         rec.unlink()
-        return request.make_response("", 204)
+        return request.make_response("", status=204)

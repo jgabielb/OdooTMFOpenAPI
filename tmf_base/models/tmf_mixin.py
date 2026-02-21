@@ -45,7 +45,8 @@ class TMFModelMixin(models.AbstractModel):
         for record in self:
             api_path = record._get_tmf_api_path()
             if api_path and record.tmf_id:
-                record.href = f"{base_url}/tmf-api{api_path}/{record.tmf_id}"
+                normalized_path = api_path if str(api_path).startswith("/tmf-api") else f"/tmf-api{api_path}"
+                record.href = f"{base_url}{normalized_path}/{record.tmf_id}"
             else:
                 record.href = False
 
@@ -71,7 +72,7 @@ class TMFModelMixin(models.AbstractModel):
         path = self._get_tmf_api_path() or ""
         if not path:
             return None
-        base = "/tmf-api" + path
+        base = path if str(path).startswith("/tmf-api") else "/tmf-api" + path
         return f"{base}/{self.tmf_id or self.id}"
     
     def _register_hook(self):

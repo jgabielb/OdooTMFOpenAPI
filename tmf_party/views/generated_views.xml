@@ -36,6 +36,6 @@
 
   <menuitem id="menu_tmf_party"
             name="Party"
-            parent="tmf_product_catalog.menu_tmf_root"
+            parent="base.menu_custom"
             action="action_tmf_party"/>
 </odoo>

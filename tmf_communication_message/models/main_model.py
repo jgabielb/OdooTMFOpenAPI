@@ -1,74 +1,160 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
-import json
+from odoo.exceptions import ValidationError
+from datetime import datetime
 
-class TMFModel(models.Model):
-    _name = 'tmf.communication.message'
-    _description = 'CommunicationMessage'
-    _inherit = ['tmf.model.mixin']
 
-    # Fields based on TMF681
-    content = fields.Char(string="content", help="The content of the message")
+def _dt_to_iso_z(dtval):
+    """Return ISO-8601 with Z (UTC-ish) as CTK commonly expects."""
+    if not dtval:
+        return None
+    if isinstance(dtval, str):
+        # assume already iso
+        return dtval
+    if isinstance(dtval, datetime):
+        return dtval.replace(microsecond=0).isoformat() + "Z"
+    return str(dtval)
+
+
+class TMFCommunicationMessage(models.Model):
+    _name = "tmf.communication.message"
+    _description = "TMF681 CommunicationMessage"
+    _inherit = ["tmf.model.mixin"]
+    _rec_name = "tmf_id"
+
+    # ---------------------------
+    # Mandatory by TMF681 conformance (POST input)
+    # content, messageType, receiver, sender
+    # ---------------------------
+    content = fields.Char(string="content", required=True, help="The content of the message")  # M
+    message_type = fields.Char(string="messageType", required=True, help="Type of message (email, sms, etc)")  # M
+
+    # receiver MUST be an array (Array of Receiver)
+    receiver = fields.Json(string="receiver", required=True, default=list, help="Array of Receiver objects")  # M
+
+    # sender is mandatory (object)
+    sender = fields.Json(string="sender", required=True, default=dict, help="Sender object")  # M
+
+    # ---------------------------
+    # Optional fields (not mandated by TMF681 conformance profile)
+    # ---------------------------
     description = fields.Char(string="description", help="Description of the message")
     log_flag = fields.Boolean(string="logFlag", help="Flag to log the message")
-    message_type = fields.Char(string="messageType", help="Type of message (email, sms, etc)")
     priority = fields.Char(string="priority", help="Priority of the message")
-    receiver = fields.Char(string="receiver", help="Receiver of the message")
-    sender = fields.Char(string="sender", help="Sender of the message")
     state = fields.Char(string="state", help="State of the message")
     subject = fields.Char(string="subject", help="Subject of the message")
     try_times = fields.Integer(string="tryTimes", help="Number of attempts")
-    attachment = fields.Char(string="attachment", help="Attachments")
-    characteristic = fields.Char(string="characteristic", help="Additional characteristics")
-    
-    # --- MISSING FIELDS FIXED HERE ---
-    scheduled_send_time = fields.Datetime(string="scheduledSendTime", help="Time when the message is scheduled to be sent")
-    send_time = fields.Datetime(string="sendTime", help="Time when the message was sent")
-    send_time_complete = fields.Datetime(string="sendTimeComplete", help="Time when the message sending was completed")
-    # ---------------------------------
 
+    # Typically arrays/complex objects -> JSON
+    attachment = fields.Json(string="attachment", default=list, help="Attachments array (if used)")
+    characteristic = fields.Json(string="characteristic", default=list, help="Array of Characteristic objects")
+
+    scheduled_send_time = fields.Datetime(string="scheduledSendTime")
+    send_time = fields.Datetime(string="sendTime")
+    send_time_complete = fields.Datetime(string="sendTimeComplete")
+
+    # ------------------------------------------------------------
+    # API path helper (if your mixin uses it)
+    # ------------------------------------------------------------
     def _get_tmf_api_path(self):
-        return "/communicationMessageManagement/v4/CommunicationMessage"
+        # Your controller is using /tmf-api/communicationManagement/v4/communicationMessage
+        # Keep this aligned with your routing/base; adjust if your mixin builds href from it.
+        return "/tmf-api/communicationManagement/v4/communicationMessage"
 
-    # ==========================================
-    # SERIALIZATION
-    # ==========================================
-    def to_tmf_json(self):
+    # ------------------------------------------------------------
+    # Validation to keep CTK happy and align with conformance rules
+    # - receiver: list
+    # - characteristic: if present, list of objects w/ name+value
+    # ------------------------------------------------------------
+    @api.constrains("receiver", "sender", "characteristic")
+    def _check_tmf681_shapes(self):
+        for rec in self:
+            # receiver must be array
+            if rec.receiver is None or not isinstance(rec.receiver, list) or len(rec.receiver) == 0:
+                raise ValidationError("TMF681: 'receiver' must be a non-empty array.")
+
+            # sender must be object
+            if rec.sender is None or not isinstance(rec.sender, dict) or len(rec.sender.keys()) == 0:
+                raise ValidationError("TMF681: 'sender' must be a non-empty object.")
+
+            # characteristic optional; if present enforce items
+            if rec.characteristic:
+                if not isinstance(rec.characteristic, list):
+                    raise ValidationError("TMF681: 'characteristic' must be an array when present.")
+                for ch in rec.characteristic:
+                    if not isinstance(ch, dict):
+                        raise ValidationError("TMF681: each 'characteristic' item must be an object.")
+                    if not ch.get("name") or ch.get("value") is None:
+                        raise ValidationError("TMF681: characteristic items must include 'name' and 'value'.")
+
+    # ------------------------------------------------------------
+    # Serialization
+    # ------------------------------------------------------------
+    def to_tmf_json(self, host_url="", fields_filter=None):
+        """
+        Conformance:
+        - Response must include id + href (in response messages)
+        - Mandatory attributes should be present when no ?fields= selection is used
+        - fields_filter applies only to first-level attributes (we keep id/href/@type always)
+        """
         self.ensure_one()
-        return {
-            "id": self.tmf_id,
-            "href": self.href,
+
+        host_url = (host_url or "").rstrip("/")
+        api_path = self._get_tmf_api_path().rstrip("/")
+        tmf_id = getattr(self, "tmf_id", None) or str(self.id)
+
+        href = getattr(self, "href", None)
+        if not href:
+            href = f"{host_url}{api_path}/{tmf_id}" if host_url else f"{api_path}/{tmf_id}"
+
+        payload = {
+            "id": tmf_id,
+            "href": href,
             "@type": "CommunicationMessage",
+
+            # Mandatory
             "content": self.content,
-            "description": self.description,
-            "logFlag": self.log_flag,
             "messageType": self.message_type,
+            "receiver": self.receiver or [],
+            "sender": self.sender or {},
+
+            # Optional
+            "description": self.description,
+            "logFlag": bool(self.log_flag) if self.log_flag is not None else False,
             "priority": self.priority,
-            "receiver": self.receiver,
-            "sender": self.sender,
             "state": self.state,
             "subject": self.subject,
             "tryTimes": self.try_times,
-            "scheduledSendTime": self.scheduled_send_time.isoformat() if self.scheduled_send_time else None,
-            "sendTime": self.send_time.isoformat() if self.send_time else None,
-            "sendTimeComplete": self.send_time_complete.isoformat() if self.send_time_complete else None,
-            "attachment": [], # Placeholder for list
-            "characteristic": [], # Placeholder for list
+            "scheduledSendTime": _dt_to_iso_z(self.scheduled_send_time),
+            "sendTime": _dt_to_iso_z(self.send_time),
+            "sendTimeComplete": _dt_to_iso_z(self.send_time_complete),
+            "attachment": self.attachment or [],
+            "characteristic": self.characteristic or [],
         }
 
-    # ==========================================
-    # NOTIFICATION LOGIC
-    # ==========================================
+        # Apply top-level field selection (?fields=)
+        if fields_filter:
+            allowed = {f.strip() for f in fields_filter.split(",") if f.strip()}
+            # Always preserve identifiers + @type
+            allowed |= {"id", "href", "@type"}
+            payload = {k: v for k, v in payload.items() if k in allowed}
+
+        return payload
+
+    # ------------------------------------------------------------
+    # Notifications (same as yours, kept)
+    # ------------------------------------------------------------
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
         for rec in recs:
-            self._notify('communicationMessage', 'create', rec)
+            rec._notify("communicationMessage", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
         for rec in self:
-            self._notify('communicationMessage', 'update', rec)
+            rec._notify("communicationMessage", "update", rec)
         return res
 
     def unlink(self):
@@ -76,9 +162,9 @@ class TMFModel(models.Model):
         res = super().unlink()
         for resource in payloads:
             try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='communicationMessage',
-                    event_type='delete',
+                self.env["tmf.hub.subscription"]._notify_subscribers(
+                    api_name="communicationMessage",
+                    event_type="delete",
                     resource_json=resource,
                 )
             except Exception:
@@ -87,7 +173,7 @@ class TMFModel(models.Model):
 
     def _notify(self, api_name, action, record):
         try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
+            self.env["tmf.hub.subscription"]._notify_subscribers(
                 api_name=api_name,
                 event_type=action,
                 resource_json=record.to_tmf_json(),

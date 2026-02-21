@@ -139,7 +139,8 @@ class TMFCatalogController(http.Controller):
                 updated = self._mock_patch('productSpecification', id, data)
                 if updated:
                     return self._response(self._filter_fields(updated, params.get('fields')))
-            except: pass
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
         
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productSpecification', id):
@@ -230,7 +231,8 @@ class TMFCatalogController(http.Controller):
                 data = json.loads(request.httprequest.data)
                 updated = self._mock_patch('productOffering', id, data)
                 if updated: return self._response(self._filter_fields(updated, params.get('fields')))
-            except: pass
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productOffering', id): return Response(status=204)
         elif request.httprequest.method == 'GET':
@@ -308,7 +310,8 @@ class TMFCatalogController(http.Controller):
                 data = json.loads(request.httprequest.data)
                 updated = self._mock_patch('productOfferingPrice', id, data)
                 if updated: return self._response(self._filter_fields(updated, params.get('fields')))
-            except: pass
+            except Exception as e:
+                return self._error(400, "BAD_REQUEST", str(e))
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productOfferingPrice', id): return Response(status=204)
         elif request.httprequest.method == 'GET':

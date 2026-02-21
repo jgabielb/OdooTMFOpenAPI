@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_capacity_specification,tmf.capacity.specification,model_tmf_capacity_specification,,1,1,1,1
+access_tmf_resource_pool_specification,tmf.resource.pool.specification,model_tmf_resource_pool_specification,,1,1,1,1
+access_tmf_resource_pool,tmf.resource.pool,model_tmf_resource_pool,,1,1,1,1
+access_tmf_resource_pool_push,tmf.resource.pool.push,model_tmf_resource_pool_push,,1,1,1,1
+access_tmf_resource_pool_extract,tmf.resource.pool.extract,model_tmf_resource_pool_extract,,1,1,1,1
+access_tmf_resource_pool_availability_check,tmf.resource.pool.availability.check,model_tmf_resource_pool_availability_check,,1,1,1,1

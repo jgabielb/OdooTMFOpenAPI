@@ -25,10 +25,6 @@ def _as_dict(val):
     return None
 
 def _filter_top_level_fields(payload, fields_filter):
-    """
-    TMF677: attribute selection via ?fields= applies to first-level attributes.
-    We must always preserve 'href', 'id', and '@type' as these are critical identifiers.
-    """
     if not fields_filter:
         return payload
     allowed = set([f.strip() for f in fields_filter.split(",") if f.strip()])
@@ -37,19 +33,65 @@ def _filter_top_level_fields(payload, fields_filter):
     allowed.add("@type")
     return {k: v for k, v in payload.items() if k in allowed}
 
+
 class TMFQueryUsageConsumption(models.Model):
     _name = "tmf.query.usage.consumption"
     _description = "QueryUsageConsumption"
     _inherit = ["tmf.model.mixin"]
 
-    # Store whole TMF payload (except id/href/@type which we manage)
     tmf_type = fields.Char(string="@type", default="QueryUsageConsumption", required=True)
-    usage_consumption_json = fields.Text(string="usageConsumption(JSON)")  # list of objects
-    party_account_json = fields.Text(string="partyAccount(JSON)")          # dict
-    related_party_json = fields.Text(string="relatedParty(JSON)")          # dict
-    search_criteria_json = fields.Text(string="searchCriteria(JSON)")      # dict
-    error_message_json = fields.Text(string="errorMessage(JSON)")          # dict
+    usage_consumption_json = fields.Text(string="usageConsumption(JSON)")
+    party_account_json = fields.Text(string="partyAccount(JSON)")
+    related_party_json = fields.Text(string="relatedParty(JSON)")
+    search_criteria_json = fields.Text(string="searchCriteria(JSON)")
+    error_message_json = fields.Text(string="errorMessage(JSON)")
 
+    # -----------------------------
+    # HUB NOTIFICATION (TMF)
+    # -----------------------------
+    def _notify(self, action):
+        # action MUST be: create | update | delete (matches your TMF_EVENT_NAME_MAP keys)
+        try:
+            self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name="queryUsageConsumption",
+                event_type=action,
+                resource_json=self.to_tmf_json(),
+            )
+        except Exception:
+            # keep CTK-safe: do not break CRUD if hub fails
+            pass
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        for rec in recs:
+            rec._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        for rec in self:
+            rec._notify("update")
+        return res
+
+    def unlink(self):
+        # capture payloads before delete
+        payloads = [(rec, rec.to_tmf_json()) for rec in self]
+        res = super().unlink()
+        for rec, payload in payloads:
+            try:
+                self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                    api_name="queryUsageConsumption",
+                    event_type="delete",
+                    resource_json=payload,
+                )
+            except Exception:
+                pass
+        return res
+
+    # -----------------------------
+    # TMF JSON
+    # -----------------------------
     def _get_tmf_api_path(self):
         return f"{API_BASE}/queryUsageConsumption"
 
@@ -62,19 +104,16 @@ class TMFQueryUsageConsumption(models.Model):
             "@type": "QueryUsageConsumption",
         }
 
-        # 1. Handle usageConsumption as a list of UsageConsumptionReport items
         uc_val = _as_dict(self.usage_consumption_json)
         if uc_val is None:
             uc_val = []
         elif isinstance(uc_val, dict):
             uc_val = [uc_val]
-        
-        # Ensure items in the list have correct type and id/href
+
         out["usageConsumption"] = []
         for item in uc_val:
             if not isinstance(item, dict):
                 continue
-            # Ensure mandatory fields for the item
             if not item.get("id"):
                 item["id"] = str(uuid.uuid4())
             if not item.get("@type"):
@@ -83,14 +122,12 @@ class TMFQueryUsageConsumption(models.Model):
                 item["href"] = f"{API_BASE}/usageConsumptionReport/{item['id']}"
             out["usageConsumption"].append(item)
 
-        # 2. Handle searchCriteria
         sc = _as_dict(self.search_criteria_json)
-        # Default searchCriteria points to a report with the same ID
         if sc is None:
             sc = {
                 "id": self.tmf_id,
                 "@type": "UsageConsumptionReport",
-                "href": f"{API_BASE}/usageConsumptionReport/{self.tmf_id}"
+                "href": f"{API_BASE}/usageConsumptionReport/{self.tmf_id}",
             }
         else:
             if not sc.get("id"):
@@ -99,10 +136,9 @@ class TMFQueryUsageConsumption(models.Model):
                 sc["@type"] = "UsageConsumptionReport"
             if not sc.get("href"):
                 sc["href"] = f"{API_BASE}/usageConsumptionReport/{sc['id']}"
-        
+
         out["searchCriteria"] = sc
 
-        # 3. Optional fields
         pa = _as_dict(self.party_account_json)
         rp = _as_dict(self.related_party_json)
         em = _as_dict(self.error_message_json)
@@ -125,6 +161,49 @@ class TMFUsageConsumptionReport(models.Model):
     tmf_type = fields.Char(string="@type", default="UsageConsumptionReport", required=True)
     bucket_json = fields.Text(string="bucket(JSON)")
 
+    # -----------------------------
+    # HUB NOTIFICATION (TMF)
+    # -----------------------------
+    def _notify(self, action):
+        try:
+            self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name="usageConsumptionReport",
+                event_type=action,
+                resource_json=self.to_tmf_json(),
+            )
+        except Exception:
+            pass
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        for rec in recs:
+            rec._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        for rec in self:
+            rec._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [(rec, rec.to_tmf_json()) for rec in self]
+        res = super().unlink()
+        for rec, payload in payloads:
+            try:
+                self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                    api_name="usageConsumptionReport",
+                    event_type="delete",
+                    resource_json=payload,
+                )
+            except Exception:
+                pass
+        return res
+
+    # -----------------------------
+    # TMF JSON
+    # -----------------------------
     def _get_tmf_api_path(self):
         return f"{API_BASE}/usageConsumptionReport"
 
@@ -135,14 +214,12 @@ class TMFUsageConsumptionReport(models.Model):
             "href": self.href,
             "@type": "UsageConsumptionReport",
         }
-        
-        # Handle bucket as a List of BucketRefOrValue
+
         b_val = _as_dict(self.bucket_json)
         if b_val is not None:
-            # Spec expects a list. If we have a single dict, wrap it.
             if isinstance(b_val, dict):
                 b_val = [b_val]
-            
+
             if isinstance(b_val, list):
                 valid_buckets = []
                 for b in b_val:

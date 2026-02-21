@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <record id="view_tmf_customer_bill_list" model="ir.ui.view">
+    <field name="name">tmf.customer.bill.list</field>
+    <field name="model">tmf.customer.bill</field>
+    <field name="arch" type="xml">
+      <list string="Customer Bills">
+        <field name="name"/>
+        <field name="state"/>
+        <field name="bill_date"/>
+        <field name="tmf_id"/>
+        <field name="last_update"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_customer_bill_form" model="ir.ui.view">
+    <field name="name">tmf.customer.bill.form</field>
+    <field name="model">tmf.customer.bill</field>
+    <field name="arch" type="xml">
+      <form string="Customer Bill">
+        <sheet>
+          <group>
+            <field name="name"/>
+            <field name="state"/>
+            <field name="bill_date"/>
+            <field name="bill_cycle_id"/>
+          </group>
+          <group string="Billing Period">
+            <field name="billing_period_start"/>
+            <field name="billing_period_end"/>
+          </group>
+          <group>
+            <field name="tmf_id" readonly="1"/>
+            <field name="href" readonly="1"/>
+            <field name="tmf_type" readonly="1"/>
+            <field name="last_update" readonly="1"/>
+          </group>
+          <group>
+            <field name="payload" widget="json" colspan="4"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_tmf_customer_bill" model="ir.actions.act_window">
+    <field name="name">Customer Bills</field>
+    <field name="res_model">tmf.customer.bill</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <menuitem id="menu_tmf_customer_bill_root" name="TMF Billing" sequence="30"/>
+  <menuitem id="menu_tmf_customer_bill" name="Customer Bills" parent="menu_tmf_customer_bill_root" action="action_tmf_customer_bill" sequence="10"/>
+
+</odoo>

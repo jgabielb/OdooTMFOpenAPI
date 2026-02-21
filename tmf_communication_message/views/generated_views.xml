@@ -1,62 +1,76 @@
 <odoo>
+    <!-- FORM -->
     <record id="view_tmf_communication_message_form" model="ir.ui.view">
         <field name="name">tmf.communication.message.form</field>
         <field name="model">tmf.communication.message</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Communication Message">
                 <sheet>
                     <group>
-                <field name="content"/>
-                <field name="description"/>
-                <field name="log_flag"/>
-                <field name="message_type"/>
-                <field name="priority"/>
-                <field name="scheduled_send_time"/>
-                <field name="send_time"/>
-                <field name="send_time_complete"/>
-                <field name="subject"/>
-                <field name="try_times"/>
-                <field name="attachment"/>
-                <field name="characteristic"/>
-                <field name="receiver"/>
-                <field name="sender"/>
-                <field name="state"/>
+                        <group>
+                            <field name="content" required="1"/>
+                            <field name="message_type" required="1"/>
+                            <field name="subject"/>
+                            <field name="description"/>
+                            <field name="state"/>
+                            <field name="priority"/>
+                            <field name="log_flag"/>
+                            <field name="try_times"/>
+                        </group>
+
+                        <group string="Schedule">
+                            <field name="scheduled_send_time"/>
+                            <field name="send_time"/>
+                            <field name="send_time_complete"/>
+                        </group>
                     </group>
+
+                    <notebook>
+                        <page string="Parties">
+                            <group>
+                                <field name="receiver" widget="json" required="1"/>
+                                <field name="sender" widget="json" required="1"/>
+                            </group>
+                        </page>
+
+                        <page string="Details">
+                            <group>
+                                <field name="characteristic" widget="json"/>
+                                <field name="attachment" widget="json"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="view_tmf_communication_message_tree" model="ir.ui.view">
-        <field name="name">tmf.communication.message.tree</field>
+    <!-- LIST -->
+    <record id="view_tmf_communication_message_list" model="ir.ui.view">
+        <field name="name">tmf.communication.message.list</field>
         <field name="model">tmf.communication.message</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="content"/>
-                <field name="description"/>
-                <field name="log_flag"/>
+            <list string="Communication Messages">
                 <field name="message_type"/>
+                <field name="subject"/>
+                <field name="state"/>
                 <field name="priority"/>
                 <field name="scheduled_send_time"/>
                 <field name="send_time"/>
-                <field name="send_time_complete"/>
-                <field name="subject"/>
                 <field name="try_times"/>
-                <field name="attachment"/>
-                <field name="characteristic"/>
-                <field name="receiver"/>
-                <field name="sender"/>
-                <field name="state"/>
+                <field name="log_flag"/>
             </list>
         </field>
     </record>
 
+    <!-- ACTION -->
     <record id="action_tmf_communication_message" model="ir.actions.act_window">
         <field name="name">CommunicationMessage</field>
         <field name="res_model">tmf.communication.message</field>
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- MENU -->
     <menuitem id="menu_tmf_communication_message"
               name="CommunicationMessage"
               parent="tmf_product_catalog.menu_tmf_root"

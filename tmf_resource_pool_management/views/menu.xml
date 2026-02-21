@@ -1,0 +1,11 @@
+<odoo>
+  <menuitem id="tmf685_root" name="TMF685 Resource Pool" sequence="50"/>
+
+  <menuitem id="tmf685_capacity_spec_menu" name="CapacitySpecification" parent="tmf685_root" action="action_tmf_capacity_specification"/>
+  <menuitem id="tmf685_pool_spec_menu" name="ResourcePoolSpecification" parent="tmf685_root" action="action_tmf_resource_pool_specification"/>
+  <menuitem id="tmf685_pool_menu" name="ResourcePool" parent="tmf685_root" action="action_tmf_resource_pool"/>
+  <menuitem id="tmf685_sub_menu" name="Pool Subresources" parent="tmf685_root" sequence="60"/>
+  <menuitem id="tmf685_push_menu" name="Push" parent="tmf685_sub_menu" action="action_tmf_resource_pool_push"/>
+  <menuitem id="tmf685_extract_menu" name="Extract" parent="tmf685_sub_menu" action="action_tmf_resource_pool_extract"/>
+  <menuitem id="tmf685_avail_menu" name="AvailabilityCheck" parent="tmf685_sub_menu" action="action_tmf_resource_pool_availability_check"/>
+</odoo>

@@ -97,7 +97,7 @@
   <record id="action_tmf_change_request" model="ir.actions.act_window">
     <field name="name">Change Requests</field>
     <field name="res_model">tmf.change.request</field>
-    <field name="view_mode">tree,form</field>
+    <field name="view_mode">list,form</field>
   </record>
 
   <!-- Menu (under a TMF root menu if you have one; otherwise this creates its own) -->

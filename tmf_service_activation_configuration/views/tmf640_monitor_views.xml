@@ -35,6 +35,6 @@
   <record id="tmf640_monitor_action" model="ir.actions.act_window">
     <field name="name">TMF640 Monitors</field>
     <field name="res_model">tmf640.monitor</field>
-    <field name="view_mode">tree,form</field>
+    <field name="view_mode">list,form</field>
   </record>
 </odoo>

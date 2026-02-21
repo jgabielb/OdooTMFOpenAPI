@@ -1,0 +1,126 @@
+<odoo>
+  <!-- Push -->
+  <record id="view_tmf_resource_pool_push_tree" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.push.tree</field>
+    <field name="model">tmf.resource.pool.push</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="resource_pool_id"/>
+        <field name="state"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_resource_pool_push_form" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.push.form</field>
+    <field name="model">tmf.resource.pool.push</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id"/>
+            <field name="tmf_type"/>
+            <field name="resource_pool_id"/>
+            <field name="state"/>
+          </group>
+          <group>
+            <field name="error_message"/>
+            <field name="pushed_resource"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_tmf_resource_pool_push" model="ir.actions.act_window">
+    <field name="name">Push</field>
+    <field name="res_model">tmf.resource.pool.push</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <!-- Extract -->
+  <record id="view_tmf_resource_pool_extract_tree" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.extract.tree</field>
+    <field name="model">tmf.resource.pool.extract</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="resource_pool_id"/>
+        <field name="state"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_resource_pool_extract_form" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.extract.form</field>
+    <field name="model">tmf.resource.pool.extract</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id"/>
+            <field name="tmf_type"/>
+            <field name="resource_pool_id"/>
+            <field name="state"/>
+          </group>
+          <group>
+            <field name="capacity_demand"/>
+            <field name="error_message"/>
+            <field name="extracted_resource"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_tmf_resource_pool_extract" model="ir.actions.act_window">
+    <field name="name">Extract</field>
+    <field name="res_model">tmf.resource.pool.extract</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <!-- AvailabilityCheck -->
+  <record id="view_tmf_resource_pool_availability_check_tree" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.availability.check.tree</field>
+    <field name="model">tmf.resource.pool.availability.check</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="resource_pool_id"/>
+        <field name="state"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_tmf_resource_pool_availability_check_form" model="ir.ui.view">
+    <field name="name">tmf.resource.pool.availability.check.form</field>
+    <field name="model">tmf.resource.pool.availability.check</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="tmf_id"/>
+            <field name="tmf_type"/>
+            <field name="resource_pool_id"/>
+            <field name="state"/>
+          </group>
+          <group>
+            <field name="capacity_demand"/>
+            <field name="capacity_option"/>
+            <field name="error_message"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_tmf_resource_pool_availability_check" model="ir.actions.act_window">
+    <field name="name">AvailabilityCheck</field>
+    <field name="res_model">tmf.resource.pool.availability.check</field>
+    <field name="view_mode">list,form</field>
+  </record>
+</odoo>

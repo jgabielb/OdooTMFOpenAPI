@@ -1,77 +1,435 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
+import uuid
 import json
 
-class TMFModel(models.Model):
-    _name = 'tmf.product.offering.qualification'
-    _description = 'ProductOfferingQualification'
-    _inherit = ['tmf.model.mixin']
+API_BASE = "/tmf-api/productOfferingQualificationManagement/v5"
 
-    effective_qualification_date = fields.Datetime(string="effectiveQualificationDate", help="Effective date to productOfferingQualification completion")
-    expected_poq_completion_date = fields.Datetime(string="expectedPOQCompletionDate", help="Date when the requester expect to provide an answer for the qualification request")
-    instant_sync_qualification = fields.Boolean(string="instantSyncQualification", help="An indicator which when the value is 'true' means that requester expects to get qualifcation result ")
-    project_id = fields.Char(string="projectId", help="This value MAY be assigned by the Buyer/Seller to identify a project the serviceability request is a")
-    provide_alternative = fields.Boolean(string="provideAlternative", help="An indicator which when the value is 'true' means that alternative solutions should be provided")
-    requested_poq_completion_date = fields.Datetime(string="requestedPOQCompletionDate", help="Deadline date when the requester expected a qualification answer")
-    product_offering_qualification_item = fields.Char(string="productOfferingQualificationItem", help="Qualification item for a product or a category")
-    related_party = fields.Char(string="relatedParty", help="Party playing a role for this qualification (as requester for example)")
-    state = fields.Char(string="state", help="State of the productOfferingQualification defined in the state engine")
-    state_change = fields.Char(string="stateChange", help="State change for the POQ")
 
-    def _get_tmf_api_path(self):
-        return "/product_offering_qualificationManagement/v4/ProductOfferingQualification"
+# ----------------------------
+# Helpers
+# ----------------------------
+def _filter_top_level_fields(payload, fields_filter):
+    """
+    TMF spec:
+    - ?fields applies ONLY to first-level attributes
+    - Must always preserve: id, href, @type
+    """
+    if not fields_filter:
+        return payload
+
+    allowed = {f.strip() for f in str(fields_filter).split(",") if f.strip()}
+    allowed.update({"id", "href", "@type"})
+    return {k: v for k, v in payload.items() if k in allowed}
+
+
+def _dt_to_iso_z(dtval):
+    if not dtval:
+        return None
+    if isinstance(dtval, str):
+        return dtval
+    try:
+        return dtval.replace(microsecond=0).isoformat() + "Z"
+    except Exception:
+        return str(dtval)
+
+
+def _as_obj(val, default=None):
+    """Accept dict OR JSON-string; always return dict."""
+    if default is None:
+        default = {}
+    if val is None:
+        return default
+    if isinstance(val, dict):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return default
+        try:
+            parsed = json.loads(s)
+            return parsed if isinstance(parsed, dict) else default
+        except Exception:
+            return default
+    return default
+
+
+def _as_arr(val, default=None):
+    """Accept list OR JSON-string; always return list."""
+    if default is None:
+        default = []
+    if val is None:
+        return default
+    if isinstance(val, list):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return default
+        try:
+            parsed = json.loads(s)
+            return parsed if isinstance(parsed, list) else default
+        except Exception:
+            return default
+    return default
+
+
+# -------------------------------------------------------------------------
+# QueryProductOfferingQualification
+# -------------------------------------------------------------------------
+class TMFQueryProductOfferingQualification(models.Model):
+    _name = "tmf.query.product.offering.qualification"
+    _description = "TMF679 QueryProductOfferingQualification"
+    _rec_name = "tmf_id"
+    _inherit = ["tmf.model.mixin"]
+
+    tmf_id = fields.Char(string="id", required=True, index=True, default=lambda self: str(uuid.uuid4()))
+    href = fields.Char(string="href", compute="_compute_href", store=False)
+
+    tmf_type = fields.Char(string="@type", default="QueryProductOfferingQualification", required=True)
+    description = fields.Text(string="description")
+
+    effective_qualification_date = fields.Datetime(string="effectiveQualificationDate", default=fields.Datetime.now)
+    creation_date = fields.Datetime(string="creationDate", default=fields.Datetime.now, readonly=True)
+
+    # IMPORTANT: DB column is jsonb -> use fields.Json (NOT Text)
+    # Must NEVER be NULL -> required=True + default dict with @type
+    search_criteria_json = fields.Json(
+        string="searchCriteria",
+        required=True,
+        default=lambda self: {"@type": "ProductOfferingQualificationSearchCriteria"},
+    )
+
+    # CTK wants array
+    related_party_json = fields.Json(string="relatedParty", default=list)
+
+    state = fields.Selection(
+        [
+            ("inProgress", "In Progress"),
+            ("done", "Done"),
+            ("terminatedWithError", "Terminated With Error"),
+        ],
+        string="state",
+        required=True,
+        default="done",
+    )
+
+    def _compute_href(self):
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        for rec in self:
+            rec.href = f"{base_url}{API_BASE}/queryProductOfferingQualification/{rec.tmf_id}"
+
+    def to_tmf_json(self, host_url="", fields_filter=None):
+        host_url = (host_url or "").rstrip("/")
+
+        sc = _as_obj(self.search_criteria_json, default={})
+        sc.setdefault("@type", "ProductOfferingQualificationSearchCriteria")  # CTK required
+
+        data = {
+            "id": self.tmf_id,
+            "href": f"{host_url}{API_BASE}/queryProductOfferingQualification/{self.tmf_id}",
+            "@type": "QueryProductOfferingQualification",
+            "creationDate": _dt_to_iso_z(self.creation_date),
+            "effectiveQualificationDate": _dt_to_iso_z(self.effective_qualification_date),
+            "state": self.state or "done",
+            "searchCriteria": sc,  # object + @type
+            "relatedParty": _as_arr(self.related_party_json, default=[]),
+            "description": self.description or "",  # must be string
+        }
+        return _filter_top_level_fields(data, fields_filter)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            # Ensure JSON fields are dict/list (not string)
+            sc = vals.get("search_criteria_json")
+            if isinstance(sc, str):
+                sc = _as_obj(sc, default={})
+            sc = sc or {}
+            sc.setdefault("@type", "ProductOfferingQualificationSearchCriteria")
+            vals["search_criteria_json"] = sc
+
+            rp = vals.get("related_party_json")
+            if isinstance(rp, str):
+                rp = _as_arr(rp, default=[])
+            vals["related_party_json"] = rp or []
+
+            desc = vals.get("description")
+            vals["description"] = desc if isinstance(desc, str) else (desc or "")
+
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if "search_criteria_json" in vals:
+            sc = vals.get("search_criteria_json")
+            if isinstance(sc, str):
+                sc = _as_obj(sc, default={})
+            sc = sc or {}
+            sc.setdefault("@type", "ProductOfferingQualificationSearchCriteria")
+            vals["search_criteria_json"] = sc
+
+        if "related_party_json" in vals:
+            rp = vals.get("related_party_json")
+            if isinstance(rp, str):
+                rp = _as_arr(rp, default=[])
+            vals["related_party_json"] = rp or []
+
+        if "description" in vals:
+            desc = vals.get("description")
+            vals["description"] = desc if isinstance(desc, str) else (desc or "")
+
+        return super().write(vals)
+
+    @api.model
+    def create_from_json(self, data):
+        data = data or {}
+        sc = data.get("searchCriteria") or {}
+        if isinstance(sc, str):
+            sc = _as_obj(sc, default={})
+        sc.setdefault("@type", "ProductOfferingQualificationSearchCriteria")
+
+        rp = data.get("relatedParty") or []
+        if isinstance(rp, str):
+            rp = _as_arr(rp, default=[])
+
+        return self.create({
+            "description": data.get("description") if isinstance(data.get("description"), str) else (data.get("description") or ""),
+            "state": data.get("state") or "done",
+            "related_party_json": rp,
+            "search_criteria_json": sc,
+        })
+
+
+# -------------------------------------------------------------------------
+# CheckProductOfferingQualification
+# -------------------------------------------------------------------------
+class TMFCheckProductOfferingQualification(models.Model):
+    _name = "tmf.check.product.offering.qualification"
+    _description = "TMF679 CheckProductOfferingQualification"
+    _rec_name = "tmf_id"
+    _inherit = ["tmf.model.mixin"]
+
+    tmf_id = fields.Char(string="id", required=True, index=True, default=lambda self: str(uuid.uuid4()))
+    href = fields.Char(string="href", compute="_compute_href", store=False)
+
+    tmf_type = fields.Char(string="@type", default="CheckProductOfferingQualification", required=True)
+    description = fields.Text(string="description")
+
+    effective_qualification_date = fields.Datetime(
+        string="effectiveQualificationDate",
+        required=True,
+        default=fields.Datetime.now,
+    )
+
+    qualification_result = fields.Selection(
+        [
+            ("qualified", "Qualified"),
+            ("unableToProvide", "Unable To Provide"),
+            ("insufficientInformation", "Insufficient Information"),
+        ],
+        string="qualificationResult",
+        required=True,
+        default="qualified",
+    )
+
+    state = fields.Selection(
+        [
+            ("inProgress", "In Progress"),
+            ("done", "Done"),
+            ("terminatedWithError", "Terminated With Error"),
+        ],
+        string="state",
+        required=True,
+        default="done",
+    )
+
+    item_ids = fields.One2many(
+        "tmf.check.poq.item",
+        "parent_id",
+        string="checkProductOfferingQualificationItem",
+    )
+
+    related_party_json = fields.Json(string="relatedParty", default=list)
+
+    def _compute_href(self):
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        for rec in self:
+            rec.href = f"{base_url}{API_BASE}/checkProductOfferingQualification/{rec.tmf_id}"
+
+    def to_tmf_json(self, host_url="", fields_filter=None):
+        host_url = (host_url or "").rstrip("/")
+
+        data = {
+            "id": self.tmf_id,
+            "href": f"{host_url}{API_BASE}/checkProductOfferingQualification/{self.tmf_id}",
+            "@type": self.tmf_type or "CheckProductOfferingQualification",
+            "description": self.description or "",
+            "effectiveQualificationDate": _dt_to_iso_z(self.effective_qualification_date),
+            "qualificationResult": self.qualification_result or "qualified",
+            "state": self.state or "done",
+            "creationDate": _dt_to_iso_z(self.create_date),
+            "checkProductOfferingQualificationItem": [item.to_tmf_json() for item in self.item_ids],
+            "relatedParty": _as_arr(self.related_party_json, default=[]),
+        }
+
+        data = {k: v for k, v in data.items() if v is not None}
+        return _filter_top_level_fields(data, fields_filter)
+
+    @api.model
+    def create_from_json(self, data):
+        data = data or {}
+
+        rp = data.get("relatedParty") or []
+        if isinstance(rp, str):
+            rp = _as_arr(rp, default=[])
+
+        vals = {
+            "description": data.get("description") if isinstance(data.get("description"), str) else (data.get("description") or ""),
+            "qualification_result": data.get("qualificationResult") or "qualified",
+            "state": data.get("state") or "inProgress",
+            "related_party_json": rp,
+        }
+
+        if data.get("effectiveQualificationDate"):
+            vals["effective_qualification_date"] = str(data["effectiveQualificationDate"]).replace("Z", "")
+
+        record = self.create(vals)
+
+        items = data.get("checkProductOfferingQualificationItem") or []
+        if items == []:
+            items = [{"product": {"@type": "ProductRefOrValue"}, "qualificationItemResult": "qualified", "state": "done"}]
+
+        for item_data in items:
+            item_data = item_data or {}
+            prod = item_data.get("product") or {}
+            if isinstance(prod, str):
+                prod = _as_obj(prod, default={})
+            prod.setdefault("@type", "ProductRefOrValue")
+
+            self.env["tmf.check.poq.item"].create({
+                "parent_id": record.id,
+                "tmf_id": item_data.get("id") or str(uuid.uuid4()),
+                "qualification_item_result": item_data.get("qualificationItemResult", "qualified"),
+                "product_json": prod,
+                "state": item_data.get("state", "done"),
+            })
+
+        return record
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if "related_party_json" in vals and isinstance(vals["related_party_json"], str):
+                vals["related_party_json"] = _as_arr(vals["related_party_json"], default=[])
+            if "description" in vals:
+                desc = vals.get("description")
+                vals["description"] = desc if isinstance(desc, str) else (desc or "")
+
+        recs = super().create(vals_list)
+        for rec in recs:
+            rec._notify("checkProductOfferingQualification", "create")
+        return recs
+
+    def write(self, vals):
+        if "related_party_json" in vals and isinstance(vals["related_party_json"], str):
+            vals["related_party_json"] = _as_arr(vals["related_party_json"], default=[])
+        if "description" in vals:
+            desc = vals.get("description")
+            vals["description"] = desc if isinstance(desc, str) else (desc or "")
+
+        old_states = {rec.id: rec.state for rec in self} if "state" in vals else {}
+        res = super().write(vals)
+        for rec in self:
+            if "state" in vals and vals["state"] != old_states.get(rec.id):
+                rec._notify("checkProductOfferingQualification", "stateChange")
+            else:
+                rec._notify("checkProductOfferingQualification", "attributeValueChange")
+        return res
+
+    def _notify(self, api_name, event_suffix):
+        try:
+            self.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name=api_name,
+                event_type=event_suffix,
+                resource_json=self.to_tmf_json(),
+            )
+        except Exception:
+            pass
+
+
+# -------------------------------------------------------------------------
+# CheckProductOfferingQualificationItem
+# -------------------------------------------------------------------------
+class TMFCheckProductOfferingQualificationItem(models.Model):
+    _name = "tmf.check.poq.item"
+    _description = "CheckProductOfferingQualificationItem"
+
+    parent_id = fields.Many2one(
+        "tmf.check.product.offering.qualification",
+        required=True,
+        ondelete="cascade",
+    )
+
+    tmf_id = fields.Char(string="id", required=True, default=lambda self: str(uuid.uuid4()))
+    tmf_type = fields.Char(string="@type", required=True, default="CheckProductOfferingQualificationItem")
+
+    # JSONB object, MUST have @type for CTK
+    product_json = fields.Json(
+        string="product",
+        required=True,
+        default=lambda self: {"@type": "ProductRefOrValue"},
+    )
+
+    qualification_item_result = fields.Selection(
+        [
+            ("qualified", "Qualified"),
+            ("unableToProvide", "Unable To Provide"),
+        ],
+        string="qualificationItemResult",
+        required=True,
+        default="qualified",
+    )
+
+    state = fields.Selection(
+        [
+            ("done", "Done"),
+            ("terminatedWithError", "Terminated With Error"),
+        ],
+        string="state",
+        required=True,
+        default="done",
+    )
 
     def to_tmf_json(self):
         self.ensure_one()
+        prod = _as_obj(self.product_json, default={})
+        prod.setdefault("@type", "ProductRefOrValue")
+
         return {
             "id": self.tmf_id,
-            "href": self.href,
-            "@type": "ProductOfferingQualification",
-            "effectiveQualificationDate": self.effective_qualification_date.isoformat() if self.effective_qualification_date else None,
-            "expectedPOQCompletionDate": self.expected_poq_completion_date.isoformat() if self.expected_poq_completion_date else None,
-            "instantSyncQualification": self.instant_sync_qualification,
-            "projectId": self.project_id,
-            "provideAlternative": self.provide_alternative,
-            "requestedPOQCompletionDate": self.requested_poq_completion_date.isoformat() if self.requested_poq_completion_date else None,
-            "productOfferingQualificationItem": self.product_offering_qualification_item,
-            "relatedParty": self.related_party,
+            "@type": self.tmf_type,
+            "product": prod,
+            "qualificationItemResult": self.qualification_item_result,
             "state": self.state,
-            "stateChange": self.state_change,
-
         }
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
-        for rec in recs:
-            self._notify('productOfferingQualification', 'create', rec)
-        return recs
+        for vals in vals_list:
+            prod = vals.get("product_json")
+            if isinstance(prod, str):
+                prod = _as_obj(prod, default={})
+            prod = prod or {}
+            prod.setdefault("@type", "ProductRefOrValue")
+            vals["product_json"] = prod
+        return super().create(vals_list)
 
     def write(self, vals):
-        res = super().write(vals)
-        for rec in self:
-            self._notify('productOfferingQualification', 'update', rec)
-        return res
-
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='productOfferingQualification',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
-
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass
+        if "product_json" in vals:
+            prod = vals.get("product_json")
+            if isinstance(prod, str):
+                prod = _as_obj(prod, default={})
+            prod = prod or {}
+            prod.setdefault("@type", "ProductRefOrValue")
+            vals["product_json"] = prod
+        return super().write(vals)
