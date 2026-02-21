@@ -1,0 +1,65 @@
+<odoo>
+    <record id="view_tmf_managed_entity_form" model="ir.ui.view">
+        <field name="name">tmf.managed.entity.form</field>
+        <field name="model">tmf.managed.entity</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="context"/>
+                <field name="description"/>
+                <field name="valid_for"/>
+                <field name="is_bundle"/>
+                <field name="is_external"/>
+                <field name="name"/>
+                <field name="last_update"/>
+                <field name="lifecycle_status"/>
+                <field name="status_change_date"/>
+                <field name="version"/>
+                <field name="attachment"/>
+                <field name="characteristic"/>
+                <field name="entity_relationship"/>
+                <field name="entity_specification"/>
+                <field name="note"/>
+                <field name="related_party"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_managed_entity_tree" model="ir.ui.view">
+        <field name="name">tmf.managed.entity.tree</field>
+        <field name="model">tmf.managed.entity</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="context"/>
+                <field name="description"/>
+                <field name="valid_for"/>
+                <field name="is_bundle"/>
+                <field name="is_external"/>
+                <field name="name"/>
+                <field name="last_update"/>
+                <field name="lifecycle_status"/>
+                <field name="status_change_date"/>
+                <field name="version"/>
+                <field name="attachment"/>
+                <field name="characteristic"/>
+                <field name="entity_relationship"/>
+                <field name="entity_specification"/>
+                <field name="note"/>
+                <field name="related_party"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_managed_entity" model="ir.actions.act_window">
+        <field name="name">ManagedEntity</field>
+        <field name="res_model">tmf.managed.entity</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_managed_entity"
+              name="ManagedEntity"
+              action="action_tmf_managed_entity"/>
+</odoo>

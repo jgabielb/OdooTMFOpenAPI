@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_test_data_instance_definition,tmf.test.data.instance.definition,model_tmf_test_data_instance_definition,base.group_user,1,1,1,1

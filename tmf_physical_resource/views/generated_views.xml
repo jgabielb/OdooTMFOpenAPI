@@ -1,0 +1,77 @@
+<odoo>
+    <record id="view_tmf_physical_resource_form" model="ir.ui.view">
+        <field name="name">tmf.physical.resource.form</field>
+        <field name="model">tmf.physical.resource</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="category"/>
+                <field name="description"/>
+                <field name="end_operating_date"/>
+                <field name="manufacture_date"/>
+                <field name="name"/>
+                <field name="power_state"/>
+                <field name="resource_version"/>
+                <field name="serial_number"/>
+                <field name="start_operating_date"/>
+                <field name="version_number"/>
+                <field name="activation_feature"/>
+                <field name="administrative_state"/>
+                <field name="attachment"/>
+                <field name="note"/>
+                <field name="operational_state"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_characteristic"/>
+                <field name="resource_relationship"/>
+                <field name="resource_specification"/>
+                <field name="resource_status"/>
+                <field name="usage_state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_physical_resource_tree" model="ir.ui.view">
+        <field name="name">tmf.physical.resource.tree</field>
+        <field name="model">tmf.physical.resource</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="category"/>
+                <field name="description"/>
+                <field name="end_operating_date"/>
+                <field name="manufacture_date"/>
+                <field name="name"/>
+                <field name="power_state"/>
+                <field name="resource_version"/>
+                <field name="serial_number"/>
+                <field name="start_operating_date"/>
+                <field name="version_number"/>
+                <field name="activation_feature"/>
+                <field name="administrative_state"/>
+                <field name="attachment"/>
+                <field name="note"/>
+                <field name="operational_state"/>
+                <field name="place"/>
+                <field name="related_party"/>
+                <field name="resource_characteristic"/>
+                <field name="resource_relationship"/>
+                <field name="resource_specification"/>
+                <field name="resource_status"/>
+                <field name="usage_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_physical_resource" model="ir.actions.act_window">
+        <field name="name">PhysicalResource</field>
+        <field name="res_model">tmf.physical.resource</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_physical_resource"
+              name="PhysicalResource"
+              action="action_tmf_physical_resource"/>
+</odoo>

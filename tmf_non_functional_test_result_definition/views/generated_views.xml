@@ -1,0 +1,49 @@
+<odoo>
+    <record id="view_tmf_non_functional_test_result_definition_form" model="ir.ui.view">
+        <field name="name">tmf.non.functional.test.result.definition.form</field>
+        <field name="model">tmf.non.functional.test.result.definition</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                <field name="attachment_type"/>
+                <field name="content"/>
+                <field name="description"/>
+                <field name="mime_type"/>
+                <field name="name"/>
+                <field name="url"/>
+                <field name="size"/>
+                <field name="valid_for"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_non_functional_test_result_definition_tree" model="ir.ui.view">
+        <field name="name">tmf.non.functional.test.result.definition.tree</field>
+        <field name="model">tmf.non.functional.test.result.definition</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="attachment_type"/>
+                <field name="content"/>
+                <field name="description"/>
+                <field name="mime_type"/>
+                <field name="name"/>
+                <field name="url"/>
+                <field name="size"/>
+                <field name="valid_for"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_non_functional_test_result_definition" model="ir.actions.act_window">
+        <field name="name">NonFunctionalTestResultDefinition</field>
+        <field name="res_model">tmf.non.functional.test.result.definition</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_non_functional_test_result_definition"
+              name="NonFunctionalTestResultDefinition"
+              action="action_tmf_non_functional_test_result_definition"/>
+</odoo>
