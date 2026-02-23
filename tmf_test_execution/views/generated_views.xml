@@ -1,44 +1,185 @@
 <odoo>
-    <record id="view_tmf_test_execution_form" model="ir.ui.view">
-        <field name="name">tmf.test.execution.form</field>
-        <field name="model">tmf.test.execution</field>
+    <record id="view_tmf_test_environment_provisioning_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.test.environment.provisioning.execution.tree</field>
+        <field name="model">tmf.test.environment.provisioning.execution</field>
         <field name="arch" type="xml">
-            <form>
+            <list string="TestEnvironmentProvisioningExecution">
+                <field name="tmf_id"/>
+                <field name="data_correlation_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_test_environment_provisioning_execution_form" model="ir.ui.view">
+        <field name="name">tmf.test.environment.provisioning.execution.form</field>
+        <field name="model">tmf.test.environment.provisioning.execution</field>
+        <field name="arch" type="xml">
+            <form string="TestEnvironmentProvisioningExecution">
                 <sheet>
                     <group>
-                <field name="data_correlation_id"/>
-                <field name="general_test_artifact"/>
-                <field name="state"/>
-                <field name="test_data_instance"/>
-                <field name="test_environment_provisioning_execution"/>
+                        <field name="data_correlation_id"/>
+                        <field name="state"/>
+                        <field name="test_environment_allocation_execution_json"/>
+                        <field name="test_environment_provisioning_execution_json"/>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="view_tmf_test_execution_tree" model="ir.ui.view">
-        <field name="name">tmf.test.execution.tree</field>
-        <field name="model">tmf.test.execution</field>
+    <record id="action_tmf_test_environment_provisioning_execution" model="ir.actions.act_window">
+        <field name="name">TestEnvironmentProvisioningExecution</field>
+        <field name="res_model">tmf.test.environment.provisioning.execution</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_test_environment_provisioning_execution" name="TestEnvironmentProvisioningExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_provisioning_execution"/>
+
+    <record id="view_tmf_test_environment_allocation_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.test.environment.allocation.execution.tree</field>
+        <field name="model">tmf.test.environment.allocation.execution</field>
         <field name="arch" type="xml">
-            <list>
+            <list string="TestEnvironmentAllocationExecution">
+                <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
-                <field name="general_test_artifact"/>
                 <field name="state"/>
-                <field name="test_data_instance"/>
-                <field name="test_environment_provisioning_execution"/>
+                <field name="resource_manager_url"/>
             </list>
         </field>
     </record>
 
-    <record id="action_tmf_test_execution" model="ir.actions.act_window">
-        <field name="name">TestExecution</field>
-        <field name="res_model">tmf.test.execution</field>
+    <record id="view_tmf_test_environment_allocation_execution_form" model="ir.ui.view">
+        <field name="name">tmf.test.environment.allocation.execution.form</field>
+        <field name="model">tmf.test.environment.allocation.execution</field>
+        <field name="arch" type="xml">
+            <form string="TestEnvironmentAllocationExecution">
+                <sheet>
+                    <group>
+                        <field name="data_correlation_id"/>
+                        <field name="state"/>
+                        <field name="resource_manager_url"/>
+                        <field name="abstract_environment_json"/>
+                        <field name="test_environment_provisioning_execution_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_test_environment_allocation_execution" model="ir.actions.act_window">
+        <field name="name">TestEnvironmentAllocationExecution</field>
+        <field name="res_model">tmf.test.environment.allocation.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_execution"
-              name="TestExecution"
-              parent="tmf_product_catalog.menu_tmf_root"
-              action="action_tmf_test_execution"/>
+    <menuitem id="menu_tmf_test_environment_allocation_execution" name="TestEnvironmentAllocationExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_allocation_execution"/>
+
+    <record id="view_tmf_test_suite_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.test.suite.execution.tree</field>
+        <field name="model">tmf.test.suite.execution</field>
+        <field name="arch" type="xml">
+            <list string="TestSuiteExecution">
+                <field name="tmf_id"/>
+                <field name="data_correlation_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_test_suite_execution_form" model="ir.ui.view">
+        <field name="name">tmf.test.suite.execution.form</field>
+        <field name="model">tmf.test.suite.execution</field>
+        <field name="arch" type="xml">
+            <form string="TestSuiteExecution">
+                <sheet>
+                    <group>
+                        <field name="data_correlation_id"/>
+                        <field name="state"/>
+                        <field name="test_environment_provisioning_execution_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_test_suite_execution" model="ir.actions.act_window">
+        <field name="name">TestSuiteExecution</field>
+        <field name="res_model">tmf.test.suite.execution</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_test_suite_execution" name="TestSuiteExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite_execution"/>
+
+    <record id="view_tmf_test_case_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.test.case.execution.tree</field>
+        <field name="model">tmf.test.case.execution</field>
+        <field name="arch" type="xml">
+            <list string="TestCaseExecution">
+                <field name="tmf_id"/>
+                <field name="data_correlation_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_test_case_execution_form" model="ir.ui.view">
+        <field name="name">tmf.test.case.execution.form</field>
+        <field name="model">tmf.test.case.execution</field>
+        <field name="arch" type="xml">
+            <form string="TestCaseExecution">
+                <sheet>
+                    <group>
+                        <field name="data_correlation_id"/>
+                        <field name="state"/>
+                        <field name="test_environment_provisioning_execution_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_test_case_execution" model="ir.actions.act_window">
+        <field name="name">TestCaseExecution</field>
+        <field name="res_model">tmf.test.case.execution</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_test_case_execution" name="TestCaseExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case_execution"/>
+
+    <record id="view_tmf_non_functional_test_execution_tree" model="ir.ui.view">
+        <field name="name">tmf.non.functional.test.execution.tree</field>
+        <field name="model">tmf.non.functional.test.execution</field>
+        <field name="arch" type="xml">
+            <list string="NonFunctionalTestExecution">
+                <field name="tmf_id"/>
+                <field name="data_correlation_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_non_functional_test_execution_form" model="ir.ui.view">
+        <field name="name">tmf.non.functional.test.execution.form</field>
+        <field name="model">tmf.non.functional.test.execution</field>
+        <field name="arch" type="xml">
+            <form string="NonFunctionalTestExecution">
+                <sheet>
+                    <group>
+                        <field name="data_correlation_id"/>
+                        <field name="state"/>
+                        <field name="test_environment_provisioning_execution_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_non_functional_test_execution" model="ir.actions.act_window">
+        <field name="name">NonFunctionalTestExecution</field>
+        <field name="res_model">tmf.non.functional.test.execution</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_non_functional_test_execution" name="NonFunctionalTestExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_execution"/>
 </odoo>

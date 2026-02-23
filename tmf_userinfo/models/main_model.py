@@ -26,11 +26,13 @@ class TMFUserinfo(models.Model):
     zoneinfo = fields.Char(string="zoneinfo")
     address = fields.Json(default=dict)
     legal_id = fields.Json(default=list)
+    # Keep legacy storage field for backward compatibility with existing records/views.
     user_assets = fields.Json(default=list)
+    user_permission = fields.Json(default=list)
     extra_json = fields.Json(default=dict)
 
     def _get_tmf_api_path(self):
-        return "/openid/v4/userinfo"
+        return "/federatedIdentity/v5/userinfo"
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -75,8 +77,10 @@ class TMFUserinfo(models.Model):
             payload["address"] = self.address
         if self.legal_id:
             payload["legalId"] = self.legal_id
-        if self.user_assets:
-            payload["userAssets"] = self.user_assets
+        if self.user_permission:
+            payload["userPermission"] = self.user_permission
+        elif self.user_assets:
+            payload["userPermission"] = self.user_assets
         if isinstance(self.extra_json, dict):
             for key, value in self.extra_json.items():
                 if key not in payload:

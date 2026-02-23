@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_incident,tmf.incident,model_tmf_incident,base.group_user,1,1,1,1
+access_tmf_diagnose_incident,tmf.diagnose.incident,model_tmf_diagnose_incident,base.group_user,1,1,1,1
+access_tmf_resolve_incident,tmf.resolve.incident,model_tmf_resolve_incident,base.group_user,1,1,1,1

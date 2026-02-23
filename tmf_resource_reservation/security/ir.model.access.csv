@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_resource_reservation,tmf.resource.reservation,model_tmf_resource_reservation,base.group_user,1,1,1,1
+access_tmf_cancel_resource_reservation,tmf.cancel.resource.reservation,model_tmf_cancel_resource_reservation,base.group_user,1,1,1,1

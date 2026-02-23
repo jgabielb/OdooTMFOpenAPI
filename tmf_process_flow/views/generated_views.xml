@@ -6,15 +6,15 @@
             <form>
                 <sheet>
                     <group>
-                <field name="process_flow_date"/>
-                <field name="process_flow_specification"/>
-                <field name="channel"/>
-                <field name="characteristic"/>
-                <field name="process_flow_specification_ref"/>
-                <field name="related_entity"/>
-                <field name="related_party"/>
-                <field name="state"/>
-                <field name="task_flow"/>
+                        <field name="name"/>
+                        <field name="state"/>
+                        <field name="description"/>
+                        <field name="process_flow_date"/>
+                        <field name="process_flow_specification_ref"/>
+                        <field name="channel"/>
+                        <field name="characteristic"/>
+                        <field name="related_entity"/>
+                        <field name="related_party"/>
                     </group>
                 </sheet>
             </form>
@@ -26,15 +26,10 @@
         <field name="model">tmf.process.flow</field>
         <field name="arch" type="xml">
             <list>
-                <field name="process_flow_date"/>
-                <field name="process_flow_specification"/>
-                <field name="channel"/>
-                <field name="characteristic"/>
-                <field name="process_flow_specification_ref"/>
-                <field name="related_entity"/>
-                <field name="related_party"/>
+                <field name="name"/>
                 <field name="state"/>
-                <field name="task_flow"/>
+                <field name="process_flow_date"/>
+                <field name="process_flow_specification_ref"/>
             </list>
         </field>
     </record>

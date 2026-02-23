@@ -1,7 +1,7 @@
 {
-    'name': "TMF TestScenario",
-    'summary': "Auto-generated implementation of Test Scenario Management API",
-    'description': "Implements TestScenario API with Hub Notifications.",
+    'name': "TMF709 Test Scenario",
+    'summary': "TMF709 Test Scenario Management API",
+    'description': "Implements TMF709 Test Scenario Management API with Hub notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

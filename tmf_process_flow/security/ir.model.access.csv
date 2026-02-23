@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_process_flow,tmf.process.flow,model_tmf_process_flow,base.group_user,1,1,1,1
+access_tmf_process_flow_specification,tmf.process.flow.specification,model_tmf_process_flow_specification,base.group_user,1,1,1,1
+access_tmf_task_flow_specification,tmf.task.flow.specification,model_tmf_task_flow_specification,base.group_user,1,1,1,1
+access_tmf_task_flow,tmf.task.flow,model_tmf_task_flow,base.group_user,1,1,1,1

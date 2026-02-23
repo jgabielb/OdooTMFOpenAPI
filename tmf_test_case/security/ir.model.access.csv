@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_test_case,tmf.test.case,model_tmf_test_case,base.group_user,1,1,1,1
+access_tmf_test_suite,tmf.test.suite,model_tmf_test_suite,base.group_user,1,1,1,1
+access_tmf_non_functional_test_model,tmf.non.functional.test.model,model_tmf_non_functional_test_model,base.group_user,1,1,1,1

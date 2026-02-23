@@ -1,0 +1,45 @@
+<odoo>
+    <record id="view_tmf_sales_lead_form" model="ir.ui.view">
+        <field name="name">tmf.sales.lead.form</field>
+        <field name="model">tmf.sales.lead</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="status"/>
+                        <field name="description"/>
+                        <field name="priority"/>
+                        <field name="expected_close_date"/>
+                        <field name="crm_lead_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_sales_lead_tree" model="ir.ui.view">
+        <field name="name">tmf.sales.lead.tree</field>
+        <field name="model">tmf.sales.lead</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="status"/>
+                <field name="priority"/>
+                <field name="expected_close_date"/>
+                <field name="crm_lead_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_sales_lead" model="ir.actions.act_window">
+        <field name="name">SalesLead</field>
+        <field name="res_model">tmf.sales.lead</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_sales_lead"
+              name="SalesLead"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_sales_lead"/>
+</odoo>

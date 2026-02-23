@@ -25,6 +25,241 @@ TMF_EVENT_NAME_MAP = {
         'delete': 'PartyDeleteEvent',
     },
 
+    # TMF703 - Entity Inventory
+    'entity': {
+        'create': 'EntityCreateEvent',
+        'update': 'EntityChangeEvent',
+        'delete': 'EntityDeleteEvent',
+    },
+    'association': {
+        'create': 'AssociationCreateEvent',
+        'update': 'AssociationChangeEvent',
+        'delete': 'AssociationDeleteEvent',
+    },
+
+    # TMF704 - Test Case Management
+    'testCase': {
+        'create': 'TestCaseCreateEvent',
+        'update': 'TestCaseChangeEvent',
+        'state_change': 'TestCaseStateChangeEvent',
+        'delete': 'TestCaseDeleteEvent',
+    },
+    'testSuite': {
+        'create': 'TestSuiteCreateEvent',
+        'update': 'TestSuiteChangeEvent',
+        'state_change': 'TestSuiteStateChangeEvent',
+        'delete': 'TestSuiteDeleteEvent',
+    },
+    'nonFunctionalTestModel': {
+        'create': 'NonFunctionalTestModelCreateEvent',
+        'update': 'NonFunctionalTestModelChangeEvent',
+        'state_change': 'NonFunctionalTestModelStateChangeEvent',
+        'delete': 'NonFunctionalTestModelDeleteEvent',
+    },
+
+    # TMF705 - Test Environment Management
+    'abstractEnvironment': {
+        'create': 'AbstractEnvironmentCreateEvent',
+        'update': 'AbstractEnvironmentChangeEvent',
+        'state_change': 'AbstractEnvironmentStateChangeEvent',
+        'delete': 'AbstractEnvironmentDeleteEvent',
+    },
+    'concreteEnvironmentMetaModel': {
+        'create': 'ConcreteEnvironmentMetaModelCreateEvent',
+        'update': 'ConcreteEnvironmentMetaModelChangeEvent',
+        'state_change': 'ConcreteEnvironmentMetaModelStateChangeEvent',
+        'delete': 'ConcreteEnvironmentMetaModelDeleteEvent',
+    },
+    'testResourceAPI': {
+        'create': 'TestResourceAPICreateEvent',
+        'update': 'TestResourceAPIChangeEvent',
+        'state_change': 'TestResourceAPIStateChangeEvent',
+        'delete': 'TestResourceAPIDeleteEvent',
+    },
+    'provisioningArtifact': {
+        'create': 'ProvisioningArtifactCreateEvent',
+        'update': 'ProvisioningArtifactChangeEvent',
+        'state_change': 'ProvisioningArtifactStateChangeEvent',
+        'delete': 'ProvisioningArtifactDeleteEvent',
+    },
+
+    # TMF706 - Test Data Management
+    'testDataInstance': {
+        'create': 'TestDataInstanceCreateEvent',
+        'update': 'TestDataInstanceChangeEvent',
+        'state_change': 'TestDataInstanceStateChangeEvent',
+        'delete': 'TestDataInstanceDeleteEvent',
+    },
+    'testDataSchema': {
+        'create': 'TestDataSchemaCreateEvent',
+        'update': 'TestDataSchemaChangeEvent',
+        'state_change': 'TestDataSchemaStateChangeEvent',
+        'delete': 'TestDataSchemaDeleteEvent',
+    },
+
+    # TMF707 - Test Result Management
+    'testCaseResult': {
+        'create': 'TestCaseResultCreateEvent',
+        'update': 'TestCaseResultChangeEvent',
+        'delete': 'TestCaseResultDeleteEvent',
+    },
+    'testSuiteResult': {
+        'create': 'TestSuiteResultCreateEvent',
+        'update': 'TestSuiteResultChangeEvent',
+        'delete': 'TestSuiteResultDeleteEvent',
+    },
+    'nonFunctionalTestResult': {
+        'create': 'NonFunctionalTestResultCreateEvent',
+        'update': 'NonFunctionalTestResultChangeEvent',
+        'delete': 'NonFunctionalTestResultDeleteEvent',
+    },
+
+    # TMF708 - Test Execution Management
+    'testEnvironmentProvisioningExecution': {
+        'create': 'TestEnvironmentProvisioningExecutionCreateEvent',
+        'update': 'TestEnvironmentProvisioningExecutionChangeEvent',
+        'state_change': 'TestEnvironmentProvisioningExecutionStateChangeEvent',
+        'delete': 'TestEnvironmentProvisioningExecutionDeleteEvent',
+    },
+    'testEnvironmentAllocationExecution': {
+        'create': 'TestEnvironmentAllocationExecutionCreateEvent',
+        'update': 'TestEnvironmentAllocationExecutionChangeEvent',
+        'state_change': 'TestEnvironmentAllocationExecutionStateChangeEvent',
+        'delete': 'TestEnvironmentAllocationExecutionDeleteEvent',
+    },
+    'testSuiteExecution': {
+        'create': 'TestSuiteExecutionCreateEvent',
+        'update': 'TestSuiteExecutionChangeEvent',
+        'state_change': 'TestSuiteExecutionStateChangeEvent',
+        'delete': 'TestSuiteExecutionDeleteEvent',
+    },
+    'testCaseExecution': {
+        'create': 'TestCaseExecutionCreateEvent',
+        'update': 'TestCaseExecutionChangeEvent',
+        'state_change': 'TestCaseExecutionStateChangeEvent',
+        'delete': 'TestCaseExecutionDeleteEvent',
+    },
+    'nonFunctionalTestExecution': {
+        'create': 'NonFunctionalTestExecutionCreateEvent',
+        'update': 'NonFunctionalTestExecutionChangeEvent',
+        'state_change': 'NonFunctionalTestExecutionStateChangeEvent',
+        'delete': 'NonFunctionalTestExecutionDeleteEvent',
+    },
+
+    # TMF709 - Test Scenario Management
+    'testScenario': {
+        'create': 'TestScenarioCreateEvent',
+        'update': 'TestScenarioAttributeValueChangeEvent',
+        'state_change': 'TestScenarioStateChangeEvent',
+        'delete': 'TestScenarioDeleteEvent',
+    },
+
+    # TMF710 - General Test Artifact Management
+    'generalTestArtifact': {
+        'create': 'GeneralTestArtifactCreateEvent',
+        'update': 'GeneralTestArtifactAttributeValueChangeEvent',
+        'state_change': 'GeneralTestArtifactStateChangeEvent',
+        'delete': 'GeneralTestArtifactDeleteEvent',
+    },
+
+    # TMF711 - Shipment Management
+    'shipment': {
+        'create': 'ShipmentCreateEvent',
+        'update': 'ShipmentAttributeValueChangeEvent',
+        'state_change': 'ShipmentStateChangeEvent',
+        'delete': 'ShipmentDeleteEvent',
+    },
+    'shipmentSpecification': {
+        'create': 'ShipmentSpecificationCreateEvent',
+        'update': 'ShipmentSpecificationAttributeValueChangeEvent',
+        'state_change': 'ShipmentSpecificationStateChangeEvent',
+        'delete': 'ShipmentSpecificationDeleteEvent',
+    },
+
+    # TMF713 - Work Management
+    'work': {
+        'create': 'WorkCreateEvent',
+        'update': 'WorkAttributeValueChangeEvent',
+        'state_change': 'WorkStateChangeEvent',
+        'delete': 'WorkDeleteEvent',
+    },
+    'workSpecification': {
+        'create': 'WorkSpecificationCreateEvent',
+        'update': 'WorkSpecificationAttributeValueChangeEvent',
+        'state_change': 'WorkSpecificationStateChangeEvent',
+        'delete': 'WorkSpecificationDeleteEvent',
+    },
+
+    # TMF714 - Work Qualification Management
+    'checkWorkQualification': {
+        'create': 'CheckWorkQualificationCreateEvent',
+        'update': 'CheckWorkQualificationAttributeValueChangeEvent',
+        'state_change': 'CheckWorkQualificationStateChangeEvent',
+        'delete': 'CheckWorkQualificationDeleteEvent',
+        'information_required': 'CheckWorkQualificationInformationRequiredEvent',
+    },
+    'queryWorkQualification': {
+        'create': 'QueryWorkQualificationCreateEvent',
+        'state_change': 'QueryWorkQualificationStateChangeEvent',
+        'delete': 'QueryWorkQualificationDeleteEvent',
+    },
+
+    # TMF715 - Warranty Management
+    'warranty': {
+        'create': 'WarrantyCreateEvent',
+        'update': 'WarrantyAttributeValueChangeEvent',
+        'state_change': 'WarrantyStateChangeEvent',
+        'delete': 'WarrantyDeleteEvent',
+    },
+    'warrantySpecification': {
+        'create': 'WarrantySpecificationCreateEvent',
+        'update': 'WarrantySpecificationAttributeValueChangeEvent',
+        'state_change': 'WarrantySpecificationStateChangeEvent',
+        'delete': 'WarrantySpecificationDeleteEvent',
+    },
+
+    # TMF716 - Resource Reservation
+    'resourceReservation': {
+        'create': 'ResourceReservationCreateEvent',
+        'update': 'ResourceReservationAttributeValueChangeEvent',
+        'state_change': 'ResourceReservationStateChangeEvent',
+        'delete': 'ResourceReservationDeleteEvent',
+        'information_required': 'ResourceReservationInformationRequiredEvent',
+    },
+    'cancelResourceReservation': {
+        'create': 'CancelResourceReservationCreateEvent',
+        'state_change': 'CancelResourceReservationStateChangeEvent',
+        'information_required': 'CancelResourceReservationInformationRequiredEvent',
+    },
+
+    # TMF720 - Digital Identity Management
+    'digitalIdentity': {
+        'create': 'DigitalIdentityCreateEvent',
+        'update': 'DigitalIdentityAttributeValueChangeEvent',
+        'state_change': 'DigitalIdentityStateChangeEvent',
+        'delete': 'DigitalIdentityDeleteEvent',
+    },
+
+    # TMF724 - Incident Management
+    'incident': {
+        'create': 'IncidentCreateEvent',
+        'update': 'IncidentAttributeValueChangeEvent',
+        'state_change': 'IncidentStateChangeEvent',
+        'delete': 'IncidentDeleteEvent',
+    },
+    'diagnoseIncident': {
+        'create': 'DiagnoseIncidentCreateEvent',
+        'update': 'DiagnoseIncidentAttributeValueChangeEvent',
+        'state_change': 'DiagnoseIncidentStateChangeEvent',
+        'delete': 'DiagnoseIncidentDeleteEvent',
+    },
+    'resolveIncident': {
+        'create': 'ResolveIncidentCreateEvent',
+        'update': 'ResolveIncidentAttributeValueChangeEvent',
+        'state_change': 'ResolveIncidentStateChangeEvent',
+        'delete': 'ResolveIncidentDeleteEvent',
+    },
+
     # TMF629 - Customer
     'customer': {
         'create': 'CustomerCreateEvent',
@@ -75,6 +310,19 @@ TMF_EVENT_NAME_MAP = {
         'state_change': 'ResourceStateChangeEvent',
         'delete': 'ResourceDeleteEvent',
     },
+    # TMF664 - Resource Function Activation
+    'resourceFunction': {
+        'create': 'ResourceFunctionCreateEvent',
+        'update': 'ResourceFunctionAttributeValueChangeEvent',
+        'state_change': 'ResourceFunctionStateChangeEvent',
+        'delete': 'ResourceFunctionDeleteEvent',
+    },
+    'monitor': {
+        'create': 'MonitorCreateEvent',
+        'update': 'MonitorAttributeValueChangeEvent',
+        'state_change': 'MonitorStateChangeEvent',
+        'delete': 'MonitorDeleteEvent',
+    },
 
     # TMF621 - Trouble Ticket (resource: troubleTicket)
     'troubleTicket': {
@@ -111,6 +359,77 @@ TMF_EVENT_NAME_MAP = {
         'create': 'TopicCreateEvent',
         'update': 'TopicChangeEvent',
         'delete': 'TopicDeleteEvent',
+    },
+
+    # TMF696 - Risk Management
+    'productOfferingRiskAssessment': {
+        'create': 'ProductOfferingRiskAssessmentCreateEvent',
+        'state_change': 'ProductOfferingRiskAssessmentStatusChangeEvent',
+        'delete': 'ProductOfferingRiskAssessmentDeleteEvent',
+    },
+    'partyRoleRiskAssessment': {
+        'create': 'PartyRoleRiskAssessmentCreateEvent',
+        'state_change': 'PartyRoleRiskAssessmentStatusChangeEvent',
+        'delete': 'PartyRoleRiskAssessmentDeleteEvent',
+    },
+    'partyRoleProductOfferingRiskAssessment': {
+        'create': 'PartyRoleProductOfferingRiskAssessmentCreateEvent',
+        'state_change': 'PartyRoleProductOfferingRiskAssessmentStatusChangeEvent',
+        'delete': 'PartyRoleProductOfferingRiskAssessmentDeleteEvent',
+    },
+    'shoppingCartRiskAssessment': {
+        'create': 'ShoppingCartRiskAssessmentCreateEvent',
+        'state_change': 'ShoppingCartRiskAssessmentStatusChangeEvent',
+        'delete': 'ShoppingCartRiskAssessmentDeleteEvent',
+    },
+    'productOrderRiskAssessment': {
+        'create': 'ProductOrderRiskAssessmentCreateEvent',
+        'state_change': 'ProductOrderRiskAssessmentStatusChangeEvent',
+        'delete': 'ProductOrderRiskAssessmentDeleteEvent',
+    },
+
+    # TMF699 - Sales Management
+    'salesLead': {
+        'create': 'SalesLeadCreateEvent',
+        'update': 'SalesLeadAttributeValueChangeEvent',
+        'state_change': 'SalesLeadStateChangeEvent',
+        'delete': 'SalesLeadDeleteEvent',
+    },
+
+    # TMF700 - Shipping Order Management
+    'shippingOrder': {
+        'create': 'ShippingOrderCreateEvent',
+        'update': 'ShippingOrderAttributeValueChangeEvent',
+        'state_change': 'ShippingOrderStateChangeEvent',
+        'delete': 'ShippingOrderDeleteEvent',
+        'information_required': 'ShippingOrderInformationRequiredEvent',
+    },
+
+    # TMF701 - Process Flow Management
+    'processFlowSpecification': {
+        'create': 'ProcessFlowSpecificationCreateEvent',
+        'update': 'ProcessFlowSpecificationAttributeValueChangeEvent',
+        'state_change': 'ProcessFlowSpecificationStateChangeEvent',
+        'delete': 'ProcessFlowSpecificationDeleteEvent',
+    },
+    'taskFlowSpecification': {
+        'create': 'TaskFlowSpecificationCreateEvent',
+        'update': 'TaskFlowSpecificationAttributeValueChangeEvent',
+        'state_change': 'TaskFlowSpecificationStateChangeEvent',
+        'delete': 'TaskFlowSpecificationDeleteEvent',
+    },
+    'processFlow': {
+        'create': 'ProcessFlowCreateEvent',
+        'update': 'ProcessFlowAttributeValueChangeEvent',
+        'state_change': 'ProcessFlowStateChangeEvent',
+        'delete': 'ProcessFlowDeleteEvent',
+    },
+    'taskFlow': {
+        'create': 'TaskFlowCreateEvent',
+        'update': 'TaskFlowAttributeValueChangeEvent',
+        'state_change': 'TaskFlowStateChangeEvent',
+        'delete': 'TaskFlowDeleteEvent',
+        'information_required': 'TaskFlowInformationRequiredEvent',
     },
 }
 

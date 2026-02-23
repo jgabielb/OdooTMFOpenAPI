@@ -1,7 +1,7 @@
 {
-    'name': "TMF TestExecution",
-    'summary': "Auto-generated implementation of Test Execution",
-    'description': "Implements TestExecution API with Hub Notifications.",
+    'name': "TMF708 Test Execution",
+    'summary': "TMF708 Test Execution Management API",
+    'description': "Implements TMF708 Test Execution Management API with Hub notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

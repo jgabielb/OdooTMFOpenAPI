@@ -1,0 +1,125 @@
+<odoo>
+    <record id="view_tmf_incident_tree" model="ir.ui.view">
+        <field name="name">tmf.incident.tree</field>
+        <field name="model">tmf.incident</field>
+        <field name="arch" type="xml">
+            <list string="Incident">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="priority"/>
+                <field name="state"/>
+                <field name="ack_state"/>
+                <field name="domain"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_incident_form" model="ir.ui.view">
+        <field name="name">tmf.incident.form</field>
+        <field name="model">tmf.incident</field>
+        <field name="arch" type="xml">
+            <form string="Incident">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="category"/>
+                        <field name="priority"/>
+                        <field name="state"/>
+                        <field name="ack_state"/>
+                        <field name="domain"/>
+                        <field name="occur_time"/>
+                        <field name="clear_time"/>
+                    </group>
+                    <group>
+                        <field name="incident_detail"/>
+                        <field name="incident_resolution_suggestion"/>
+                        <field name="source_object_json"/>
+                        <field name="affected_entity_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_diagnose_incident_tree" model="ir.ui.view">
+        <field name="name">tmf.diagnose.incident.tree</field>
+        <field name="model">tmf.diagnose.incident</field>
+        <field name="arch" type="xml">
+            <list string="DiagnoseIncident">
+                <field name="tmf_id"/>
+                <field name="state"/>
+                <field name="error_log"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_diagnose_incident_form" model="ir.ui.view">
+        <field name="name">tmf.diagnose.incident.form</field>
+        <field name="model">tmf.diagnose.incident</field>
+        <field name="arch" type="xml">
+            <form string="DiagnoseIncident">
+                <sheet>
+                    <group>
+                        <field name="state"/>
+                        <field name="error_log"/>
+                        <field name="incident_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_resolve_incident_tree" model="ir.ui.view">
+        <field name="name">tmf.resolve.incident.tree</field>
+        <field name="model">tmf.resolve.incident</field>
+        <field name="arch" type="xml">
+            <list string="ResolveIncident">
+                <field name="tmf_id"/>
+                <field name="state"/>
+                <field name="clear_time"/>
+                <field name="error_log"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_resolve_incident_form" model="ir.ui.view">
+        <field name="name">tmf.resolve.incident.form</field>
+        <field name="model">tmf.resolve.incident</field>
+        <field name="arch" type="xml">
+            <form string="ResolveIncident">
+                <sheet>
+                    <group>
+                        <field name="state"/>
+                        <field name="clear_time"/>
+                        <field name="error_log"/>
+                        <field name="incident_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_incident" model="ir.actions.act_window">
+        <field name="name">Incident</field>
+        <field name="res_model">tmf.incident</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_diagnose_incident" model="ir.actions.act_window">
+        <field name="name">Diagnose Incident</field>
+        <field name="res_model">tmf.diagnose.incident</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_resolve_incident" model="ir.actions.act_window">
+        <field name="name">Resolve Incident</field>
+        <field name="res_model">tmf.resolve.incident</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_incident_root" name="TMF Incident" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_incident" name="Incident" parent="menu_tmf_incident_root" action="action_tmf_incident"/>
+    <menuitem id="menu_tmf_diagnose_incident" name="Diagnose Incident" parent="menu_tmf_incident_root" action="action_tmf_diagnose_incident"/>
+    <menuitem id="menu_tmf_resolve_incident" name="Resolve Incident" parent="menu_tmf_incident_root" action="action_tmf_resolve_incident"/>
+</odoo>

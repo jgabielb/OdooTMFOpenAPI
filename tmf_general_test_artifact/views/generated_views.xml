@@ -3,17 +3,17 @@
         <field name="name">tmf.general.test.artifact.form</field>
         <field name="model">tmf.general.test.artifact</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="GeneralTestArtifact">
                 <sheet>
                     <group>
-                <field name="description"/>
-                <field name="version"/>
-                <field name="version_description"/>
-                <field name="agreement"/>
-                <field name="attribute"/>
-                <field name="general_artifact_definition"/>
-                <field name="related_party"/>
-                <field name="state"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="version_description"/>
+                        <field name="state"/>
+                        <field name="agreement_json"/>
+                        <field name="attribute_json"/>
+                        <field name="general_artifact_definition_json"/>
+                        <field name="related_party_json"/>
                     </group>
                 </sheet>
             </form>
@@ -24,14 +24,10 @@
         <field name="name">tmf.general.test.artifact.tree</field>
         <field name="model">tmf.general.test.artifact</field>
         <field name="arch" type="xml">
-            <list>
+            <list string="GeneralTestArtifact">
+                <field name="tmf_id"/>
                 <field name="description"/>
                 <field name="version"/>
-                <field name="version_description"/>
-                <field name="agreement"/>
-                <field name="attribute"/>
-                <field name="general_artifact_definition"/>
-                <field name="related_party"/>
                 <field name="state"/>
             </list>
         </field>

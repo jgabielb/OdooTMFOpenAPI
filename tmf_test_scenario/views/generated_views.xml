@@ -3,17 +3,17 @@
         <field name="name">tmf.test.scenario.form</field>
         <field name="model">tmf.test.scenario</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="TestScenario">
                 <sheet>
                     <group>
-                <field name="description"/>
-                <field name="version"/>
-                <field name="version_description"/>
-                <field name="agreement"/>
-                <field name="attribute"/>
-                <field name="related_party"/>
-                <field name="state"/>
-                <field name="test_scenario_definition"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="version_description"/>
+                        <field name="state"/>
+                        <field name="agreement_json"/>
+                        <field name="attribute_json"/>
+                        <field name="related_party_json"/>
+                        <field name="test_scenario_definition_json"/>
                     </group>
                 </sheet>
             </form>
@@ -24,15 +24,11 @@
         <field name="name">tmf.test.scenario.tree</field>
         <field name="model">tmf.test.scenario</field>
         <field name="arch" type="xml">
-            <list>
+            <list string="TestScenario">
+                <field name="tmf_id"/>
                 <field name="description"/>
                 <field name="version"/>
-                <field name="version_description"/>
-                <field name="agreement"/>
-                <field name="attribute"/>
-                <field name="related_party"/>
                 <field name="state"/>
-                <field name="test_scenario_definition"/>
             </list>
         </field>
     </record>

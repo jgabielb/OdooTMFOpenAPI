@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_party_role_product_offering_risk_assessment,tmf.party.role.product.offering.risk.assessment,model_tmf_party_role_product_offering_risk_assessment,base.group_user,1,1,1,1
+access_tmf_product_offering_risk_assessment,tmf.product.offering.risk.assessment,model_tmf_product_offering_risk_assessment,base.group_user,1,1,1,1
+access_tmf_party_role_risk_assessment,tmf.party.role.risk.assessment,model_tmf_party_role_risk_assessment,base.group_user,1,1,1,1
+access_tmf_shopping_cart_risk_assessment,tmf.shopping.cart.risk.assessment,model_tmf_shopping_cart_risk_assessment,base.group_user,1,1,1,1
+access_tmf_product_order_risk_assessment,tmf.product.order.risk.assessment,model_tmf_product_order_risk_assessment,base.group_user,1,1,1,1

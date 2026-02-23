@@ -1,7 +1,7 @@
 {
-    'name': "TMF ResourceFunction",
-    'summary': "Auto-generated implementation of Resource Function Activation and Configuration",
-    'description': "Implements ResourceFunction API with Hub Notifications.",
+    'name': "TMF664 Resource Function Activation",
+    'summary': "TMF664 Resource Function Activation and Configuration API",
+    'description': "Implements TMF664 Resource Function Activation and Configuration API with hub notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

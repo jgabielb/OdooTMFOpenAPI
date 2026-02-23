@@ -1,0 +1,96 @@
+<odoo>
+    <record id="view_tmf_shipment_tree" model="ir.ui.view">
+        <field name="name">tmf.shipment.tree</field>
+        <field name="model">tmf.shipment</field>
+        <field name="arch" type="xml">
+            <list string="Shipment">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_shipment_form" model="ir.ui.view">
+        <field name="name">tmf.shipment.form</field>
+        <field name="model">tmf.shipment</field>
+        <field name="arch" type="xml">
+            <form string="Shipment">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="state"/>
+                        <field name="collection_date"/>
+                        <field name="delivery_date"/>
+                        <field name="expected_delivery_date"/>
+                        <field name="requested_delivery_date"/>
+                        <field name="completion_date"/>
+                    </group>
+                    <group>
+                        <field name="shipment_specification_json"/>
+                        <field name="shipment_item_json"/>
+                        <field name="shipment_tracking_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_shipment" model="ir.actions.act_window">
+        <field name="name">Shipment</field>
+        <field name="res_model">tmf.shipment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_shipment" name="Shipment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_shipment"/>
+
+    <record id="view_tmf_shipment_specification_tree" model="ir.ui.view">
+        <field name="name">tmf.shipment.specification.tree</field>
+        <field name="model">tmf.shipment.specification</field>
+        <field name="arch" type="xml">
+            <list string="ShipmentSpecification">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="lifecycle_status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_shipment_specification_form" model="ir.ui.view">
+        <field name="name">tmf.shipment.specification.form</field>
+        <field name="model">tmf.shipment.specification</field>
+        <field name="arch" type="xml">
+            <form string="ShipmentSpecification">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="lifecycle_status"/>
+                        <field name="is_bundle"/>
+                        <field name="last_update"/>
+                    </group>
+                    <group>
+                        <field name="spec_characteristic_json"/>
+                        <field name="constraint_json"/>
+                        <field name="target_shipment_schema_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_shipment_specification" model="ir.actions.act_window">
+        <field name="name">ShipmentSpecification</field>
+        <field name="res_model">tmf.shipment.specification</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_shipment_specification" name="ShipmentSpecification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_shipment_specification"/>
+</odoo>

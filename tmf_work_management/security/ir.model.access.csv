@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_work,tmf.work,model_tmf_work,base.group_user,1,1,1,1
+access_tmf_work_specification,tmf.work.specification,model_tmf_work_specification,base.group_user,1,1,1,1

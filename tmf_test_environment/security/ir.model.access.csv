@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_abstract_environment,tmf.abstract.environment,model_tmf_abstract_environment,base.group_user,1,1,1,1
+access_tmf_concrete_environment_meta_model,tmf.concrete.environment.meta.model,model_tmf_concrete_environment_meta_model,base.group_user,1,1,1,1
+access_tmf_test_resource_api,tmf.test.resource.api,model_tmf_test_resource_api,base.group_user,1,1,1,1
+access_tmf_provisioning_artifact,tmf.provisioning.artifact,model_tmf_provisioning_artifact,base.group_user,1,1,1,1

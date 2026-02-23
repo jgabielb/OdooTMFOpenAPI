@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_check_work_qualification,tmf.check.work.qualification,model_tmf_check_work_qualification,base.group_user,1,1,1,1
+access_tmf_query_work_qualification,tmf.query.work.qualification,model_tmf_query_work_qualification,base.group_user,1,1,1,1

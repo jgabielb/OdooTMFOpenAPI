@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_test_execution,tmf.test.execution,model_tmf_test_execution,base.group_user,1,1,1,1
+access_tmf_test_environment_provisioning_execution,tmf.test.environment.provisioning.execution,model_tmf_test_environment_provisioning_execution,base.group_user,1,1,1,1
+access_tmf_test_environment_allocation_execution,tmf.test.environment.allocation.execution,model_tmf_test_environment_allocation_execution,base.group_user,1,1,1,1
+access_tmf_test_suite_execution,tmf.test.suite.execution,model_tmf_test_suite_execution,base.group_user,1,1,1,1
+access_tmf_test_case_execution,tmf.test.case.execution,model_tmf_test_case_execution,base.group_user,1,1,1,1
+access_tmf_non_functional_test_execution,tmf.non.functional.test.execution,model_tmf_non_functional_test_execution,base.group_user,1,1,1,1

@@ -1,7 +1,7 @@
 {
-    'name': "TMF GeneralTestArtifact",
-    'summary': "Auto-generated implementation of General Test Artifact Management API",
-    'description': "Implements GeneralTestArtifact API with Hub Notifications.",
+    'name': "TMF710 General Test Artifact",
+    'summary': "TMF710 General Test Artifact Management API",
+    'description': "Implements TMF710 General Test Artifact Management API with Hub notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

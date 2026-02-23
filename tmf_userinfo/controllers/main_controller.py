@@ -3,7 +3,7 @@ from odoo import http
 from odoo.http import request
 
 
-API_BASE = "/tmf-api/openid/v4"
+API_BASE = "/tmf-api/federatedIdentity/v5"
 
 
 def _json_response(payload, status=200, headers=None):
@@ -14,7 +14,8 @@ def _json_response(payload, status=200, headers=None):
 
 
 def _error(status, reason):
-    return _json_response({"error": {"status": status, "reason": reason}}, status=status)
+    status_str = str(status)
+    return _json_response({"error": {"code": status_str, "status": status_str, "reason": reason}}, status=status)
 
 
 def _parse_json():
@@ -48,10 +49,14 @@ def _find_by_rid(model_name, rid):
 
 
 def _subscription_json(rec):
+    base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
+    href = f"{base_url}{API_BASE}/hub/{rec.id}"
     return {
         "id": str(rec.id),
+        "href": href,
         "callback": rec.callback,
         "query": rec.query or "",
+        "@type": "Hub",
     }
 
 
@@ -107,6 +112,13 @@ class TMF691UserinfoController(http.Controller):
             }
         )
         return _json_response(_subscription_json(rec), status=201)
+
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET"], csrf=False)
+    def get_listener(self, sid, **params):
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
+        if not rec or not rec.exists() or rec.api_name != "userinfo":
+            return _error(404, f"Hub subscription {sid} not found")
+        return _json_response(_fields_filter(_subscription_json(rec), params.get("fields")), status=200)
 
     @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_listener(self, sid, **_params):

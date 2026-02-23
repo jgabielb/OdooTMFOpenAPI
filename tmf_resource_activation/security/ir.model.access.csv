@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf702_resource_user,tmf702.resource user,model_tmf702_resource,base.group_user,1,1,1,1
+access_tmf702_resource_public,tmf702.resource public,model_tmf702_resource,base.group_public,1,0,0,0
+access_tmf702_monitor_user,tmf702.monitor user,model_tmf702_monitor,base.group_user,1,1,1,1
+access_tmf702_monitor_public,tmf702.monitor public,model_tmf702_monitor,base.group_public,1,0,0,0

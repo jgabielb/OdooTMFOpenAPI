@@ -3,10 +3,12 @@
         <field name="name">tmf.entity.form</field>
         <field name="model">tmf.entity</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Entity">
                 <sheet>
                     <group>
-
+                        <field name="tmf_type_value"/>
+                        <field name="base_type"/>
+                        <field name="schema_location"/>
                     </group>
                 </sheet>
             </form>
@@ -17,8 +19,9 @@
         <field name="name">tmf.entity.tree</field>
         <field name="model">tmf.entity</field>
         <field name="arch" type="xml">
-            <list>
-
+            <list string="Entity">
+                <field name="tmf_id"/>
+                <field name="tmf_type_value"/>
             </list>
         </field>
     </record>
@@ -33,4 +36,46 @@
               name="Entity"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_entity"/>
+
+    <record id="view_tmf_entity_association_form" model="ir.ui.view">
+        <field name="name">tmf.entity.association.form</field>
+        <field name="model">tmf.entity.association</field>
+        <field name="arch" type="xml">
+            <form string="Association">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="association_role"/>
+                        <field name="description"/>
+                        <field name="lifecycle_status"/>
+                        <field name="version"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_entity_association_tree" model="ir.ui.view">
+        <field name="name">tmf.entity.association.tree</field>
+        <field name="model">tmf.entity.association</field>
+        <field name="arch" type="xml">
+            <list string="Association">
+                <field name="name"/>
+                <field name="association_role"/>
+                <field name="lifecycle_status"/>
+                <field name="version"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tmf_entity_association" model="ir.actions.act_window">
+        <field name="name">Association</field>
+        <field name="res_model">tmf.entity.association</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_entity_association"
+              name="Association"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_entity_association"/>
 </odoo>
