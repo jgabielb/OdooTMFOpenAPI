@@ -100,6 +100,18 @@ TMF_EVENT_NAME_MAP = {
         'state_change': 'CustomerBillStateChangeEvent',
         'delete': 'CustomerBillDeleteEvent',
     },
+
+    # TMF688 - Event Management
+    'event': {
+        'create': 'EventCreateEvent',
+        'update': 'EventChangeEvent',
+        'delete': 'EventDeleteEvent',
+    },
+    'topic': {
+        'create': 'TopicCreateEvent',
+        'update': 'TopicChangeEvent',
+        'delete': 'TopicDeleteEvent',
+    },
 }
 
 def _strip_quotes(s: str) -> str:
