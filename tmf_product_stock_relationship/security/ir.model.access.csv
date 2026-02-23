@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tmf_product_stock_relationship,tmf.product.stock.relationship,model_tmf_product_stock_relationship,base.group_user,1,1,1,1
+access_tmf_product_stock,tmf.product.stock,model_tmf_product_stock,base.group_user,1,1,1,1
+access_tmf_reserve_product_stock,tmf.reserve.product.stock,model_tmf_reserve_product_stock,base.group_user,1,1,1,1

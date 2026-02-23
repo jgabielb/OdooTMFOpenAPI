@@ -1,7 +1,7 @@
 {
-    'name': "TMF ProductStockRelationship",
-    'summary': "Auto-generated implementation of Stock Management",
-    'description': "Implements ProductStockRelationship API with Hub Notifications.",
+    'name': "TMF687 Stock Management",
+    'summary': "TMF687 Stock Management API v4",
+    'description': "Implements TMF687 endpoints for ProductStock and ReserveProductStock.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

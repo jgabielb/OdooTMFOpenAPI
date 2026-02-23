@@ -40,6 +40,7 @@ $GenModules = "tmf_resource_pool_management,tmf_recommendation_management,tmf_cu
 
 # Combine them
 $ModulesToUpdate = "base,$CoreModules,$GenModules"
+$ModulesToUpgrade = $ModulesToUpdate
 # $ModulesToUpdate = "base,tmf_attachment"
 
 # 5. Run Odoo
@@ -50,4 +51,5 @@ Write-Host "Starting Odoo Server..." -ForegroundColor Green
     --addons-path="$BaseAddons,$MyAddons" `
     --db_port=5433 `
     -d TMF_Odoo_DB `
-    -i $ModulesToUpdate
+    -i $ModulesToUpdate `
+    -u $ModulesToUpgrade

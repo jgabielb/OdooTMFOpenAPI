@@ -1,87 +1,109 @@
-from odoo import models, fields, api
-import json
+from odoo import api, fields, models
 
-class TMFModel(models.Model):
-    _name = 'tmf.userinfo'
-    _description = 'Userinfo'
-    _inherit = ['tmf.model.mixin']
 
-    birthdate = fields.Char(string="birthdate", help="End-User's birthday, represented as an [ISO8601-2004] YYYY-MM-DD format. The year MAY be 0000, indic")
-    email = fields.Char(string="email", help="End-User's preferred e-mail address. Its value MUST conform to the [RFC5322] addr-spec syntax")
-    emailverified = fields.Boolean(string="email_verified", help="True if the user's email has been verified.")
-    familyname = fields.Char(string="family_name", help="Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple fam")
-    gender = fields.Char(string="gender", help="End-User's gender. Values defined by this specification are female and male. Other values MAY be use")
-    givenname = fields.Char(string="given_name", help="Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple")
-    locale = fields.Char(string="locale", help="End-User's locale, represented as a [RFC5646] language tag. This is typically an [ISO639-1] language")
-    middlename = fields.Char(string="middle_name", help="Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; a")
-    name = fields.Char(string="name", help="End-User's full name in displayable form including all name parts, possibly including titles and suf")
-    nickname = fields.Char(string="nickname", help="Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickn")
-    phonenumber = fields.Char(string="phone_number", help="End-User's preferred telephone number. [E.164] is RECOMMENDED as the format of this Claim, for examp")
-    phonenumberverified = fields.Boolean(string="phone_number_verified", help="True if the user's phone number has been verified.")
-    picture = fields.Char(string="picture", help="URL of the End-User's profile picture. This URL MUST refer to an image file (for example, a PNG, JPE")
-    preferredusername = fields.Char(string="preferred_username", help="Shorthand name by which the End-User wishes to be referred to at the RP, such as janedoe or j.doe. T")
-    profile = fields.Char(string="profile", help="URL of the End-User's profile page. The contents of this Web page SHOULD be about the End-User")
-    sub = fields.Char(string="sub", help="Subject - Unique Identifier for the End-User")
-    website = fields.Char(string="website", help="URL of the End-User's Web page or blog. This Web page SHOULD contain information published by the En")
-    zoneinfo = fields.Char(string="zoneinfo", help="String from zoneinfo time zone database representing the End-User's time zone. For example, Europe/P")
-    address = fields.Char(string="address", help="Structure including the End-User's preferred postal address")
-    legal_id = fields.Char(string="legalId", help="Identification documentation of the contact")
-    user_assets = fields.Char(string="userAssets", help="List of additional profile information")
+class TMFUserinfo(models.Model):
+    _name = "tmf.userinfo"
+    _description = "TMF691 Userinfo"
+    _inherit = ["tmf.model.mixin"]
+
+    birthdate = fields.Char(string="birthdate")
+    email = fields.Char(string="email")
+    emailverified = fields.Boolean(string="email_verified", default=False)
+    familyname = fields.Char(string="family_name")
+    gender = fields.Char(string="gender")
+    givenname = fields.Char(string="given_name")
+    locale = fields.Char(string="locale")
+    middlename = fields.Char(string="middle_name")
+    name = fields.Char(string="name")
+    nickname = fields.Char(string="nickname")
+    phonenumber = fields.Char(string="phone_number")
+    phonenumberverified = fields.Boolean(string="phone_number_verified", default=False)
+    picture = fields.Char(string="picture")
+    preferredusername = fields.Char(string="preferred_username")
+    profile = fields.Char(string="profile")
+    sub = fields.Char(string="sub", required=True, index=True)
+    website = fields.Char(string="website")
+    zoneinfo = fields.Char(string="zoneinfo")
+    address = fields.Json(default=dict)
+    legal_id = fields.Json(default=list)
+    user_assets = fields.Json(default=list)
+    extra_json = fields.Json(default=dict)
 
     def _get_tmf_api_path(self):
-        return "/userinfoManagement/v4/Userinfo"
+        return "/openid/v4/userinfo"
 
     def to_tmf_json(self):
         self.ensure_one()
-        return {
+        payload = {
             "id": self.tmf_id,
             "href": self.href,
             "@type": "Userinfo",
-            "birthdate": self.birthdate,
-            "email": self.email,
-            "email_verified": self.emailverified,
-            "family_name": self.familyname,
-            "gender": self.gender,
-            "given_name": self.givenname,
-            "locale": self.locale,
-            "middle_name": self.middlename,
-            "name": self.name,
-            "nickname": self.nickname,
-            "phone_number": self.phonenumber,
-            "phone_number_verified": self.phonenumberverified,
-            "picture": self.picture,
-            "preferred_username": self.preferredusername,
-            "profile": self.profile,
             "sub": self.sub,
-            "website": self.website,
-            "zoneinfo": self.zoneinfo,
-            "address": self.address,
-            "legalId": self.legal_id,
-            "userAssets": self.user_assets,
-
+            "name": self.name or "",
         }
+        if self.birthdate:
+            payload["birthdate"] = self.birthdate
+        if self.email:
+            payload["email"] = self.email
+        payload["email_verified"] = bool(self.emailverified)
+        if self.familyname:
+            payload["family_name"] = self.familyname
+        if self.gender:
+            payload["gender"] = self.gender
+        if self.givenname:
+            payload["given_name"] = self.givenname
+        if self.locale:
+            payload["locale"] = self.locale
+        if self.middlename:
+            payload["middle_name"] = self.middlename
+        if self.nickname:
+            payload["nickname"] = self.nickname
+        if self.phonenumber:
+            payload["phone_number"] = self.phonenumber
+        payload["phone_number_verified"] = bool(self.phonenumberverified)
+        if self.picture:
+            payload["picture"] = self.picture
+        if self.preferredusername:
+            payload["preferred_username"] = self.preferredusername
+        if self.profile:
+            payload["profile"] = self.profile
+        if self.website:
+            payload["website"] = self.website
+        if self.zoneinfo:
+            payload["zoneinfo"] = self.zoneinfo
+        if self.address:
+            payload["address"] = self.address
+        if self.legal_id:
+            payload["legalId"] = self.legal_id
+        if self.user_assets:
+            payload["userAssets"] = self.user_assets
+        if isinstance(self.extra_json, dict):
+            for key, value in self.extra_json.items():
+                if key not in payload:
+                    payload[key] = value
+        return payload
 
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
         for rec in recs:
-            self._notify('userinfo', 'create', rec)
+            self._notify("userinfo", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
         for rec in self:
-            self._notify('userinfo', 'update', rec)
+            self._notify("userinfo", "update", rec)
         return res
 
     def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
+        payloads = [rec.to_tmf_json() for rec in self]
         res = super().unlink()
         for resource in payloads:
             try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='userinfo',
-                    event_type='delete',
+                self.env["tmf.hub.subscription"]._notify_subscribers(
+                    api_name="userinfo",
+                    event_type="delete",
                     resource_json=resource,
                 )
             except Exception:
@@ -90,7 +112,7 @@ class TMFModel(models.Model):
 
     def _notify(self, api_name, action, record):
         try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
+            self.env["tmf.hub.subscription"]._notify_subscribers(
                 api_name=api_name,
                 event_type=action,
                 resource_json=record.to_tmf_json(),

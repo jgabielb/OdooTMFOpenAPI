@@ -6,6 +6,7 @@
             <form>
                 <sheet>
                     <group>
+                <field name="topic_id"/>
                 <field name="correlation_id"/>
                 <field name="description"/>
                 <field name="domain"/>
@@ -16,7 +17,7 @@
                 <field name="time_occurred"/>
                 <field name="title"/>
                 <field name="analytic_characteristic"/>
-                <field name="event"/>
+                <field name="event_payload"/>
                 <field name="related_party"/>
                 <field name="reporting_system"/>
                 <field name="source"/>
@@ -31,6 +32,7 @@
         <field name="model">tmf.event</field>
         <field name="arch" type="xml">
             <list>
+                <field name="topic_id"/>
                 <field name="correlation_id"/>
                 <field name="description"/>
                 <field name="domain"/>
@@ -41,7 +43,7 @@
                 <field name="time_occurred"/>
                 <field name="title"/>
                 <field name="analytic_characteristic"/>
-                <field name="event"/>
+                <field name="event_payload"/>
                 <field name="related_party"/>
                 <field name="reporting_system"/>
                 <field name="source"/>

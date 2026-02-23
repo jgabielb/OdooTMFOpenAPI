@@ -1,61 +1,72 @@
-from odoo import models, fields, api
-import json
+from odoo import api, fields, models
 
-class TMFModel(models.Model):
-    _name = 'tmf.product.stock.relationship'
-    _description = 'ProductStockRelationship'
-    _inherit = ['tmf.model.mixin']
 
-    relationship_type = fields.Char(string="relationshipType", help="The type of relationship between product stock")
-    stock_level = fields.Char(string="stockLevel", help="A product stock  in relationship with this product stock")
+class TMFProductStock(models.Model):
+    _name = "tmf.product.stock"
+    _description = "TMF687 ProductStock"
+    _inherit = ["tmf.model.mixin"]
+
+    name = fields.Char()
+    description = fields.Char()
+    product_stock_status_type = fields.Char(default="unknown")
+    product_stock_level = fields.Json(default=dict)
+    stocked_product = fields.Json(default=dict)
+    extra_json = fields.Json(default=dict)
 
     def _get_tmf_api_path(self):
-        return "/product_stock_relationshipManagement/v4/ProductStockRelationship"
+        return "/stock/v4/productStock"
 
     def to_tmf_json(self):
         self.ensure_one()
-        return {
+        payload = {
             "id": self.tmf_id,
             "href": self.href,
-            "@type": "ProductStockRelationship",
-            "relationshipType": self.relationship_type,
-            "stockLevel": self.stock_level,
-
+            "@type": "ProductStock",
+            "productStockLevel": self.product_stock_level or {},
+            "productStockStatusType": self.product_stock_status_type or "unknown",
+            "stockedProduct": self.stocked_product or {},
         }
+        if self.name:
+            payload["name"] = self.name
+        if self.description:
+            payload["description"] = self.description
+        if isinstance(self.extra_json, dict):
+            for k, v in self.extra_json.items():
+                if k not in payload:
+                    payload[k] = v
+        return payload
+
+
+class TMFReserveProductStock(models.Model):
+    _name = "tmf.reserve.product.stock"
+    _description = "TMF687 ReserveProductStock"
+    _inherit = ["tmf.model.mixin"]
+
+    reserve_product_stock_item = fields.Json(default=list)
+    reserve_product_stock_state = fields.Char(default="accepted")
+    extra_json = fields.Json(default=dict)
+
+    def _get_tmf_api_path(self):
+        return "/stock/v4/reserveProductStock"
+
+    def to_tmf_json(self):
+        self.ensure_one()
+        payload = {
+            "id": self.tmf_id,
+            "href": self.href,
+            "@type": "ReserveProductStock",
+            "reserveProductStockItem": self.reserve_product_stock_item or [],
+            "reserveProductStockState": self.reserve_product_stock_state or "accepted",
+        }
+        if isinstance(self.extra_json, dict):
+            for k, v in self.extra_json.items():
+                if k not in payload:
+                    payload[k] = v
+        return payload
 
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
         for rec in recs:
-            self._notify('productStockRelationship', 'create', rec)
+            rec.reserve_product_stock_state = rec.reserve_product_stock_state or "accepted"
         return recs
-
-    def write(self, vals):
-        res = super().write(vals)
-        for rec in self:
-            self._notify('productStockRelationship', 'update', rec)
-        return res
-
-    def unlink(self):
-        payloads = [r.to_tmf_json() for r in self]
-        res = super().unlink()
-        for resource in payloads:
-            try:
-                self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='productStockRelationship',
-                    event_type='delete',
-                    resource_json=resource,
-                )
-            except Exception:
-                pass
-        return res
-
-    def _notify(self, api_name, action, record):
-        try:
-            self.env['tmf.hub.subscription']._notify_subscribers(
-                api_name=api_name,
-                event_type=action,
-                resource_json=record.to_tmf_json(),
-            )
-        except Exception:
-            pass
