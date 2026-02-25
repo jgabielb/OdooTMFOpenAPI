@@ -79,12 +79,41 @@ class TMF676Controller(http.Controller):
                 "total_amount_json": json.dumps(total, ensure_ascii=False),
             }
 
+            # Wire to native Odoo records when references exist
+            partner_id = None
+            account_id = account.get("id")
+            if account_id:
+                partner = request.env["res.partner"].sudo().search([("tmf_id", "=", str(account_id))], limit=1)
+                if not partner and str(account_id).isdigit():
+                    partner = request.env["res.partner"].sudo().browse(int(account_id))
+                if partner and partner.exists():
+                    partner_id = partner.id
+                    vals["partner_id"] = partner_id
+
+            invoice_ids = []
+            payment_items = data.get("paymentItem")
+            if isinstance(payment_items, list):
+                for pi in payment_items:
+                    item = pi.get("item") if isinstance(pi, dict) else None
+                    iid = item.get("id") if isinstance(item, dict) else None
+                    if not iid:
+                        continue
+                    move = request.env["account.move"].sudo().search([("tmf_id", "=", str(iid))], limit=1)
+                    if not move and str(iid).isdigit():
+                        move = request.env["account.move"].sudo().browse(int(iid))
+                    if move and move.exists():
+                        invoice_ids.append(move.id)
+                        if not partner_id and move.partner_id:
+                            vals["partner_id"] = move.partner_id.id
+
             if data.get("channel") is not None:
                 vals["channel_json"] = json.dumps(data.get("channel"), ensure_ascii=False)
             if data.get("paymentItem") is not None:
                 vals["payment_item_json"] = json.dumps(data.get("paymentItem"), ensure_ascii=False)
 
             rec = request.env["tmf.payment"].sudo().create(vals)
+            if invoice_ids:
+                rec.sudo().write({"invoice_ids": [(6, 0, invoice_ids)]})
 
             host_url = request.httprequest.host_url.rstrip("/")
             return _json_response(rec.to_tmf_json(host_url=host_url), status=201)

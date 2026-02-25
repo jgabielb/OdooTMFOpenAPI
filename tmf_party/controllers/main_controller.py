@@ -100,6 +100,7 @@ class TMFPartyController(http.Controller):
 
         vals = {
             'is_company': False,
+            'tmf_managed': True,
             'tmf_given_name': payload.get('givenName'),
             'tmf_family_name': payload.get('familyName'),
             # Keep Odoo's display name meaningful

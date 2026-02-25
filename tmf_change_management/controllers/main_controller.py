@@ -225,3 +225,4 @@ class TMF655Controller(http.Controller):
             return _error(404, "Not Found")
         r.unlink()
         return request.make_response("", status=204)
+

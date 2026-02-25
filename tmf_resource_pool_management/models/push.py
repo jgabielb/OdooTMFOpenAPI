@@ -26,9 +26,13 @@ class TMFPush(models.Model):
     def to_tmf_json(self, host_url="", fields_filter=None):
         host_url = (host_url or "").rstrip("/")
         rp_id = self.resource_pool_id.tmf_id
+        base_url = (self.env["ir.config_parameter"].sudo().get_param("web.base.url") or "").rstrip("/")
+        href_value = self.href or f"{host_url}{API_BASE}/{rp_id}/push/{self.tmf_id}"
+        if isinstance(href_value, str) and href_value.startswith("/"):
+            href_value = f"{base_url}{href_value}" if base_url else href_value
         payload = {
-            "id": self.tmf_id,
-            "href": self.href or f"{host_url}{API_BASE}/{rp_id}/push/{self.tmf_id}",
+            "id": str(self.tmf_id),
+            "href": href_value,
             "@type": self.tmf_type,
             "state": self.state,
             "errorMessage": self.error_message and __import__("json").loads(self.error_message) or None,

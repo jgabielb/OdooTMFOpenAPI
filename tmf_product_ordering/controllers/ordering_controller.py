@@ -118,6 +118,40 @@ class TMFOrderingController(http.Controller):
 
         return tmf_prod, odoo_prod
 
+    def _find_quote_from_body(self, body):
+        quote_id = None
+        quote_ref = body.get("quote")
+        if isinstance(quote_ref, dict):
+            quote_id = quote_ref.get("id")
+        elif isinstance(quote_ref, list) and quote_ref and isinstance(quote_ref[0], dict):
+            quote_id = quote_ref[0].get("id")
+        elif body.get("quoteId"):
+            quote_id = body.get("quoteId")
+
+        if not quote_id:
+            return False
+
+        Quote = request.env["tmf.quote"].sudo()
+        quote = Quote.search([("tmf_id", "=", str(quote_id))], limit=1)
+        if not quote and str(quote_id).isdigit():
+            quote = Quote.browse(int(quote_id))
+        return quote if quote and quote.exists() else False
+
+    def _resolve_order_line_product(self, item, fallback_product):
+        odoo_prod = fallback_product
+        po = item.get("productOffering") if isinstance(item, dict) else None
+        po_id = po.get("id") if isinstance(po, dict) else None
+        if not po_id:
+            return odoo_prod
+
+        ProductTemplate = request.env["product.template"].sudo()
+        tmpl = ProductTemplate.search([("tmf_id", "=", str(po_id))], limit=1)
+        if not tmpl and str(po_id).isdigit():
+            tmpl = ProductTemplate.browse(int(po_id))
+        if tmpl and tmpl.exists() and tmpl.product_variant_id:
+            return tmpl.product_variant_id
+        return odoo_prod
+
     def _absolute_location(self, href, fallback_id=None):
         base = request.httprequest.host_url.rstrip('/')
         if href:
@@ -166,6 +200,7 @@ class TMFOrderingController(http.Controller):
     def create_order(self, **params):
         try:
             body = json.loads(request.httprequest.data or b"{}")
+            quote = self._find_quote_from_body(body)
 
             partner = None
             for party in body.get('relatedParty', []) or []:
@@ -175,6 +210,8 @@ class TMFOrderingController(http.Controller):
                         partner = Partner.search([('tmf_id', '=', str(party['id']))], limit=1)
                     break
 
+            if not partner and quote and quote.partner_id:
+                partner = quote.partner_id
             if not partner:
                 partner = self._get_fallback_partner()
             if not partner:
@@ -182,19 +219,22 @@ class TMFOrderingController(http.Controller):
 
             order = request.env['sale.order'].sudo().create({
                 'partner_id': partner.id,
-                'description': body.get('description') or 'Order via TMF API',
+                'description': body.get('description') or (quote.description if quote else 'Order via TMF API'),
             })
+
+            if quote and hasattr(quote, "sale_order_id"):
+                quote.sudo().write({"sale_order_id": order.id})
 
             items = body.get('productOrderItem') or [{}]
 
             # Always ensure we have a valid Odoo product.product to create sale lines
-            fallback_tmf_prod, fallback_odoo_prod = self._get_fallback_product()
+            _fallback_tmf_prod, fallback_odoo_prod = self._get_fallback_product()
 
             for item in items:
                 qty = item.get('quantity') or 1
 
                 # For now: use fallback Odoo product (CTK doesn’t require real catalog mapping)
-                odoo_prod = fallback_odoo_prod
+                odoo_prod = self._resolve_order_line_product(item, fallback_odoo_prod)
 
                 SOL = request.env['sale.order.line'].sudo()
                 vals = {

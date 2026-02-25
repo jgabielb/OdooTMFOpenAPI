@@ -1,5 +1,5 @@
 import json
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 def _dumps(value):
@@ -55,6 +55,24 @@ class TMFCustomer360(models.Model):
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "Customer360CreateEvent",
+            "update": "Customer360AttributeValueChangeEvent",
+            "delete": "Customer360DeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("customer360", event_name, payload)
+            except Exception:
+                continue
+
     def _get_tmf_api_path(self):
         return "/customer360/v4/customer360"
 
@@ -92,7 +110,7 @@ class TMFCustomer360(models.Model):
             "@baseType": self.base_type,
             "@schemaLocation": self.schema_location,
         }
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = {}
@@ -133,3 +151,21 @@ class TMFCustomer360(models.Model):
             if key in data:
                 vals[field_name] = _dumps(data.get(key))
         return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
+

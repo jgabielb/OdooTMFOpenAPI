@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_cloud_application,tmf.cloud.application,model_tmf_cloud_application,base.group_user,1,1,1,1
+access_tmf_cloud_application_specification,tmf.cloud.application.specification,model_tmf_cloud_application_specification,base.group_user,1,1,1,1
+access_tmf_user_equipment,tmf.user.equipment,model_tmf_user_equipment,base.group_user,1,1,1,1
+access_tmf_user_equipment_specification,tmf.user.equipment.specification,model_tmf_user_equipment_specification,base.group_user,1,1,1,1

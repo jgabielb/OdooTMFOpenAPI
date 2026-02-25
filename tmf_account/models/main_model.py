@@ -67,6 +67,24 @@ class TMFAccount(models.Model):
     default_payment_method_json = fields.Text(string="defaultPaymentMethod")  # ref object
     payment_plan_json = fields.Text(string="paymentPlan")            # array
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AccountCreateEvent",
+            "update": "AccountAttributeValueChangeEvent",
+            "delete": "AccountDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("account", event_name, payload)
+            except Exception:
+                continue
+
     def _resource_path(self):
         return RESOURCE_TO_PATH.get(self.resource_type, "partyAccount")
 
@@ -107,15 +125,28 @@ class TMFAccount(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
         now = fields.Datetime.now()
-        recs.write({"last_update": now})
+        patched = []
+        for vals in vals_list:
+            new_vals = dict(vals)
+            new_vals["last_update"] = now
+            patched.append(new_vals)
+        recs = super().create(patched)
+        recs._notify("create")
         return recs
 
     def write(self, vals):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
-        return super().write(vals)
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # -----------------------------
@@ -129,6 +160,24 @@ class TMFBillFormat(models.Model):
     name = fields.Char(string="name", required=True)
     description = fields.Char(string="description")
     last_update = fields.Datetime(string="lastUpdate")
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AccountCreateEvent",
+            "update": "AccountAttributeValueChangeEvent",
+            "delete": "AccountDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("account", event_name, payload)
+            except Exception:
+                continue
 
     def _href_for(self):
         rid = self.tmf_id or str(self.id)
@@ -148,15 +197,28 @@ class TMFBillFormat(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
         now = fields.Datetime.now()
-        recs.write({"last_update": now})
+        patched = []
+        for vals in vals_list:
+            new_vals = dict(vals)
+            new_vals["last_update"] = now
+            patched.append(new_vals)
+        recs = super().create(patched)
+        recs._notify("create")
         return recs
 
     def write(self, vals):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
-        return super().write(vals)
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # -----------------------------
@@ -180,6 +242,24 @@ class TMFBillingCycleSpecification(models.Model):
 
     valid_for_json = fields.Text(string="validFor")  # TimePeriod object
     last_update = fields.Datetime(string="lastUpdate")
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AccountCreateEvent",
+            "update": "AccountAttributeValueChangeEvent",
+            "delete": "AccountDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("account", event_name, payload)
+            except Exception:
+                continue
 
     def _href_for(self):
         rid = self.tmf_id or str(self.id)
@@ -207,15 +287,28 @@ class TMFBillingCycleSpecification(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
         now = fields.Datetime.now()
-        recs.write({"last_update": now})
+        patched = []
+        for vals in vals_list:
+            new_vals = dict(vals)
+            new_vals["last_update"] = now
+            patched.append(new_vals)
+        recs = super().create(patched)
+        recs._notify("create")
         return recs
 
     def write(self, vals):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
-        return super().write(vals)
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # -----------------------------
@@ -229,6 +322,24 @@ class TMFBillPresentationMedia(models.Model):
     name = fields.Char(string="name", required=True)
     description = fields.Char(string="description")
     last_update = fields.Datetime(string="lastUpdate")
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AccountCreateEvent",
+            "update": "AccountAttributeValueChangeEvent",
+            "delete": "AccountDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("account", event_name, payload)
+            except Exception:
+                continue
 
     def _href_for(self):
         rid = self.tmf_id or str(self.id)
@@ -248,12 +359,25 @@ class TMFBillPresentationMedia(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        recs = super().create(vals_list)
         now = fields.Datetime.now()
-        recs.write({"last_update": now})
+        patched = []
+        for vals in vals_list:
+            new_vals = dict(vals)
+            new_vals["last_update"] = now
+            patched.append(new_vals)
+        recs = super().create(patched)
+        recs._notify("create")
         return recs
 
     def write(self, vals):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
-        return super().write(vals)
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

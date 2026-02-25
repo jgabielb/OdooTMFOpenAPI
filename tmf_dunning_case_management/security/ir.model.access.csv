@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_dunning_scenario,tmf.dunning.scenario,model_tmf_dunning_scenario,base.group_user,1,1,1,1
+access_tmf_dunning_rule,tmf.dunning.rule,model_tmf_dunning_rule,base.group_user,1,1,1,1
+access_tmf_dunning_case,tmf.dunning.case,model_tmf_dunning_case,base.group_user,1,1,1,1

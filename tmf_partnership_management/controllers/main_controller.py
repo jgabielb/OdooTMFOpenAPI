@@ -441,3 +441,4 @@ class TMF668PartnershipController(http.Controller):
 
         rec.unlink()
         return request.make_response("", status=204)
+

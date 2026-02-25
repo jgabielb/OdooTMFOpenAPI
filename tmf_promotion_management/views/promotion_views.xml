@@ -52,7 +52,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_root_promotion" name="TMF" sequence="10"/>
+    <menuitem id="menu_tmf_root_promotion" name="TMF671 Promotion" parent="tmf_product_catalog.menu_tmf_root" sequence="10"/>
     <menuitem id="menu_tmf_promotion" name="Promotion (TMF671)" parent="menu_tmf_root_promotion" sequence="40" action="action_tmf_promotion"/>
 
 </odoo>

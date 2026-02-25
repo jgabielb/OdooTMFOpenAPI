@@ -51,7 +51,7 @@ class TMFEntitySpecification(models.Model):
 
     def to_tmf_json(self):
         self.ensure_one()
-        return {
+        payload = {
             "id": self.tmf_id,
             "href": self.href,
             "name": self.name,
@@ -71,6 +71,7 @@ class TMFEntitySpecification(models.Model):
 
             "@type": "EntitySpecification",
         }
+        return self._tmf_normalize_payload(payload)
 
     def tmf_from_json(self, data: dict, for_patch: bool):
         vals = {}
@@ -141,7 +142,7 @@ class TMFEntityCatalog(models.Model):
     # --------
     def to_tmf_json(self):
         self.ensure_one()
-        return {
+        payload = {
             "id": self.tmf_id,
             "href": self.href,
             "name": self.name,
@@ -157,6 +158,7 @@ class TMFEntityCatalog(models.Model):
             "@type": "EntityCatalog",  # :contentReference[oaicite:12]{index=12}
             # Optional: "@schemaLocation", "@baseType"
         }
+        return self._tmf_normalize_payload(payload)
 
     # --------
     # TMF -> Odoo mapping helper

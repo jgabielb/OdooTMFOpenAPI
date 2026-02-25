@@ -34,6 +34,9 @@ class TMF702Resource(models.Model):
     operational_state = fields.Char(string="operationalState")
     resource_status = fields.Char(string="resourceStatus")
     usage_state = fields.Char(string="usageState")
+    partner_id = fields.Many2one("res.partner", string="Customer", ondelete="set null")
+    project_task_id = fields.Many2one("project.task", string="Fulfillment Task", ondelete="set null")
+    picking_id = fields.Many2one("stock.picking", string="Stock Picking", ondelete="set null")
 
     resource_specification_json = fields.Text(string="resourceSpecification")
     resource_characteristic_json = fields.Text(string="resourceCharacteristic")
@@ -43,6 +46,67 @@ class TMF702Resource(models.Model):
     related_party_json = fields.Text(string="relatedParty")
     place_json = fields.Text(string="place")
     resource_relationship_json = fields.Text(string="resourceRelationship")
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        parties = _loads(self.related_party_json) or []
+        if not isinstance(parties, list):
+            return self.env["res.partner"]
+        Partner = self.env["res.partner"].sudo()
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            if not pid:
+                continue
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner
+        return self.env["res.partner"]
+
+    def _sync_fulfillment_records(self):
+        Task = self.env["project.task"].sudo()
+        Project = self.env["project.project"].sudo()
+        Picking = self.env["stock.picking"].sudo()
+        PickingType = self.env["stock.picking.type"].sudo()
+        for rec in self:
+            partner = rec.partner_id
+            if not partner:
+                partner = rec._resolve_partner_from_related_party()
+                if partner and partner.exists():
+                    rec.partner_id = partner.id
+
+            project = Project.search([], limit=1)
+            task_vals = {
+                "name": rec.name or f"TMF Resource {rec.tmf_id or rec.id}",
+                "description": rec.description or "",
+                "partner_id": partner.id if partner and partner.exists() else False,
+                "date_deadline": rec.end_operating_date.date() if rec.end_operating_date else False,
+            }
+            if project:
+                task_vals["project_id"] = project.id
+            if rec.project_task_id and rec.project_task_id.exists():
+                rec.project_task_id.write(task_vals)
+            else:
+                rec.project_task_id = Task.create(task_vals).id
+
+            picking_type = PickingType.search([("code", "=", "outgoing")], limit=1) or PickingType.search([], limit=1)
+            if picking_type:
+                pick_vals = {
+                    "partner_id": partner.id if partner and partner.exists() else False,
+                    "origin": rec.tmf_id,
+                    "scheduled_date": rec.start_operating_date or False,
+                    "note": rec.description or "",
+                    "picking_type_id": picking_type.id,
+                    "location_id": picking_type.default_location_src_id.id,
+                    "location_dest_id": picking_type.default_location_dest_id.id,
+                }
+                if rec.picking_id and rec.picking_id.exists():
+                    rec.picking_id.write(pick_vals)
+                else:
+                    rec.picking_id = Picking.create(pick_vals).id
 
     def _get_tmf_api_path(self):
         return BASE_PATH
@@ -125,6 +189,7 @@ class TMF702Resource(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_fulfillment_records()
         for rec in recs:
             self._notify("resource", "create", rec)
         return recs
@@ -133,6 +198,7 @@ class TMF702Resource(models.Model):
         state_fields = {"administrative_state", "operational_state", "resource_status", "usage_state"}
         state_changed = bool(set(vals.keys()) & state_fields)
         res = super().write(vals)
+        self._sync_fulfillment_records()
         for rec in self:
             self._notify("resource", "update", rec)
             if state_changed:

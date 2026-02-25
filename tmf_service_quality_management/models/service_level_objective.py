@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from odoo import models, fields
+from odoo import models, fields, api
 
 
 class TMFServiceLevelObjective(models.Model):
@@ -32,6 +32,24 @@ class TMFServiceLevelObjective(models.Model):
         ("tmf_slo_id_unique", "unique(tmf_id)", "ServiceLevelObjective id must be unique."),
     ]
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "ServiceLevelObjectiveCreateEvent",
+            "update": "ServiceLevelObjectiveAttributeValueChangeEvent",
+            "delete": "ServiceLevelObjectiveDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_dict() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("serviceLevelObjective", event_name, payload)
+            except Exception:
+                continue
+
 
     def _loads(self, txt):
         if not txt:
@@ -62,4 +80,21 @@ class TMFServiceLevelObjective(models.Model):
             "serviceLevelObjectiveConsequence": self._loads(self.service_level_objective_consequence_json),
         }
         return {k: v for k, v in out.items() if v is not None}
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_dict() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 

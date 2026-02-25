@@ -119,7 +119,7 @@ class TMFCheckWorkQualification(models.Model):
         payload["qualificationResult"] = self.qualification_result
         payload["provideAlternative"] = self.provide_alternative
         payload["provideUnavailabilityReason"] = self.provide_unavailability_reason
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -180,7 +180,7 @@ class TMFQueryWorkQualification(models.Model):
         payload["@type"] = self.tmf_type_value or "QueryWorkQualification"
         payload["queryWorkQualificationDate"] = self.query_work_qualification_date
         payload["searchCriteria"] = _loads(self.search_criteria_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -219,3 +219,4 @@ class TMFQueryWorkQualification(models.Model):
             except Exception:
                 pass
         return res
+

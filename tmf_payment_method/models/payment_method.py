@@ -69,10 +69,56 @@ class TMFPaymentMethod(models.Model):
     # Odoo meta
     create_date = fields.Datetime(readonly=True)
     write_date = fields.Datetime(readonly=True)
+    payment_method_line_id = fields.Many2one("account.payment.method.line", string="Odoo Payment Method", ondelete="set null")
+    journal_id = fields.Many2one("account.journal", string="Journal", ondelete="set null")
 
     _sql_constraints = [
         ("tmf_id_unique", "unique(tmf_id)", "tmf_id must be unique"),
     ]
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "PaymentMethodCreateEvent",
+            "update": "PaymentMethodAttributeValueChangeEvent",
+            "delete": "PaymentMethodDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_dict() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("paymentMethod", event_name, payload)
+            except Exception:
+                continue
+
+    def _sync_account_payment_method(self):
+        MethodLine = self.env["account.payment.method.line"].sudo()
+        Journal = self.env["account.journal"].sudo()
+        for rec in self:
+            if rec.payment_method_line_id and rec.payment_method_line_id.exists():
+                if not rec.journal_id and rec.payment_method_line_id.journal_id:
+                    rec.journal_id = rec.payment_method_line_id.journal_id.id
+                continue
+
+            domain = []
+            if rec.journal_id:
+                domain.append(("journal_id", "=", rec.journal_id.id))
+
+            candidate = MethodLine.search(domain + [("name", "ilike", rec.name)], limit=1)
+            if not candidate:
+                candidate = MethodLine.search(domain, limit=1) if domain else MethodLine.search([], limit=1)
+
+            if candidate:
+                rec.payment_method_line_id = candidate.id
+                if not rec.journal_id and candidate.journal_id:
+                    rec.journal_id = candidate.journal_id.id
+            elif not rec.journal_id:
+                journal = Journal.search([("type", "in", ["bank", "cash"])], limit=1)
+                if journal:
+                    rec.journal_id = journal.id
 
     @api.constrains("tmf_type", "name")
     def _check_mandatory(self):
@@ -90,7 +136,22 @@ class TMFPaymentMethod(models.Model):
             # Default base type if missing
             if not vals.get("base_type"):
                 vals["base_type"] = "PaymentMethod"
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._sync_account_payment_method()
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._sync_account_payment_method()
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_dict() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
     # ---------- TMF JSON mapping ----------
     def to_tmf_dict(self):

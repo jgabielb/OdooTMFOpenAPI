@@ -15,6 +15,9 @@ class TMFQuote(models.Model):
     # Business fields
     category = fields.Char()
     description = fields.Text()
+    partner_id = fields.Many2one("res.partner", string="Customer")
+    lead_id = fields.Many2one("crm.lead", string="CRM Opportunity")
+    sale_order_id = fields.Many2one("sale.order", string="Related Quotation/Sales Order")
 
     # Dates
     quote_date = fields.Datetime(string="quoteDate", required=True, default=fields.Datetime.now)
@@ -48,6 +51,22 @@ class TMFQuote(models.Model):
 
     quote_item_ids = fields.One2many("tmf.quote.item", "quote_id", string="quoteItem")
 
+    def _notify(self, action):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "QuoteCreateEvent",
+            "update": "QuoteAttributeValueChangeEvent",
+            "delete": "QuoteDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for rec in self:
+            try:
+                hub._notify_subscribers("quote", event_name, rec.to_tmf_json())
+            except Exception:
+                continue
+
     def _get_tmf_api_path(self):
         return "/tmf-api/quoteManagement/v4"
 
@@ -58,6 +77,15 @@ class TMFQuote(models.Model):
 
     def to_tmf_json(self, fields_param=None):
         self.ensure_one()
+
+        related_party = json.loads(self.related_party_json) if self.related_party_json else []
+        if not related_party and self.partner_id:
+            related_party = [{
+                "id": str(self.partner_id.tmf_id or self.partner_id.id),
+                "name": self.partner_id.name,
+                "@type": "RelatedParty",
+                "@referredType": "Individual" if not self.partner_id.is_company else "Organization",
+            }]
 
         payload = {
             "id": self.tmf_id or str(self.id),
@@ -77,7 +105,7 @@ class TMFQuote(models.Model):
             "billingAccount": json.loads(self.billing_account_json) if self.billing_account_json else [],
             "contactMedium": json.loads(self.contact_medium_json) if self.contact_medium_json else [],
             "note": json.loads(self.note_json) if self.note_json else [],
-            "relatedParty": json.loads(self.related_party_json) if self.related_party_json else [],
+            "relatedParty": related_party,
             "productOfferingQualification": json.loads(self.poq_json) if self.poq_json else [],
             "authorization": json.loads(self.authorization_json) if self.authorization_json else [],
             "quoteTotalPrice": json.loads(self.quote_total_price_json) if self.quote_total_price_json else [],
@@ -97,4 +125,26 @@ class TMFQuote(models.Model):
             wanted |= always
             payload = {k: v for k, v in payload.items() if k in wanted}
 
-        return payload
+        return self._tmf_normalize_payload(payload)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        hub = self.env["tmf.hub.subscription"].sudo()
+        res = super().unlink()
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("quote", "QuoteDeleteEvent", payload)
+            except Exception:
+                continue
+        return res

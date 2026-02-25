@@ -27,9 +27,13 @@ class TMFCapacitySpecification(models.Model):
 
     def to_tmf_json(self, host_url="", fields_filter=None):
         host_url = (host_url or "").rstrip("/")
+        base_url = (self.env["ir.config_parameter"].sudo().get_param("web.base.url") or "").rstrip("/")
+        href_value = self.href or f"{host_url}{API_BASE}/{self.tmf_id}"
+        if isinstance(href_value, str) and href_value.startswith("/"):
+            href_value = f"{base_url}{href_value}" if base_url else href_value
         payload = {
-            "id": self.tmf_id,
-            "href": self.href or f"{host_url}{API_BASE}/{self.tmf_id}",
+            "id": str(self.tmf_id),
+            "href": href_value,
             "@type": self.tmf_type,
             "capacityCharacteristicSpecification": _as_list(self.capacity_characteristic_specification) or [],
             "externalIdentifier": json.loads(self.external_identifier) if self.external_identifier else None,

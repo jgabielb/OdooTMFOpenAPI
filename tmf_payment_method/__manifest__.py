@@ -6,7 +6,7 @@
     "summary": "TMF670 Payment Method API v4.0.0 implementation",
     "description": "Implements TMF670 Payment Method API v4.0.0 (CRUD + Hub + Notifications).",
     "author": "Your Team",
-    "depends": ["base", "tmf_base"],
+    "depends": ["base", "tmf_base", "account"],
     "data": [
         "security/ir.model.access.csv",
         "views/payment_method_views.xml",

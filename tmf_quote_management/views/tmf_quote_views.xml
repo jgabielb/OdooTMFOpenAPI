@@ -7,6 +7,9 @@
       <list>
         <field name="tmf_id"/>
         <field name="tmf_external_id"/>
+        <field name="partner_id"/>
+        <field name="lead_id"/>
+        <field name="sale_order_id"/>
         <field name="category"/>
         <field name="state"/>
         <field name="version"/>
@@ -24,6 +27,9 @@
           <group>
             <field name="tmf_id" readonly="1"/>
             <field name="tmf_external_id"/>
+            <field name="partner_id"/>
+            <field name="lead_id"/>
+            <field name="sale_order_id"/>
             <field name="category"/>
             <field name="state"/>
             <field name="version"/>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 import json
-from odoo import models, fields
+from odoo import models, fields, api
 
 from .common import _as_dict, _as_list, _filter_top_level_fields
 
@@ -41,11 +41,34 @@ class TMFResourcePool(models.Model):
     usage_state = fields.Char()
     resource_status = fields.Char()
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "ResourcePoolCreateEvent",
+            "update": "ResourcePoolAttributeValueChangeEvent",
+            "delete": "ResourcePoolDeleteEvent",
+        }
+        if payloads is None:
+            base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+            payloads = [rec.to_tmf_json(host_url=base_url) for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("resourcePool", event_name, payload)
+            except Exception:
+                continue
+
     def to_tmf_json(self, host_url="", fields_filter=None):
         host_url = (host_url or "").rstrip("/")
+        base_url = (self.env["ir.config_parameter"].sudo().get_param("web.base.url") or "").rstrip("/")
+        href_value = self.href or f"{host_url}{API_BASE}/{self.tmf_id}"
+        if isinstance(href_value, str) and href_value.startswith("/"):
+            href_value = f"{base_url}{href_value}" if base_url else href_value
         payload = {
-            "id": self.tmf_id,
-            "href": self.href or f"{host_url}{API_BASE}/{self.tmf_id}",
+            "id": str(self.tmf_id),
+            "href": href_value,
             "@type": self.tmf_type,
 
             "name": self.name,
@@ -70,3 +93,21 @@ class TMFResourcePool(models.Model):
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         return _filter_top_level_fields(payload, fields_filter)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        payloads = [rec.to_tmf_json(host_url=base_url) for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

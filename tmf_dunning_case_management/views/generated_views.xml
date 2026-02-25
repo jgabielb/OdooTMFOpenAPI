@@ -1,0 +1,127 @@
+<odoo>
+    <record id="view_tmf_dunning_scenario_tree" model="ir.ui.view">
+        <field name="name">tmf.dunning.scenario.tree</field>
+        <field name="model">tmf.dunning.scenario</field>
+        <field name="arch" type="xml">
+            <list string="DunningScenario">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="is_default"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_dunning_scenario_form" model="ir.ui.view">
+        <field name="name">tmf.dunning.scenario.form</field>
+        <field name="model">tmf.dunning.scenario</field>
+        <field name="arch" type="xml">
+            <form string="DunningScenario">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="category"/>
+                        <field name="is_default"/>
+                        <field name="description"/>
+                    </group>
+                    <group>
+                        <field name="dunning_rule_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_dunning_rule_tree" model="ir.ui.view">
+        <field name="name">tmf.dunning.rule.tree</field>
+        <field name="model">tmf.dunning.rule</field>
+        <field name="arch" type="xml">
+            <list string="DunningRule">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="dunning_event"/>
+                <field name="dunning_action"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_dunning_rule_form" model="ir.ui.view">
+        <field name="name">tmf.dunning.rule.form</field>
+        <field name="model">tmf.dunning.rule</field>
+        <field name="arch" type="xml">
+            <form string="DunningRule">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="dunning_event"/>
+                        <field name="dunning_action"/>
+                        <field name="dunning_condition"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_dunning_case_tree" model="ir.ui.view">
+        <field name="name">tmf.dunning.case.tree</field>
+        <field name="model">tmf.dunning.case</field>
+        <field name="arch" type="xml">
+            <list string="DunningCase">
+                <field name="tmf_id"/>
+                <field name="status"/>
+                <field name="category"/>
+                <field name="creation_date"/>
+                <field name="last_update_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_dunning_case_form" model="ir.ui.view">
+        <field name="name">tmf.dunning.case.form</field>
+        <field name="model">tmf.dunning.case</field>
+        <field name="arch" type="xml">
+            <form string="DunningCase">
+                <sheet>
+                    <group>
+                        <field name="status"/>
+                        <field name="category"/>
+                        <field name="creation_date"/>
+                        <field name="last_activity_date"/>
+                        <field name="last_update_date"/>
+                        <field name="description"/>
+                    </group>
+                    <group>
+                        <field name="billing_account_json"/>
+                        <field name="dunning_scenario_json"/>
+                        <field name="dunning_case_rule_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_dunning_scenario" model="ir.actions.act_window">
+        <field name="name">Dunning Scenario</field>
+        <field name="res_model">tmf.dunning.scenario</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_dunning_rule" model="ir.actions.act_window">
+        <field name="name">Dunning Rule</field>
+        <field name="res_model">tmf.dunning.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_dunning_case" model="ir.actions.act_window">
+        <field name="name">Dunning Case</field>
+        <field name="res_model">tmf.dunning.case</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_dunning_root" name="TMF Dunning" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_dunning_scenario" name="Dunning Scenario" parent="menu_tmf_dunning_root" action="action_tmf_dunning_scenario"/>
+    <menuitem id="menu_tmf_dunning_rule" name="Dunning Rule" parent="menu_tmf_dunning_root" action="action_tmf_dunning_rule"/>
+    <menuitem id="menu_tmf_dunning_case" name="Dunning Case" parent="menu_tmf_dunning_root" action="action_tmf_dunning_case"/>
+</odoo>

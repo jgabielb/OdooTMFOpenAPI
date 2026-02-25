@@ -8,6 +8,8 @@
     "version": "0.1",
     "depends": [
         "tmf_base",
+        "crm",
+        "sale_management",
         "tmf_party",                  # relatedParty
         "tmf_billing_management",     # billingAccount
         "tmf_agreement",              # agreement

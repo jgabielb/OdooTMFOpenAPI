@@ -45,5 +45,6 @@
 
     <menuitem id="menu_tmf_non_functional_test_result_definition"
               name="NonFunctionalTestResultDefinition"
+              parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_non_functional_test_result_definition"/>
 </odoo>

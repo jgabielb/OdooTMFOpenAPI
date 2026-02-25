@@ -87,6 +87,7 @@ class TMFAlarm(models.Model):
     crossed_threshold_information = fields.Json(string="crossedThresholdInformation")  # CrossedThresholdInformation
     parent_alarm = fields.Json(string="parentAlarm", default=list)          # [AlarmRef]
     place = fields.Json(string="place", default=list)                       # [RelatedPlace]
+    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
 
     # -------------------------
     # TMF helpers
@@ -187,6 +188,23 @@ class TMFAlarm(models.Model):
 
         return payload
 
+    def _sync_helpdesk_ticket(self):
+        Ticket = self.env["helpdesk.ticket"].sudo()
+        Team = self.env["helpdesk.team"].sudo()
+        team = Team.search([], limit=1)
+        if not team:
+            return
+        for rec in self:
+            vals = {
+                "name": f"TMF Alarm {rec.tmf_id or rec.id}",
+                "description": rec.alarm_details or rec.probable_cause or "",
+                "team_id": team.id,
+            }
+            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
+                rec.helpdesk_ticket_id.write(vals)
+            else:
+                rec.helpdesk_ticket_id = Ticket.create(vals).id
+
     # -------------------------
     # CRUD hooks + notifications
     # -------------------------
@@ -200,6 +218,7 @@ class TMFAlarm(models.Model):
                 vals["alarm_changed_time"] = now
 
         recs = super().create(vals_list)
+        recs._sync_helpdesk_ticket()
         for rec in recs:
             rec._notify("alarm", "raise", rec)
         return recs
@@ -208,6 +227,7 @@ class TMFAlarm(models.Model):
         vals = dict(vals or {})
         vals.setdefault("alarm_changed_time", fields.Datetime.now())
         res = super().write(vals)
+        self._sync_helpdesk_ticket()
 
         for rec in self:
             if rec.state == "cleared":

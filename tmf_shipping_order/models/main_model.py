@@ -71,7 +71,7 @@ class TMFShippingOrder(models.Model):
             for key, value in self.extra_json.items():
                 if key not in payload:
                     payload[key] = value
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     def _notify(self, action, rec):
         try:

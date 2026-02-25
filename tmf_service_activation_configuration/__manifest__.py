@@ -6,6 +6,7 @@
     "author": "Joao Gabriel",
     "depends": [
         "tmf_base",
+        "project",
         "tmf_service_inventory",  # optional, keep if you want cross-links with inventory
         "tmf_event",              # optional, if you want to reuse event/hub patterns
     ],

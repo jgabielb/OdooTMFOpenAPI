@@ -1,0 +1,86 @@
+<odoo>
+    <record id="view_tmf_software_compute_resource_tree" model="ir.ui.view">
+        <field name="name">tmf.software.compute.resource.tree</field>
+        <field name="model">tmf.software.compute.resource</field>
+        <field name="arch" type="xml">
+            <list string="Resource">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="resource_status"/>
+                <field name="operational_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_software_compute_resource_form" model="ir.ui.view">
+        <field name="name">tmf.software.compute.resource.form</field>
+        <field name="model">tmf.software.compute.resource</field>
+        <field name="arch" type="xml">
+            <form string="Resource">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="category"/>
+                        <field name="description"/>
+                        <field name="resource_version"/>
+                        <field name="resource_status"/>
+                        <field name="operational_state"/>
+                        <field name="administrative_state"/>
+                        <field name="usage_state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_software_compute_resource_spec_tree" model="ir.ui.view">
+        <field name="name">tmf.software.compute.resource.specification.tree</field>
+        <field name="model">tmf.software.compute.resource.specification</field>
+        <field name="arch" type="xml">
+            <list string="ResourceSpecification">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="lifecycle_status"/>
+                <field name="version"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_software_compute_resource_spec_form" model="ir.ui.view">
+        <field name="name">tmf.software.compute.resource.specification.form</field>
+        <field name="model">tmf.software.compute.resource.specification</field>
+        <field name="arch" type="xml">
+            <form string="ResourceSpecification">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="category"/>
+                        <field name="description"/>
+                        <field name="lifecycle_status"/>
+                        <field name="version"/>
+                        <field name="is_bundle"/>
+                        <field name="last_update"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_software_compute_resource" model="ir.actions.act_window">
+        <field name="name">SoftwareCompute Resource</field>
+        <field name="res_model">tmf.software.compute.resource</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_software_compute_resource_specification" model="ir.actions.act_window">
+        <field name="name">SoftwareCompute ResourceSpecification</field>
+        <field name="res_model">tmf.software.compute.resource.specification</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_software_compute_root" name="TMF730 SoftwareCompute" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_software_compute_resource" name="Resource" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource"/>
+    <menuitem id="menu_tmf_software_compute_resource_specification" name="ResourceSpecification" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource_specification"/>
+</odoo>

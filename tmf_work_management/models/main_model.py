@@ -133,7 +133,7 @@ class TMFWork(models.Model):
         payload["workRelationship"] = _loads(self.work_relationship_json)
         payload["workSpecification"] = _loads(self.work_specification_json)
         payload["workforceEmployeeAssignment"] = _loads(self.workforce_employee_assignment_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -239,7 +239,7 @@ class TMFWorkSpecification(models.Model):
         payload["targetEntitySchema"] = _loads(self.target_entity_schema_json)
         payload["validFor"] = _loads(self.valid_for_json)
         payload["workSpecRelationship"] = _loads(self.work_spec_relationship_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -294,3 +294,4 @@ class TMFWorkSpecification(models.Model):
             except Exception:
                 pass
         return res
+

@@ -66,7 +66,7 @@ class TmfGeographicLocation(models.Model):
             allowed = set([f.strip() for f in fields_filter if f and f.strip()])
             payload = {k: v for k, v in payload.items() if k in allowed}
 
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     @api.model_create_multi
     def create(self, vals_list):

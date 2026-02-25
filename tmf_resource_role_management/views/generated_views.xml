@@ -1,0 +1,79 @@
+<odoo>
+    <record id="view_tmf_resource_role_tree" model="ir.ui.view">
+        <field name="name">tmf.resource.role.tree</field>
+        <field name="model">tmf.resource.role</field>
+        <field name="arch" type="xml">
+            <list string="ResourceRole">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_resource_role_form" model="ir.ui.view">
+        <field name="name">tmf.resource.role.form</field>
+        <field name="model">tmf.resource.role</field>
+        <field name="arch" type="xml">
+            <form string="ResourceRole">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="status"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_resource_role" model="ir.actions.act_window">
+        <field name="name">Resource Role</field>
+        <field name="res_model">tmf.resource.role</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_resource_role" name="Resource Role" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_role"/>
+
+    <record id="view_tmf_resource_role_spec_tree" model="ir.ui.view">
+        <field name="name">tmf.resource.role.specification.tree</field>
+        <field name="model">tmf.resource.role.specification</field>
+        <field name="arch" type="xml">
+            <list string="ResourceRoleSpecification">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_resource_role_spec_form" model="ir.ui.view">
+        <field name="name">tmf.resource.role.specification.form</field>
+        <field name="model">tmf.resource.role.specification</field>
+        <field name="arch" type="xml">
+            <form string="ResourceRoleSpecification">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="status"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_resource_role_spec" model="ir.actions.act_window">
+        <field name="name">Resource Role Spec</field>
+        <field name="res_model">tmf.resource.role.specification</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_resource_role_spec" name="Resource Role Spec" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_role_spec"/>
+</odoo>

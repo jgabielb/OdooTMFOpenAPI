@@ -6,6 +6,8 @@
     "summary": "TMF678 CustomerBill API (Conformance v5) - CustomerBill, OnDemand, BillCycle, AppliedCustomerBillingRate",
     "depends": [
         "base",
+        "contacts",
+        "account",
         "tmf_base",  # expects tmf_base.models.tmf_mixin + tmf_hub_subscription if you use events
     ],
     "data": [

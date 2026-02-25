@@ -132,7 +132,7 @@ class TMFWarranty(models.Model):
         payload["warrantyAgreement"] = _loads(self.warranty_agreement_json)
         payload["warrantyRelationship"] = _loads(self.warranty_relationship_json)
         payload["warrantySpecification"] = _loads(self.warranty_specification_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -237,7 +237,7 @@ class TMFWarrantySpecification(models.Model):
         payload["warrantyDuration"] = _loads(self.warranty_duration_json)
         payload["warrantySpecRelationship"] = _loads(self.warranty_spec_relationship_json)
         payload["warrantySpecification"] = _loads(self.warranty_specification_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -295,3 +295,4 @@ class TMFWarrantySpecification(models.Model):
             except Exception:
                 pass
         return res
+

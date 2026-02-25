@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import models, fields, api
 import json
 import uuid
 
@@ -20,6 +20,24 @@ class TMF672UserRole(models.Model):
     _sql_constraints = [
         ("tmf672_user_role_tmf_id_uniq", "unique(tmf_id)", "TMF672 UserRole id must be unique."),
     ]
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "UserRoleCreateEvent",
+            "update": "UserRoleAttributeValueChangeEvent",
+            "delete": "UserRoleDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.tmf_to_payload() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("userRole", event_name, payload)
+            except Exception:
+                continue
 
     def _compute_href(self):
         for r in self:
@@ -54,3 +72,20 @@ class TMF672UserRole(models.Model):
             "entitlement_json": json.dumps(payload.get("entitlement"), ensure_ascii=False) if payload.get("entitlement") is not None else json.dumps([]),
         }
         return env["tmf672.user.role"].sudo().create(vals)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.tmf_to_payload() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

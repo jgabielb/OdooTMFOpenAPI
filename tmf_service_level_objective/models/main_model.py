@@ -23,7 +23,7 @@ class TMFModel(models.Model):
 
     def to_tmf_json(self):
         self.ensure_one()
-        return {
+        payload = {
             "id": self.tmf_id,
             "href": self.href,
             "@type": "ServiceLevelObjective",
@@ -40,6 +40,7 @@ class TMFModel(models.Model):
             "validFor": self.valid_for,
 
         }
+        return self._tmf_normalize_payload(payload)
 
     @api.model_create_multi
     def create(self, vals_list):

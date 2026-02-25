@@ -286,3 +286,4 @@ class TMF724Controller(http.Controller):
     @http.route(f"{API_BASE}/listener/resolveIncidentStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listen_resolve_incident_state_change(self, **_params):
         return self._listener_ok()
+

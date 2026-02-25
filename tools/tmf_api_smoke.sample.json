@@ -1,0 +1,175 @@
+{
+  "base_url": "http://localhost:8069",
+  "timeout_sec": 30,
+  "default_headers": {
+    "Accept": "application/json"
+  },
+  "auth": {
+    "type": "none"
+  },
+  "vars": {
+    "partner_id": "1"
+  },
+  "tests": [
+    {
+      "name": "TMF629 Customer",
+      "collection_path": "/tmf-api/customerManagement/v5/customer",
+      "id_path": "/tmf-api/customerManagement/v5/customer/{id}",
+      "list": {
+        "query": "fields=id,name,status",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Customer",
+          "status": "active",
+          "lifecycleStatus": "active",
+          "engagedParty": {
+            "id": "{{partner_id}}",
+            "@referredType": "Individual",
+            "@type": "RelatedParty"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "customer_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "updated-by-smoke-test"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF648 Quote",
+      "collection_path": "/tmf-api/quoteManagement/v4/quote",
+      "id_path": "/tmf-api/quoteManagement/v4/quote/{id}",
+      "list": {
+        "query": "fields=id,state,category",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "category": "smoke",
+          "description": "smoke quote",
+          "relatedParty": [
+            {
+              "id": "{{customer_id}}",
+              "@type": "RelatedParty"
+            }
+          ],
+          "quoteItem": [
+            {
+              "id": "1",
+              "action": "add",
+              "quantity": 1
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "quote_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "quote-patched-by-smoke"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF687 Stock",
+      "collection_path": "/tmf-api/stock/v4/productStock",
+      "id_path": "/tmf-api/stock/v4/productStock/{id}",
+      "list": {
+        "query": "fields=id,name,productStockStatusType",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke ProductStock",
+          "description": "created-by-smoke",
+          "productStockStatusType": "available",
+          "productStockLevel": {
+            "amount": 10,
+            "units": "unit"
+          },
+          "stockedProduct": {
+            "id": "demo-product",
+            "@referredType": "Product"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "stock_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "productStockStatusType": "reserved"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF687 ReserveProductStock",
+      "collection_path": "/tmf-api/stock/v4/reserveProductStock",
+      "id_path": "/tmf-api/stock/v4/reserveProductStock/{id}",
+      "list": {
+        "query": "fields=id,reserveProductStockState",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "reserveProductStockState": "accepted",
+          "reserveProductStockItem": [
+            {
+              "id": "1",
+              "quantity": {
+                "amount": 1,
+                "units": "unit"
+              },
+              "stockedProduct": {
+                "id": "demo-product",
+                "@referredType": "Product"
+              }
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "reserve_stock_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "reserveProductStockState": "completed"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    }
+  ]
+}

@@ -250,3 +250,4 @@ class TMF715Controller(http.Controller):
     @http.route(f"{API_BASE}/listener/warrantySpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listen_warranty_spec_delete(self, **_params):
         return self._listener_ok()
+

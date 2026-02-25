@@ -1,0 +1,158 @@
+<odoo>
+    <record id="view_tmf_metadata_catalog_tree" model="ir.ui.view">
+        <field name="name">tmf.metadata.catalog.tree</field>
+        <field name="model">tmf.metadata.catalog</field>
+        <field name="arch" type="xml">
+            <list string="MetadataCatalog">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="last_update_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_catalog_form" model="ir.ui.view">
+        <field name="name">tmf.metadata.catalog.form</field>
+        <field name="model">tmf.metadata.catalog</field>
+        <field name="arch" type="xml">
+            <form string="MetadataCatalog">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="version"/>
+                        <field name="last_update_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_category_tree" model="ir.ui.view">
+        <field name="name">tmf.metadata.category.tree</field>
+        <field name="model">tmf.metadata.category</field>
+        <field name="arch" type="xml">
+            <list string="MetadataCategory">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="lifecycle_status"/>
+                <field name="is_root"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_category_form" model="ir.ui.view">
+        <field name="name">tmf.metadata.category.form</field>
+        <field name="model">tmf.metadata.category</field>
+        <field name="arch" type="xml">
+            <form string="MetadataCategory">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="lifecycle_status"/>
+                        <field name="is_root"/>
+                        <field name="parent_id_text"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_catalog_item_tree" model="ir.ui.view">
+        <field name="name">tmf.metadata.catalog.item.tree</field>
+        <field name="model">tmf.metadata.catalog.item</field>
+        <field name="arch" type="xml">
+            <list string="MetadataCatalogItem">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="lifecycle_status"/>
+                <field name="last_update"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_catalog_item_form" model="ir.ui.view">
+        <field name="name">tmf.metadata.catalog.item.form</field>
+        <field name="model">tmf.metadata.catalog.item</field>
+        <field name="arch" type="xml">
+            <form string="MetadataCatalogItem">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="lifecycle_status"/>
+                        <field name="last_update"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_specification_tree" model="ir.ui.view">
+        <field name="name">tmf.metadata.specification.tree</field>
+        <field name="model">tmf.metadata.specification</field>
+        <field name="arch" type="xml">
+            <list string="MetadataSpecification">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="lifecycle_status"/>
+                <field name="last_update"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_metadata_specification_form" model="ir.ui.view">
+        <field name="name">tmf.metadata.specification.form</field>
+        <field name="model">tmf.metadata.specification</field>
+        <field name="arch" type="xml">
+            <form string="MetadataSpecification">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="lifecycle_status"/>
+                        <field name="last_update"/>
+                        <field name="tmf_type_value"/>
+                        <field name="is_composed"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_metadata_catalog" model="ir.actions.act_window">
+        <field name="name">Metadata Catalog</field>
+        <field name="res_model">tmf.metadata.catalog</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_metadata_category" model="ir.actions.act_window">
+        <field name="name">Metadata Category</field>
+        <field name="res_model">tmf.metadata.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_metadata_catalog_item" model="ir.actions.act_window">
+        <field name="name">Metadata Catalog Item</field>
+        <field name="res_model">tmf.metadata.catalog.item</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tmf_metadata_specification" model="ir.actions.act_window">
+        <field name="name">Metadata Specification</field>
+        <field name="res_model">tmf.metadata.specification</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_metadata_catalog_root" name="TMF Metadata Catalog" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_metadata_catalog" name="Metadata Catalog" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_catalog"/>
+    <menuitem id="menu_tmf_metadata_category" name="Metadata Category" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_category"/>
+    <menuitem id="menu_tmf_metadata_catalog_item" name="Metadata Catalog Item" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_catalog_item"/>
+    <menuitem id="menu_tmf_metadata_specification" name="Metadata Specification" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_specification"/>
+</odoo>

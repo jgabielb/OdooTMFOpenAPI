@@ -62,6 +62,15 @@ def _as_object(v):
     return v
 
 
+def _notify_records(records, api_name, event_name, payloads):
+    hub = records.env["tmf.hub.subscription"].sudo()
+    for payload in payloads:
+        try:
+            hub._notify_subscribers(api_name, event_name, payload)
+        except Exception:
+            continue
+
+
 # ============================================================
 # ServiceProblem (TMF656)
 # ============================================================
@@ -112,11 +121,70 @@ class TMFServiceProblem(models.Model):
     trouble_ticket_json = fields.Text(string="troubleTicket")            # 0..*
     underlying_alarm_json = fields.Text(string="underlyingAlarm")        # 0..*
     underlying_problem_json = fields.Text(string="underlyingProblem")    # 0..*
+    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
 
     # Non-patchable per TMF rules
     first_alert_json = fields.Text(string="firstAlert")                  # 0..1
     error_message_json = fields.Text(string="errorMessage")              # 0..*
     tracking_record_json = fields.Text(string="trackingRecord")          # 0..*
+
+    def _notify(self, action, payloads=None):
+        event_map = {
+            "create": "ServiceProblemCreateEvent",
+            "update": "ServiceProblemAttributeValueChangeEvent",
+            "delete": "ServiceProblemDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if event_name:
+            _notify_records(self, "serviceProblem", event_name, payloads)
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        parties = _as_array(_json_load(self.related_party_json))
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            if not pid:
+                continue
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner
+
+        originator = _as_object(_json_load(self.originator_party_json))
+        if isinstance(originator, dict):
+            pid = originator.get("id")
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+        return self.env["res.partner"]
+
+    def _sync_helpdesk_ticket(self):
+        Ticket = self.env["helpdesk.ticket"].sudo()
+        Team = self.env["helpdesk.team"].sudo()
+        team = Team.search([], limit=1)
+        if not team:
+            return
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            vals = {
+                "name": rec.name or f"TMF ServiceProblem {rec.tmf_id or rec.id}",
+                "description": rec.description or rec.reason or "",
+                "team_id": team.id,
+                "partner_id": partner.id if partner and partner.exists() else False,
+            }
+            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
+                rec.helpdesk_ticket_id.write(vals)
+            else:
+                rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/serviceProblem"
@@ -205,13 +273,25 @@ class TMFServiceProblem(models.Model):
             vals.setdefault("last_update", now)
             vals.setdefault("status_change_date", now)
             vals.setdefault("tmf_type", "ServiceProblem")
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._sync_helpdesk_ticket()
+        recs._notify("create")
+        return recs
 
     def write(self, vals):
         # keep lastUpdate consistent on any update
         vals = dict(vals or {})
         vals.setdefault("last_update", fields.Datetime.now())
-        return super().write(vals)
+        res = super().write(vals)
+        self._sync_helpdesk_ticket()
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # ============================================================
@@ -233,6 +313,18 @@ class TMFProblemAcknowledgement(models.Model):
     ack_problem_json = fields.Text(string="ackProblem")               # array 0..*
     tracking_record_json = fields.Text(string="trackingRecord")       # object 0..1
 
+    def _notify(self, action, payloads=None):
+        event_map = {
+            "create": "ProblemAcknowledgementCreateEvent",
+            "update": "ProblemAcknowledgementAttributeValueChangeEvent",
+            "delete": "ProblemAcknowledgementDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if event_name:
+            _notify_records(self, "problemAcknowledgement", event_name, payloads)
+
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/problemAcknowledgement"
 
@@ -250,6 +342,23 @@ class TMFProblemAcknowledgement(models.Model):
         if tr is not None:
             base["trackingRecord"] = _as_object(tr)
         return base
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # ============================================================
@@ -271,6 +380,18 @@ class TMFProblemUnacknowledgement(models.Model):
     unack_problem_json = fields.Text(string="unackProblem")             # array 0..*
     tracking_record_json = fields.Text(string="trackingRecord")         # object 0..1
 
+    def _notify(self, action, payloads=None):
+        event_map = {
+            "create": "ProblemUnacknowledgementCreateEvent",
+            "update": "ProblemUnacknowledgementAttributeValueChangeEvent",
+            "delete": "ProblemUnacknowledgementDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if event_name:
+            _notify_records(self, "problemUnacknowledgement", event_name, payloads)
+
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/problemUnacknowledgement"
 
@@ -288,6 +409,23 @@ class TMFProblemUnacknowledgement(models.Model):
         if tr is not None:
             base["trackingRecord"] = _as_object(tr)
         return base
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # ============================================================
@@ -307,6 +445,18 @@ class TMFProblemGroup(models.Model):
     child_problem_json = fields.Text(string="childProblem", required=True)  # array 1..*
     parent_problem_json = fields.Text(string="parentProblem", required=True)  # object 1
 
+    def _notify(self, action, payloads=None):
+        event_map = {
+            "create": "ProblemGroupCreateEvent",
+            "update": "ProblemGroupAttributeValueChangeEvent",
+            "delete": "ProblemGroupDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if event_name:
+            _notify_records(self, "problemGroup", event_name, payloads)
+
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/problemGroup"
 
@@ -320,6 +470,23 @@ class TMFProblemGroup(models.Model):
             "childProblem": _as_array(_json_load(self.child_problem_json)),
             "parentProblem": _as_object(_json_load(self.parent_problem_json)),
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 # ============================================================
@@ -339,6 +506,18 @@ class TMFProblemUngroup(models.Model):
     child_problem_json = fields.Text(string="childProblem", required=True)  # array 1..*
     parent_problem_json = fields.Text(string="parentProblem", required=True)  # object 1
 
+    def _notify(self, action, payloads=None):
+        event_map = {
+            "create": "ProblemUngroupCreateEvent",
+            "update": "ProblemUngroupAttributeValueChangeEvent",
+            "delete": "ProblemUngroupDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if event_name:
+            _notify_records(self, "problemUngroup", event_name, payloads)
+
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/problemUngroup"
 
@@ -352,3 +531,20 @@ class TMFProblemUngroup(models.Model):
             "childProblem": _as_array(_json_load(self.child_problem_json)),
             "parentProblem": _as_object(_json_load(self.parent_problem_json)),
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

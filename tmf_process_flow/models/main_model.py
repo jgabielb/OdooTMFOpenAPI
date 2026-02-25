@@ -53,7 +53,7 @@ class TMFProcessFlowMixin(models.AbstractModel):
             for key, value in self.extra_json.items():
                 if key not in payload:
                     payload[key] = value
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     def _notify(self, action, rec):
         try:
@@ -114,7 +114,7 @@ class TMFProcessFlowSpecification(models.Model):
         return "/processFlowManagement/v4/processFlowSpecification"
 
     def to_tmf_json(self):
-        return self._base_payload()
+        return self._tmf_normalize_payload(self._base_payload())
 
 
 class TMFTaskFlowSpecification(models.Model):
@@ -132,7 +132,7 @@ class TMFTaskFlowSpecification(models.Model):
         return "/processFlowManagement/v4/taskFlowSpecification"
 
     def to_tmf_json(self):
-        return self._base_payload()
+        return self._tmf_normalize_payload(self._base_payload())
 
 
 class TMFProcessFlow(models.Model):
@@ -158,7 +158,7 @@ class TMFProcessFlow(models.Model):
             payload["processFlowSpecificationRef"] = self.process_flow_specification_ref
         if self.task_flow_ids:
             payload["taskFlow"] = [task.to_tmf_json() for task in self.task_flow_ids]
-        return payload
+        return self._tmf_normalize_payload(payload)
 
 
 class TMFTaskFlow(models.Model):
@@ -184,7 +184,7 @@ class TMFTaskFlow(models.Model):
         payload["processFlowId"] = self.process_flow_id.tmf_id if self.process_flow_id else None
         if self.task_flow_specification_ref:
             payload["taskFlowSpecificationRef"] = self.task_flow_specification_ref
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     def write(self, vals):
         previous = {rec.id: rec.state for rec in self}

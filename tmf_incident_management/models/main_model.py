@@ -90,9 +90,48 @@ class TMFIncident(models.Model):
     related_entity_json = fields.Text(string="relatedEntity")
     root_cause_json = fields.Text(string="rootCause")
     note_json = fields.Text(string="note")
+    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/Incident/v4/incident"
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        parties = _loads(self.related_party_json) or []
+        if not isinstance(parties, list):
+            return self.env["res.partner"]
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            if not pid:
+                continue
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner
+        return self.env["res.partner"]
+
+    def _sync_helpdesk_ticket(self):
+        Ticket = self.env["helpdesk.ticket"].sudo()
+        Team = self.env["helpdesk.team"].sudo()
+        team = Team.search([], limit=1)
+        if not team:
+            return
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            vals = {
+                "name": rec.name or f"TMF Incident {rec.tmf_id or rec.id}",
+                "description": rec.incident_detail or rec.category or "",
+                "team_id": team.id,
+                "partner_id": partner.id if partner and partner.exists() else False,
+            }
+            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
+                rec.helpdesk_ticket_id.write(vals)
+            else:
+                rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     def to_tmf_json(self):
         payload = self._common_to_tmf_json()
@@ -162,6 +201,7 @@ class TMFIncident(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_helpdesk_ticket()
         for rec in recs:
             self._notify("incident", "create", rec)
         return recs
@@ -169,6 +209,7 @@ class TMFIncident(models.Model):
     def write(self, vals):
         state_changed = "state" in vals
         res = super().write(vals)
+        self._sync_helpdesk_ticket()
         for rec in self:
             self._notify("incident", "update", rec)
             if state_changed:

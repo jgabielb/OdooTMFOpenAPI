@@ -31,7 +31,7 @@ class TMFEventTopic(models.Model):
             for key, value in self.extra_json.items():
                 if key not in payload:
                     payload[key] = value
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -143,7 +143,7 @@ class TMFEvent(models.Model):
             for key, value in self.extra_json.items():
                 if key not in payload:
                     payload[key] = value
-        return payload
+        return self._tmf_normalize_payload(payload)
 
     @api.model_create_multi
     def create(self, vals_list):

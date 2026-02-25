@@ -84,6 +84,23 @@ def _now_utc():
     return datetime.now(timezone.utc).replace(microsecond=0)
 
 
+def _resolve_partner_from_related_party(env, related_party):
+    if not isinstance(related_party, list):
+        return env["res.partner"]
+    for rp in related_party:
+        if not isinstance(rp, dict):
+            continue
+        rid = rp.get("id")
+        if not rid:
+            continue
+        partner = env["res.partner"].sudo().search([("tmf_id", "=", str(rid))], limit=1)
+        if not partner and str(rid).isdigit():
+            partner = env["res.partner"].sudo().browse(int(rid))
+        if partner and partner.exists():
+            return partner
+    return env["res.partner"]
+
+
 class TMF648QuoteController(http.Controller):
 
     # -------------------------
@@ -155,6 +172,10 @@ class TMF648QuoteController(http.Controller):
                 # Provider sets quoteDate
                 "quote_date": fields.Datetime.now(),
             }
+
+            partner = _resolve_partner_from_related_party(request.env, body.get("relatedParty", []))
+            if partner and partner.exists():
+                vals["partner_id"] = partner.id
 
             q = request.env["tmf.quote"].sudo().create(vals)
 
@@ -236,6 +257,10 @@ class TMF648QuoteController(http.Controller):
 
             if vals:
                 q.write(vals)
+
+            partner = _resolve_partner_from_related_party(request.env, body.get("relatedParty", []))
+            if partner and partner.exists():
+                q.write({"partner_id": partner.id})
 
             return _json_response(q.to_tmf_json(fields_param=_fields_param()), status=200)
 

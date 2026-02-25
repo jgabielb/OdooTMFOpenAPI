@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_product,tmf.product,model_tmf_product,base.group_user,1,1,1,1
+access_tmf_check_product_configuration,tmf.check.product.configuration,model_tmf_check_product_configuration,base.group_user,1,1,1,1
+access_tmf_query_product_configuration,tmf.query.product.configuration,model_tmf_query_product_configuration,base.group_user,1,1,1,1

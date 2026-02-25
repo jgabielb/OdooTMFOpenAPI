@@ -1,0 +1,45 @@
+<odoo>
+    <record id="view__tree" model="ir.ui.view">
+        <field name="name">tmf.iot.service.resource.tree</field>
+        <field name="model">tmf.iot.service.resource</field>
+        <field name="arch" type="xml">
+            <list string="TMF914 IoT Service Management">
+                <field name="resource_type"/>
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="status"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view__form" model="ir.ui.view">
+        <field name="name">tmf.iot.service.resource.form</field>
+        <field name="model">tmf.iot.service.resource</field>
+        <field name="arch" type="xml">
+            <form string="TMF914 IoT Service Management">
+                <sheet>
+                    <group>
+                        <field name="resource_type"/>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="status"/>
+                        <field name="state"/>
+                        <field name="lifecycle_status"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_" model="ir.actions.act_window">
+        <field name="name">TMF914 IoT Service Management</field>
+        <field name="res_model">tmf.iot.service.resource</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_" name="TMF914 IoT Service Management" parent="tmf_product_catalog.menu_tmf_root" action="action_"/>
+</odoo>

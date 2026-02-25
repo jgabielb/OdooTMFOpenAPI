@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_tmf_party_rev_sharing_report_tree" model="ir.ui.view">
+        <field name="name">tmf.party.rev.sharing.report.tree</field>
+        <field name="model">tmf.party.rev.sharing.report</field>
+        <field name="arch" type="xml">
+            <list string="PartyRevSharingReport">
+                <field name="tmf_id"/>
+                <field name="create_date_time"/>
+                <field name="last_update"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_party_rev_sharing_report_form" model="ir.ui.view">
+        <field name="name">tmf.party.rev.sharing.report.form</field>
+        <field name="model">tmf.party.rev.sharing.report</field>
+        <field name="arch" type="xml">
+            <form string="PartyRevSharingReport">
+                <sheet>
+                    <group>
+                        <field name="create_date_time"/>
+                        <field name="last_update"/>
+                        <field name="status"/>
+                    </group>
+                    <group>
+                        <field name="party_rev_sharing_model_json"/>
+                        <field name="cdr_transaction_json"/>
+                        <field name="party_rev_sharing_report_item_json"/>
+                        <field name="money_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_party_rev_sharing_report" model="ir.actions.act_window">
+        <field name="name">Revenue Sharing Report</field>
+        <field name="res_model">tmf.party.rev.sharing.report</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_party_rev_sharing_report" name="Revenue Sharing Report" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_party_rev_sharing_report"/>
+</odoo>

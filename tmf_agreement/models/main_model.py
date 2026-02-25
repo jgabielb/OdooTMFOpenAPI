@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import models, fields, api
 from datetime import datetime, timezone
 
 API_BASE = "/tmf-api/agreementManagement/v4"
@@ -33,6 +33,24 @@ class TMFAgreement(models.Model):
     characteristic = fields.Json()
     engaged_party = fields.Json(required=True)           # engagedParty (mandatory on create)
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AgreementCreateEvent",
+            "update": "AgreementAttributeValueChangeEvent",
+            "delete": "AgreementDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("agreement", event_name, payload)
+            except Exception:
+                continue
+
     def _get_tmf_api_path(self):
         # TMF651 Agreement resource path
         return f"{API_BASE}/agreement"
@@ -48,7 +66,19 @@ class TMFAgreement(models.Model):
         records = super().create(vals_list)
         for r in records:
             r._ensure_defaults()
+        records._notify("create")
         return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -98,6 +128,24 @@ class TMFAgreementSpecification(models.Model):
     specification_relationship = fields.Json()
     valid_for = fields.Json()
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "AgreementSpecificationCreateEvent",
+            "update": "AgreementSpecificationAttributeValueChangeEvent",
+            "delete": "AgreementSpecificationDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("agreementSpecification", event_name, payload)
+            except Exception:
+                continue
+
     def _get_tmf_api_path(self):
         return f"{API_BASE}/agreementSpecification"
 
@@ -122,3 +170,20 @@ class TMFAgreementSpecification(models.Model):
             "specificationRelationship": self.specification_relationship,
             "validFor": self.valid_for,
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

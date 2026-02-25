@@ -100,6 +100,47 @@ class TMF652ResourceOrderController(http.Controller):
                 if not item_cmds:
                     return _error(400, "orderItem must contain at least one valid item object")
 
+            related_party_cmds = []
+            for rp in (body.get("relatedParty") or []):
+                if not isinstance(rp, dict):
+                    continue
+                if not rp.get("id"):
+                    continue
+                related_party_cmds.append((0, 0, {
+                    "tmf_party_id": str(rp.get("id")),
+                    "name": rp.get("name"),
+                    "href": rp.get("href"),
+                    "role": rp.get("role") or "Customer",
+                    "referredType": rp.get("@referredType") or "Individual",
+                }))
+
+            note_cmds = []
+            for note in (body.get("note") or []):
+                if not isinstance(note, dict):
+                    continue
+                text = note.get("text")
+                if not text:
+                    continue
+                note_cmds.append((0, 0, {
+                    "tmf_note_id": note.get("id") or __import__("uuid").uuid4().hex,
+                    "author": note.get("author"),
+                    "date": _to_dt(note.get("date")),
+                    "text": text,
+                    "href": note.get("href"),
+                }))
+
+            ext_cmds = []
+            for ext in (body.get("externalReference") or []):
+                if not isinstance(ext, dict):
+                    continue
+                name = ext.get("name")
+                if not name:
+                    continue
+                ext_cmds.append((0, 0, {
+                    "name": name,
+                    "externalReferenceType": ext.get("externalReferenceType"),
+                    "href": ext.get("href"),
+                }))
 
             # Create ResourceOrder
             vals = {
@@ -115,6 +156,9 @@ class TMF652ResourceOrderController(http.Controller):
                 "orderDate": _utc_now_naive(),
                 "state": "acknowledged",
                 "order_item_ids": item_cmds,
+                "related_party_ids": related_party_cmds,
+                "note_ids": note_cmds,
+                "external_reference_ids": ext_cmds,
             }
 
             ro = request.env["tmf.resource.order"].sudo().create(vals)

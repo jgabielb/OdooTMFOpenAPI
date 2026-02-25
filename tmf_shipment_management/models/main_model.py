@@ -121,7 +121,7 @@ class TMFShipment(models.Model):
         payload["shipmentTracking"] = _loads(self.shipment_tracking_json)
         payload["shippingInstruction"] = _loads(self.shipping_instruction_json)
         payload["weight"] = _loads(self.weight_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -222,7 +222,7 @@ class TMFShipmentSpecification(models.Model):
         payload["specCharacteristic"] = _loads(self.spec_characteristic_json)
         payload["targetShipmentSchema"] = _loads(self.target_shipment_schema_json)
         payload["validFor"] = _loads(self.valid_for_json)
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = self._common_from_tmf_json(data)
@@ -277,3 +277,4 @@ class TMFShipmentSpecification(models.Model):
             except Exception:
                 pass
         return res
+

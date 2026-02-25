@@ -25,6 +25,13 @@ class TMFService(models.Model):
         'sale.order.line',
         string="Origin Order Line"
     )
+    sale_order_id = fields.Many2one(
+        "sale.order",
+        string="Origin Sales Order",
+        related="order_line_id.order_id",
+        store=True,
+        readonly=True,
+    )
 
     # TMF fields
     service_type = fields.Char(string="Service Type")  # optional
@@ -78,6 +85,7 @@ class TMFService(models.Model):
         string="Supporting Resource",
         help="The physical/virtual resource supporting this service"
     )
+    stock_picking_id = fields.Many2one("stock.picking", string="Related Picking", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/serviceInventoryManagement/v5/service"
@@ -88,6 +96,23 @@ class TMFService(models.Model):
             return f"{base}{path}"
         except Exception:
             return path
+
+    def _sync_stock_picking(self):
+        Picking = self.env["stock.picking"].sudo()
+        for rec in self:
+            if rec.stock_picking_id and rec.stock_picking_id.exists():
+                continue
+            # Prefer picking from originating sales order.
+            picking = Picking.browse()
+            if rec.sale_order_id:
+                picking = rec.sale_order_id.picking_ids[:1]
+            # Fallback to last move tied to selected lot.
+            if not picking and rec.resource_id and hasattr(rec.resource_id, "move_line_ids"):
+                move_lines = rec.resource_id.move_line_ids.sorted("id", reverse=True)
+                if move_lines:
+                    picking = move_lines[0].picking_id
+            if picking and picking.exists():
+                rec.stock_picking_id = picking.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -164,6 +189,7 @@ class TMFService(models.Model):
     @api.model
     def create(self, vals):
         rec = super().create(vals)
+        rec._sync_stock_picking()
         try:
             rec.env['tmf.hub.subscription']._notify_subscribers(
                 api_name='service',
@@ -176,6 +202,7 @@ class TMFService(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        self._sync_stock_picking()
         for rec in self:
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(

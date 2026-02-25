@@ -83,6 +83,24 @@ class ServiceQualification(models.Model):
     place_id = fields.Many2one("tmf.geographic.address", string="Service Address")
     service_specification_id = fields.Many2one("tmf.product.specification", string="Service Specification")
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "ServiceQualificationCreateEvent",
+            "update": "ServiceQualificationAttributeValueChangeEvent",
+            "delete": "ServiceQualificationDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("serviceQualification", event_name, payload)
+            except Exception:
+                continue
+
     # -------------------------
     # Paths
     # -------------------------
@@ -119,7 +137,19 @@ class ServiceQualification(models.Model):
                 if rec.instant_sync_qualification:
                     rec._run_query_resolution()
 
+        recs._notify("create")
         return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
     # -------------------------
     # Demo feasibility logic for CHECK

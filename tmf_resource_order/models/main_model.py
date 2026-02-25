@@ -161,6 +161,24 @@ class TMFResourceOrder(models.Model):
             ],
         })
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "ResourceOrderCreateEvent",
+            "update": "ResourceOrderAttributeValueChangeEvent",
+            "delete": "ResourceOrderDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("resourceOrder", event_name, payload)
+            except Exception:
+                continue
+
 
     # Identifiers
     tmf_id = fields.Char(default=lambda self: uuid.uuid4().hex, required=True, index=True)
@@ -172,6 +190,9 @@ class TMFResourceOrder(models.Model):
     name = fields.Char()
     orderType = fields.Char()
     priority = fields.Integer()
+    partner_id = fields.Many2one("res.partner", string="Customer", ondelete="set null")
+    project_task_id = fields.Many2one("project.task", string="Fulfillment Task", ondelete="set null")
+    picking_id = fields.Many2one("stock.picking", string="Stock Picking", ondelete="set null")
 
     # Dates
     orderDate = fields.Datetime()
@@ -231,6 +252,66 @@ class TMFResourceOrder(models.Model):
         for rec in self:
             rec.href = f"{rec._get_tmf_api_base()}/resourceOrder/{rec.tmf_id}"
 
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        for rp in self.related_party_ids:
+            pid = rp.tmf_party_id
+            if not pid:
+                continue
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner
+        return self.env["res.partner"]
+
+    def _sync_fulfillment_records(self):
+        Task = self.env["project.task"].sudo()
+        Project = self.env["project.project"].sudo()
+        Picking = self.env["stock.picking"].sudo()
+        PickingType = self.env["stock.picking.type"].sudo()
+
+        for rec in self:
+            partner = rec.partner_id
+            if not partner:
+                partner = rec._resolve_partner_from_related_party()
+                if partner and partner.exists():
+                    rec.partner_id = partner.id
+
+            # Project Task
+            project = Project.search([], limit=1)
+            task_vals = {
+                "name": rec.name or rec.description or f"TMF ResourceOrder {rec.tmf_id}",
+                "description": rec.description or "",
+                "partner_id": partner.id if partner and partner.exists() else False,
+                "date_deadline": rec.requestedCompletionDate.date() if rec.requestedCompletionDate else False,
+            }
+            if project:
+                task_vals["project_id"] = project.id
+            if rec.project_task_id and rec.project_task_id.exists():
+                rec.project_task_id.write(task_vals)
+            else:
+                rec.project_task_id = Task.create(task_vals).id
+
+            # Stock Picking
+            picking_type = PickingType.search([("code", "=", "outgoing")], limit=1) or PickingType.search([], limit=1)
+            if not picking_type:
+                continue
+            pick_vals = {
+                "partner_id": partner.id if partner and partner.exists() else False,
+                "origin": rec.tmf_id,
+                "scheduled_date": rec.requestedStartDate or False,
+                "note": rec.description or "",
+                "picking_type_id": picking_type.id,
+                "location_id": picking_type.default_location_src_id.id,
+                "location_dest_id": picking_type.default_location_dest_id.id,
+            }
+            if rec.picking_id and rec.picking_id.exists():
+                rec.picking_id.write(pick_vals)
+            else:
+                rec.picking_id = Picking.create(pick_vals).id
+
     @api.model_create_multi
     def create(self, vals_list):
         """
@@ -266,7 +347,21 @@ class TMFResourceOrder(models.Model):
 
         recs = super().create(vals_list)
         recs._compute_href()
+        recs._sync_fulfillment_records()
+        recs._notify("create")
         return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._sync_fulfillment_records()
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf_json() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
     @api.constrains("external_reference_ids", "note_ids", "related_party_ids", "order_item_ids")
     def _check_tmf_additional_rules(self):

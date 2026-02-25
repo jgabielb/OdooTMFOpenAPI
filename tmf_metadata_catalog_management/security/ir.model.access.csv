@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_metadata_catalog,tmf.metadata.catalog,model_tmf_metadata_catalog,base.group_user,1,1,1,1
+access_tmf_metadata_category,tmf.metadata.category,model_tmf_metadata_category,base.group_user,1,1,1,1
+access_tmf_metadata_catalog_item,tmf.metadata.catalog.item,model_tmf_metadata_catalog_item,base.group_user,1,1,1,1
+access_tmf_metadata_specification,tmf.metadata.specification,model_tmf_metadata_specification,base.group_user,1,1,1,1

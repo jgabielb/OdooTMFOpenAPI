@@ -6,6 +6,9 @@
       <form string="Payment">
         <sheet>
           <group>
+            <field name="partner_id"/>
+            <field name="account_payment_id"/>
+            <field name="invoice_ids" widget="many2many_tags"/>
             <field name="authorization_code"/>
             <field name="correlator_id"/>
             <field name="name"/>
@@ -31,6 +34,7 @@
     <field name="model">tmf.payment</field>
     <field name="arch" type="xml">
       <list string="Payments">
+        <field name="partner_id"/>
         <field name="name"/>
         <field name="status"/>
         <field name="payment_date"/>
@@ -47,5 +51,5 @@
   </record>
 
   <!-- parent menu must exist; change to your real root menu -->
-  <menuitem id="menu_tmf_payment" name="Payment" action="action_tmf_payment"/>
+  <menuitem id="menu_tmf_payment" name="Payment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_payment"/>
 </odoo>

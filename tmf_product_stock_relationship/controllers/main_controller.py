@@ -48,12 +48,42 @@ def _find_by_rid(model_name, rid):
     return None
 
 
+def _resolve_product_id(stocked_product):
+    if not isinstance(stocked_product, dict):
+        return False
+    rid = stocked_product.get("id")
+    if not rid:
+        return False
+    Product = request.env["product.product"].sudo()
+    product = Product.search([("tmf_id", "=", str(rid))], limit=1)
+    if product:
+        return product.id
+    if str(rid).isdigit():
+        product = Product.browse(int(rid))
+        if product.exists():
+            return product.id
+    return False
+
+
+def _resolve_location_id(data):
+    place = data.get("place")
+    if not isinstance(place, dict):
+        return False
+    lid = place.get("id")
+    if not lid or not str(lid).isdigit():
+        return False
+    location = request.env["stock.location"].sudo().browse(int(lid))
+    return location.id if location.exists() else False
+
+
 class TMF687StockController(http.Controller):
     @http.route(f"{API_BASE}/productStock", type="http", auth="public", methods=["GET"], csrf=False)
     def list_product_stock(self, **params):
         domain = []
         if params.get("id"):
             domain.append(("tmf_id", "=", params["id"]))
+        if params.get("stockedProduct.id"):
+            domain.append(("product_id.tmf_id", "=", params["stockedProduct.id"]))
         offset = int(params.get("offset", 0) or 0)
         limit = params.get("limit")
         limit = int(limit) if limit not in (None, "") else None
@@ -84,6 +114,8 @@ class TMF687StockController(http.Controller):
             "product_stock_status_type": data.get("productStockStatusType"),
             "product_stock_level": data.get("productStockLevel") or {},
             "stocked_product": data.get("stockedProduct") or {},
+            "product_id": _resolve_product_id(data.get("stockedProduct") or {}),
+            "location_id": _resolve_location_id(data),
             "extra_json": {k: v for k, v in data.items() if k not in {"name", "description", "productStockStatusType", "productStockLevel", "stockedProduct", "id", "href"}},
         }
         rec = request.env["tmf.product.stock"].sudo().create(vals)
@@ -108,6 +140,9 @@ class TMF687StockController(http.Controller):
             vals["product_stock_level"] = patch.get("productStockLevel") or {}
         if "stockedProduct" in patch:
             vals["stocked_product"] = patch.get("stockedProduct") or {}
+            vals["product_id"] = _resolve_product_id(patch.get("stockedProduct") or {})
+        if "place" in patch:
+            vals["location_id"] = _resolve_location_id(patch)
         extra = rec.extra_json.copy() if isinstance(rec.extra_json, dict) else {}
         for k, v in patch.items():
             if k not in {"name", "description", "productStockStatusType", "productStockLevel", "stockedProduct", "id", "href"}:

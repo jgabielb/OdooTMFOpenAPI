@@ -31,9 +31,41 @@ class StockLot(models.Model):
         ('active', 'Active'),
         ('busy', 'Busy'),
     ], default='idle')
+    current_location_id = fields.Many2one(
+        "stock.location",
+        string="Current Location",
+        compute="_compute_inventory_links",
+        store=False,
+    )
+    last_picking_id = fields.Many2one(
+        "stock.picking",
+        string="Last Picking",
+        compute="_compute_inventory_links",
+        store=False,
+    )
+    qty_available = fields.Float(
+        string="On Hand Quantity",
+        compute="_compute_inventory_links",
+        store=False,
+    )
 
     def _get_tmf_api_path(self):
         return "/resourceInventoryManagement/v4/resource"
+
+    def _compute_inventory_links(self):
+        for rec in self:
+            rec.current_location_id = False
+            rec.last_picking_id = False
+            rec.qty_available = 0.0
+
+            quants = rec.quant_ids.filtered(lambda q: q.quantity)
+            if quants:
+                rec.current_location_id = quants[0].location_id
+                rec.qty_available = sum(quants.mapped("quantity"))
+
+            move_lines = rec.move_line_ids.sorted("id", reverse=True)
+            if move_lines:
+                rec.last_picking_id = move_lines[0].picking_id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -69,6 +101,11 @@ class StockLot(models.Model):
 
             "serialNumber": self.name or self.ref,
             "resourceSpecification": spec,
+            "place": [{
+                "id": str(self.current_location_id.id),
+                "name": self.current_location_id.display_name,
+                "@referredType": "Location",
+            }] if self.current_location_id else None,
         }
 
     # ---------- Event hooks for /hub ----------

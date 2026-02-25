@@ -1,0 +1,45 @@
+<odoo>
+    <record id="view_tmf_party_rev_sharing_algorithm_tree" model="ir.ui.view">
+        <field name="name">tmf.party.rev.sharing.algorithm.tree</field>
+        <field name="model">tmf.party.rev.sharing.algorithm</field>
+        <field name="arch" type="xml">
+            <list string="PartyRevSharingAlgorithm">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="state"/>
+                <field name="lifecycle_status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_party_rev_sharing_algorithm_form" model="ir.ui.view">
+        <field name="name">tmf.party.rev.sharing.algorithm.form</field>
+        <field name="model">tmf.party.rev.sharing.algorithm</field>
+        <field name="arch" type="xml">
+            <form string="PartyRevSharingAlgorithm">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="state"/>
+                        <field name="lifecycle_status"/>
+                    </group>
+                    <group>
+                        <field name="policy_json"/>
+                        <field name="condition_variable_json"/>
+                        <field name="action_variable_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_party_rev_sharing_algorithm" model="ir.actions.act_window">
+        <field name="name">Revenue Sharing Algorithm</field>
+        <field name="res_model">tmf.party.rev.sharing.algorithm</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_party_rev_sharing_algorithm" name="Revenue Sharing Algorithm" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_party_rev_sharing_algorithm"/>
+</odoo>

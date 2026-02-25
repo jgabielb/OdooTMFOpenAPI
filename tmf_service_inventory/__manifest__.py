@@ -9,7 +9,7 @@
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',
-    'depends': ['tmf_base', 'tmf_product_ordering', 'tmf_product_catalog'],
+    'depends': ['tmf_base', 'tmf_product_ordering', 'tmf_product_catalog', 'stock'],
     'data': [
         'security/ir.model.access.csv',
         'views/tmf_service_views.xml',

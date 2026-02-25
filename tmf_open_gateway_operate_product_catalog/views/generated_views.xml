@@ -1,0 +1,46 @@
+<odoo>
+    <record id="view_tmf_ogw_product_offering_tree" model="ir.ui.view">
+        <field name="name">tmf.ogw.product.offering.tree</field>
+        <field name="model">tmf.ogw.product.offering</field>
+        <field name="arch" type="xml">
+            <list string="Product Offering">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="status"/>
+                <field name="version"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_ogw_product_offering_form" model="ir.ui.view">
+        <field name="name">tmf.ogw.product.offering.form</field>
+        <field name="model">tmf.ogw.product.offering</field>
+        <field name="arch" type="xml">
+            <form string="Product Offering">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="status"/>
+                        <field name="lifecycle_status"/>
+                        <field name="version"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_ogw_product_offering" model="ir.actions.act_window">
+        <field name="name">OGW Product Offering</field>
+        <field name="res_model">tmf.ogw.product.offering</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_ogw_product_offering"
+              name="OGW Product Offering"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_tmf_ogw_product_offering"/>
+</odoo>

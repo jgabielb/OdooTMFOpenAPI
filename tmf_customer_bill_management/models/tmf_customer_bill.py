@@ -18,11 +18,32 @@ class TMFCustomerBill(models.Model):
     bill_date = fields.Datetime(index=True)
 
     bill_cycle_id = fields.Many2one("tmf.bill.cycle", string="BillCycle")
+    move_id = fields.Many2one("account.move", string="Invoice", ondelete="set null")
+    partner_id = fields.Many2one("res.partner", string="Customer", ondelete="set null")
     billing_period_start = fields.Datetime(index=True)
     billing_period_end = fields.Datetime(index=True)
 
     payload = fields.Json(string="TMF Payload")
     last_update = fields.Datetime(index=True, default=fields.Datetime.now)
+
+    def _sync_account_move(self):
+        Move = self.env["account.move"].sudo()
+        for rec in self:
+            if not rec.partner_id:
+                continue
+            move_vals = {
+                "move_type": "out_invoice",
+                "partner_id": rec.partner_id.id,
+                "invoice_date": fields.Date.to_date(rec.bill_date) if rec.bill_date else False,
+                "ref": rec.tmf_id,
+                "invoice_origin": rec.name or rec.tmf_id,
+            }
+            if rec.move_id and rec.move_id.exists():
+                # Keep this conservative: update only while draft.
+                if rec.move_id.state == "draft":
+                    rec.move_id.write(move_vals)
+            else:
+                rec.move_id = Move.create(move_vals).id
 
     def _compute_href(self, host_url: str, api_base: str):
         host_url = (host_url or "").rstrip("/")
@@ -54,6 +75,20 @@ class TMFCustomerBill(models.Model):
                 "@type": self.bill_cycle_id.tmf_type or "BillCycle",
                 "@referredType": "BillCycle",
             }
+
+        if self.move_id:
+            out.setdefault("relatedEntity", [])
+            out["relatedEntity"].append({
+                "id": str(self.move_id.id),
+                "name": self.move_id.name,
+                "@referredType": "Invoice",
+            })
+        if self.partner_id:
+            out.setdefault("billingAccount", {
+                "id": str(self.partner_id.tmf_id or self.partner_id.id),
+                "name": self.partner_id.name,
+                "@referredType": "Customer",
+            })
 
         # Merge stored payload
         p = dict(self.payload or {})
@@ -90,7 +125,30 @@ class TMFCustomerBill(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            move_id = vals.get("move_id")
+            payload = vals.get("payload") or {}
+            if not move_id and isinstance(payload, dict):
+                related_entities = payload.get("relatedEntity") or []
+                for ent in related_entities:
+                    if not isinstance(ent, dict):
+                        continue
+                    rid = ent.get("id")
+                    if not rid:
+                        continue
+                    move = self.env["account.move"].sudo().search([("tmf_id", "=", str(rid))], limit=1)
+                    if not move and str(rid).isdigit():
+                        move = self.env["account.move"].sudo().browse(int(rid))
+                    if move and move.exists():
+                        move_id = move.id
+                        vals["move_id"] = move.id
+                        break
+            if move_id and not vals.get("partner_id"):
+                move = self.env["account.move"].sudo().browse(move_id)
+                if move and move.exists() and move.partner_id:
+                    vals["partner_id"] = move.partner_id.id
         recs = super().create(vals_list)
+        recs._sync_account_move()
         for rec in recs:
             # Conformance Page 13: Mandatory Notification
             rec._notify("CustomerBillCreateEvent")
@@ -100,6 +158,7 @@ class TMFCustomerBill(models.Model):
         # detect state change on write
         before = {rec.id: rec.state for rec in self}
         res = super().write(vals)
+        self._sync_account_move()
         for rec in self:
             # Generic update not strictly mandatory in Page 13 list, but good practice.
             # However, StateChangeEvent IS mandatory.

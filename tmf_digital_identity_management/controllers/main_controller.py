@@ -170,3 +170,4 @@ class TMF720Controller(http.Controller):
     @http.route(f"{API_BASE}/listener/digitalIdentityDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listen_digital_identity_delete(self, **_params):
         return self._listener_ok()
+

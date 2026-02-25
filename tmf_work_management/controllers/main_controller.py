@@ -248,3 +248,4 @@ class TMF713Controller(http.Controller):
     @http.route(f"{API_BASE}/listener/workSpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listen_work_spec_delete(self, **_params):
         return self._listener_ok()
+

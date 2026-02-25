@@ -260,11 +260,316 @@ TMF_EVENT_NAME_MAP = {
         'delete': 'ResolveIncidentDeleteEvent',
     },
 
+    # TMF725 - Metadata Catalog Management
+    'metadataCatalog': {
+        'create': 'MetadataCatalogCreateEvent',
+        'update': 'MetadataCatalogAttributeValueChangeEvent',
+        'state_change': 'MetadataCatalogStatusChangeEvent',
+        'delete': 'MetadataCatalogDeleteEvent',
+    },
+    'metadataCategory': {
+        'create': 'MetadataCategoryCreateEvent',
+        'update': 'MetadataCategoryAttributeValueChangeEvent',
+        'state_change': 'MetadataCategoryStatusChangeEvent',
+        'delete': 'MetadataCategoryDeleteEvent',
+    },
+    'metadataCatalogItem': {
+        'create': 'MetadataCatalogItemCreateEvent',
+        'update': 'MetadataCatalogItemAttributeValueChangeEvent',
+        'state_change': 'MetadataCatalogItemStatusChangeEvent',
+        'delete': 'MetadataCatalogItemDeleteEvent',
+    },
+    'metadataSpecification': {
+        'create': 'MetadataSpecificationCreateEvent',
+        'update': 'MetadataSpecificationAttributeValueChangeEvent',
+        'state_change': 'MetadataSpecificationStatusChangeEvent',
+        'delete': 'MetadataSpecificationDeleteEvent',
+    },
+
+    # TMF727 - Service Usage Management
+    'serviceUsage': {
+        'create': 'ServiceUsageCreateEvent',
+        'state_change': 'ServiceUsageStatusChangeEvent',
+        'delete': 'ServiceUsageDeleteEvent',
+    },
+
+    # TMF728 - Dunning Case Management
+    'dunningScenario': {
+        'create': 'DunningScenarioCreateEvent',
+        'update': 'DunningScenarioAttributeValueChangeEvent',
+        'delete': 'DunningScenarioDeleteEvent',
+    },
+    'dunningRule': {
+        'create': 'DunningRuleCreateEvent',
+        'update': 'DunningRuleAttributeValueChangeEvent',
+        'delete': 'DunningRuleDeleteEvent',
+    },
+    'dunningCase': {
+        'create': 'DunningCaseCreateEvent',
+        'update': 'DunningCaseAttributeValueChangeEvent',
+        'state_change': 'DunningCaseStateChangeEvent',
+        'delete': 'DunningCaseDeleteEvent',
+    },
+
+    # TMF730 - Software and Compute Management
+    'softwareComputeResource': {
+        'create': 'ResourceCreateEvent',
+        'update': 'ResourceAttributeValueChangeEvent',
+        'state_change': 'ResourceStateChangeEvent',
+        'delete': 'ResourceDeleteEvent',
+    },
+    'softwareComputeResourceSpecification': {
+        'create': 'ResourceSpecificationCreateEvent',
+        'update': 'ResourceSpecificationChangeEvent',
+        'delete': 'ResourceSpecificationDeleteEvent',
+    },
+
+    # TMF735 - CDR Transaction Management
+    'cdrTransaction': {
+        'create': 'CdrTransactionCreateEvent',
+        'update': 'CdrTransactionAttributeValueChangeEvent',
+        'state_change': 'CdrTransactionStateChangeEvent',
+        'delete': 'CdrTransactionDeleteEvent',
+    },
+    # TMF736 - Revenue Sharing Algorithm Management
+    'partyRevSharingAlgorithm': {
+        'create': 'PartyRevSharingAlgorithmCreateEvent',
+        'update': 'PartyRevSharingAlgorithmAttributeValueChangeEvent',
+        'state_change': 'PartyRevSharingAlgorithmStateChangeEvent',
+        'delete': 'PartyRevSharingAlgorithmDeleteEvent',
+    },
+    # TMF737 - Revenue Sharing Report Management
+    'partyRevSharingReport': {
+        'create': 'PartyRevSharingReportCreateEvent',
+        'update': 'PartyRevSharingReportAttributeValueChangeEvent',
+        'state_change': 'PartyRevSharingReportStateChangeEvent',
+        'delete': 'PartyRevSharingReportDeleteEvent',
+    },
+    # TMF738 - Revenue Sharing Model Management
+    'partyRevSharingModel': {
+        'create': 'PartyRevSharingModelCreateEvent',
+        'update': 'PartyRevSharingModelAttributeValueChangeEvent',
+        'state_change': 'PartyRevSharingModelStateChangeEvent',
+        'delete': 'PartyRevSharingModelDeleteEvent',
+    },
+    # TMF759 - Private Optimized Binding
+    'cloudApplication': {
+        'create': 'CloudApplicationCreateEvent',
+        'update': 'CloudApplicationAttributeValueChangeEvent',
+        'state_change': 'CloudApplicationStateChangeEvent',
+        'delete': 'CloudApplicationDeleteEvent',
+    },
+    'cloudApplicationSpecification': {
+        'create': 'CloudApplicationSpecificationCreateEvent',
+        'update': 'CloudApplicationSpecificationAttributeValueChangeEvent',
+        'delete': 'CloudApplicationSpecificationDeleteEvent',
+    },
+    'userEquipment': {
+        'create': 'UserEquipmentCreateEvent',
+        'update': 'UserEquipmentAttributeValueChangeEvent',
+        'state_change': 'UserEquipmentStateChangeEvent',
+        'delete': 'UserEquipmentDeleteEvent',
+    },
+    'userEquipmentSpecification': {
+        'create': 'UserEquipmentSpecificationCreateEvent',
+        'update': 'UserEquipmentSpecificationAttributeValueChangeEvent',
+        'delete': 'UserEquipmentSpecificationDeleteEvent',
+    },
+    # TMF908 - IoT Agent and Device Management
+    'iotDevice': {
+        'create': 'IotDeviceCreateEvent',
+        'update': 'IotDeviceChangeEvent',
+        'state_change': 'IotDeviceStateChangeEvent',
+        'delete': 'IotDeviceDeleteEvent',
+    },
+    'dataAccessEndpoint': {
+        'create': 'DataAccessEndpointCreateEvent',
+        'update': 'DataAccessEndpointChangeEvent',
+        'delete': 'DataAccessEndpointDeleteEvent',
+    },
+    'iotDeviceSpecification': {
+        'create': 'IotDeviceSpecificationCreateEvent',
+        'update': 'IotDeviceSpecificationChangeEvent',
+        'delete': 'IotDeviceSpecificationDeleteEvent',
+    },
+    'iotDataEvent': {
+        'create': 'IotDataEventCreateEvent',
+        'update': 'IotDataEventChangeEvent',
+        'delete': 'IotDataEventDeleteEvent',
+    },
+    'iotManagementEvent': {
+        'create': 'IotManagementEventCreateEvent',
+        'update': 'IotManagementEventChangeEvent',
+        'delete': 'IotManagementEventDeleteEvent',
+    },
+
+    # TMF915 - AI Management
+    'aiModel': {
+        'create': 'AiModelCreateEvent',
+        'update': 'AiModelAttributeValueChangeEvent',
+        'state_change': 'AiModelStateChangeEvent',
+        'delete': 'AiModelDeleteEvent',
+    },
+    'aiModelSpecification': {
+        'create': 'AiModelSpecificationCreateEvent',
+        'update': 'AiModelSpecificationAttributeValueChangeEvent',
+        'delete': 'AiModelSpecificationDeleteEvent',
+    },
+    'aiContract': {
+        'create': 'AiContractCreateEvent',
+        'update': 'AiContractAttributeValueChangeEvent',
+        'state_change': 'AiContractStateChangeEvent',
+        'delete': 'AiContractDeleteEvent',
+    },
+    'aiContractSpecification': {
+        'create': 'AiContractSpecificationCreateEvent',
+        'update': 'AiContractSpecificationAttributeValueChangeEvent',
+        'delete': 'AiContractSpecificationDeleteEvent',
+    },
+    'aiContractViolation': {
+        'create': 'AiContractViolationCreateEvent',
+        'update': 'AiContractViolationAttributeValueChangeEvent',
+        'delete': 'AiContractViolationDeleteEvent',
+    },
+    'rule': {
+        'create': 'RuleCreateEvent',
+        'update': 'RuleAttributeValueChangeEvent',
+        'state_change': 'RuleStateChangeEvent',
+        'delete': 'RuleDeleteEvent',
+    },
+
+    # TMF921 - Intent Management
+    'intent': {
+        'create': 'IntentCreateEvent',
+        'update': 'IntentAttributeValueChangeEvent',
+        'state_change': 'IntentStatusChangeEvent',
+        'delete': 'IntentDeleteEvent',
+    },
+    'intentReport': {
+        'create': 'IntentReportCreateEvent',
+        'update': 'IntentReportAttributeValueChangeEvent',
+        'delete': 'IntentReportDeleteEvent',
+    },
+    'intentSpecification': {
+        'create': 'IntentSpecificationCreateEvent',
+        'update': 'IntentSpecificationAttributeValueChangeEvent',
+        'state_change': 'IntentSpecificationStatusChangeEvent',
+        'delete': 'IntentSpecificationDeleteEvent',
+    },
+    # TMF760 - Product Configuration Management
+    'checkProductConfiguration': {
+        'create': 'CheckProductConfigurationCreateEvent',
+        'update': 'CheckProductConfigurationAttributeValueChangeEvent',
+        'state_change': 'CheckProductConfigurationStateChangeEvent',
+        'delete': 'CheckProductConfigurationDeleteEvent',
+    },
+    'queryProductConfiguration': {
+        'create': 'QueryProductConfigurationCreateEvent',
+        'update': 'QueryProductConfigurationAttributeValueChangeEvent',
+        'state_change': 'QueryProductConfigurationStateChangeEvent',
+        'delete': 'QueryProductConfigurationDeleteEvent',
+    },
+
+    # TMF764 - Cost Management
+    'actualCost': {
+        'create': 'ActualCostCreateEvent',
+        'update': 'ActualCostAttributeValueChangeEvent',
+        'state_change': 'ActualCostStateChangeEvent',
+        'delete': 'ActualCostDeleteEvent',
+    },
+    'projectedCost': {
+        'create': 'ProjectedCostCreateEvent',
+        'update': 'ProjectedCostAttributeValueChangeEvent',
+        'state_change': 'ProjectedCostStateChangeEvent',
+        'delete': 'ProjectedCostDeleteEvent',
+    },
+
+    # TMF767 - Product Usage Catalog Management
+    'productUsageSpecification': {
+        'create': 'ProductUsageSpecificationCreateEvent',
+        'update': 'ProductUsageSpecificationAttributeValueChangeEvent',
+        'state_change': 'ProductUsageSpecificationStateChangeEvent',
+        'delete': 'ProductUsageSpecificationDeleteEvent',
+    },
+
+    # TMF768 - Resource Role Management
+    'resourceRole': {
+        'create': 'ResourceRoleCreateEvent',
+        'update': 'ResourceRoleAttributeValueChangeEvent',
+        'state_change': 'ResourceRoleStatusChangeEvent',
+        'delete': 'ResourceRoleDeleteEvent',
+    },
+    'resourceRoleSpecification': {
+        'create': 'ResourceRoleSpecificationCreateEvent',
+        'update': 'ResourceRoleSpecificationAttributeValueChangeEvent',
+        'state_change': 'ResourceRoleSpecificationStatusChangeEvent',
+        'delete': 'ResourceRoleSpecificationDeleteEvent',
+    },
+    # TMF771 - Resource Usage Management
+    'resourceUsage': {
+        'create': 'ResourceUsageCreateEvent',
+        'update': 'ResourceUsageAttributeValueChangeEvent',
+        'delete': 'ResourceUsageDeleteEvent',
+    },
+    'resourceUsageSpecification': {
+        'create': 'ResourceUsageSpecificationCreateEvent',
+        'update': 'ResourceUsageSpecificationAttributeValueChangeEvent',
+        'delete': 'ResourceUsageSpecificationDeleteEvent',
+    },
+
+    # TMF777 - Outage Management
+    'outage': {
+        'create': 'OutageCreateEvent',
+        'update': 'OutageAttributeValueChangeEvent',
+        'state_change': 'OutageStateChangeEvent',
+        'delete': 'OutageDeleteEvent',
+    },
+    # TMF931 - Open Gateway Operate API - Onboarding and Ordering
+    'apiProductOrder': {
+        'create': 'ApiProductOrderCreateEvent',
+        'update': 'ApiProductOrderAttributeValueChangeEvent',
+        'state_change': 'ApiProductOrderStateChangeEvent',
+    },
+    'application': {
+        'create': 'ApplicationCreateEvent',
+        'update': 'ApplicationAttributeValueChangeEvent',
+        'state_change': 'ApplicationApprovalStatusChangeEvent',
+    },
+    'applicationOwner': {
+        'create': 'ApplicationOwnerCreateEvent',
+        'update': 'ApplicationOwnerAttributeValueChangeEvent',
+        'state_change': 'ApplicationOwnerApprovalStatusChangeEvent',
+    },
+    'monitor': {
+        'state_change': 'MonitorStateChangeEvent',
+    },
+
+    # TMF936 - Open Gateway Operate API - Product Catalog
+    'productOffering': {
+        'create': 'ProductOfferingCreateEvent',
+        'update': 'ProductOfferingAttributeValueChangeEvent',
+        'state_change': 'ProductOfferingStateChangeEvent',
+        'delete': 'ProductOfferingDeleteEvent',
+    },
     # TMF629 - Customer
     'customer': {
         'create': 'CustomerCreateEvent',
         'update': 'CustomerAttributeValueChangeEvent',
         'delete': 'CustomerDeleteEvent',
+    },
+
+    # TMF648 - Quote Management
+    'quote': {
+        'create': 'QuoteCreateEvent',
+        'update': 'QuoteAttributeValueChangeEvent',
+        'delete': 'QuoteDeleteEvent',
+    },
+
+    # TMF676 - Payment Management
+    'payment': {
+        'create': 'PaymentCreateEvent',
+        'update': 'PaymentAttributeValueChangeEvent',
+        'delete': 'PaymentDeleteEvent',
     },
 
     # TMF622 - Product Ordering (resource: productOrder)
@@ -273,6 +578,22 @@ TMF_EVENT_NAME_MAP = {
         'update': 'ProductOrderAttributeValueChangeEvent',
         'state_change': 'ProductOrderStateChangeEvent',
         'delete': 'ProductOrderDeleteEvent',
+    },
+
+    # TMF641 - Service Ordering
+    'serviceOrder': {
+        'create': 'ServiceOrderCreateEvent',
+        'update': 'ServiceOrderAttributeValueChangeEvent',
+        'state_change': 'ServiceOrderStateChangeEvent',
+        'delete': 'ServiceOrderDeleteEvent',
+    },
+
+    # TMF652 - Resource Ordering
+    'resourceOrder': {
+        'create': 'ResourceOrderCreateEvent',
+        'update': 'ResourceOrderAttributeValueChangeEvent',
+        'state_change': 'ResourceOrderStateChangeEvent',
+        'delete': 'ResourceOrderDeleteEvent',
     },
 
     # TMF620 - Product Catalog
@@ -301,6 +622,18 @@ TMF_EVENT_NAME_MAP = {
         'update': 'ServiceAttributeValueChangeEvent',
         'state_change': 'ServiceStateChangeEvent',
         'delete': 'ServiceDeleteEvent',
+    },
+
+    # TMF668 - Partnership Management
+    'partnership': {
+        'create': 'PartnershipCreateEvent',
+        'update': 'PartnershipAttributeValueChangeEvent',
+        'delete': 'PartnershipDeleteEvent',
+    },
+    'partnershipSpecification': {
+        'create': 'PartnershipSpecificationCreateEvent',
+        'update': 'PartnershipSpecificationAttributeValueChangeEvent',
+        'delete': 'PartnershipSpecificationDeleteEvent',
     },
 
     # TMF639 - Resource Inventory (resource: resource)
@@ -339,6 +672,25 @@ TMF_EVENT_NAME_MAP = {
         'update': 'AccountAttributeValueChangeEvent',
         'state_change': 'AccountStateChangeEvent',
         'delete': 'AccountDeleteEvent',
+    },
+
+    # TMF651 - Agreement Management
+    'agreement': {
+        'create': 'AgreementCreateEvent',
+        'update': 'AgreementAttributeValueChangeEvent',
+        'delete': 'AgreementDeleteEvent',
+    },
+    'agreementSpecification': {
+        'create': 'AgreementSpecificationCreateEvent',
+        'update': 'AgreementSpecificationAttributeValueChangeEvent',
+        'delete': 'AgreementSpecificationDeleteEvent',
+    },
+
+    # TMF670 - Payment Method Management
+    'paymentMethod': {
+        'create': 'PaymentMethodCreateEvent',
+        'update': 'PaymentMethodAttributeValueChangeEvent',
+        'delete': 'PaymentMethodDeleteEvent',
     },
 
     # TMF678 - Customer Bill Management
@@ -396,6 +748,46 @@ TMF_EVENT_NAME_MAP = {
         'delete': 'SalesLeadDeleteEvent',
     },
 
+    # TMF655 - Change Management
+    'changeRequest': {
+        'create': 'ChangeRequestCreateEvent',
+        'update': 'ChangeRequestAttributeValueChangeEvent',
+        'delete': 'ChangeRequestDeleteEvent',
+    },
+
+    # TMF717 - Customer360
+    'customer360': {
+        'create': 'Customer360CreateEvent',
+        'update': 'Customer360AttributeValueChangeEvent',
+        'delete': 'Customer360DeleteEvent',
+    },
+
+    # TMF673 - Geographic Address
+    'geographicAddress': {
+        'create': 'GeographicAddressCreateEvent',
+        'update': 'GeographicAddressAttributeValueChangeEvent',
+        'delete': 'GeographicAddressDeleteEvent',
+    },
+    'geographicAddressValidation': {
+        'create': 'GeographicAddressValidationCreateEvent',
+        'update': 'GeographicAddressValidationAttributeValueChangeEvent',
+        'delete': 'GeographicAddressValidationDeleteEvent',
+    },
+
+    # TMF683 - Party Interaction
+    'partyInteraction': {
+        'create': 'PartyInteractionCreateEvent',
+        'update': 'PartyInteractionAttributeValueChangeEvent',
+        'delete': 'PartyInteractionDeleteEvent',
+    },
+
+    # TMF671 - Promotion Management
+    'promotion': {
+        'create': 'PromotionCreateEvent',
+        'update': 'PromotionAttributeValueChangeEvent',
+        'delete': 'PromotionDeleteEvent',
+    },
+
     # TMF700 - Shipping Order Management
     'shippingOrder': {
         'create': 'ShippingOrderCreateEvent',
@@ -403,6 +795,13 @@ TMF_EVENT_NAME_MAP = {
         'state_change': 'ShippingOrderStateChangeEvent',
         'delete': 'ShippingOrderDeleteEvent',
         'information_required': 'ShippingOrderInformationRequiredEvent',
+    },
+
+    # TMF654 - Prepay Balance Management
+    'bucket': {
+        'create': 'BucketCreateEvent',
+        'update': 'BucketAttributeValueChangeEvent',
+        'delete': 'BucketDeleteEvent',
     },
 
     # TMF701 - Process Flow Management
@@ -430,6 +829,254 @@ TMF_EVENT_NAME_MAP = {
         'state_change': 'TaskFlowStateChangeEvent',
         'delete': 'TaskFlowDeleteEvent',
         'information_required': 'TaskFlowInformationRequiredEvent',
+    },
+
+    # TMF687 - Product Stock Relationship
+    'productStock': {
+        'create': 'ProductStockCreateEvent',
+        'update': 'ProductStockAttributeValueChangeEvent',
+        'delete': 'ProductStockDeleteEvent',
+    },
+    'reserveProductStock': {
+        'create': 'ReserveProductStockCreateEvent',
+        'update': 'ReserveProductStockAttributeValueChangeEvent',
+        'delete': 'ReserveProductStockDeleteEvent',
+    },
+
+    # TMF685 - Resource Pool Management
+    'resourcePool': {
+        'create': 'ResourcePoolCreateEvent',
+        'update': 'ResourcePoolAttributeValueChangeEvent',
+        'delete': 'ResourcePoolDeleteEvent',
+    },
+
+    # TMF645 - Service Qualification
+    'serviceQualification': {
+        'create': 'ServiceQualificationCreateEvent',
+        'update': 'ServiceQualificationAttributeValueChangeEvent',
+        'delete': 'ServiceQualificationDeleteEvent',
+    },
+
+    # TMF656 - Service Problem
+    'serviceProblem': {
+        'create': 'ServiceProblemCreateEvent',
+        'update': 'ServiceProblemAttributeValueChangeEvent',
+        'delete': 'ServiceProblemDeleteEvent',
+    },
+    'problemAcknowledgement': {
+        'create': 'ProblemAcknowledgementCreateEvent',
+        'update': 'ProblemAcknowledgementAttributeValueChangeEvent',
+        'delete': 'ProblemAcknowledgementDeleteEvent',
+    },
+    'problemUnacknowledgement': {
+        'create': 'ProblemUnacknowledgementCreateEvent',
+        'update': 'ProblemUnacknowledgementAttributeValueChangeEvent',
+        'delete': 'ProblemUnacknowledgementDeleteEvent',
+    },
+    'problemGroup': {
+        'create': 'ProblemGroupCreateEvent',
+        'update': 'ProblemGroupAttributeValueChangeEvent',
+        'delete': 'ProblemGroupDeleteEvent',
+    },
+    'problemUngroup': {
+        'create': 'ProblemUngroupCreateEvent',
+        'update': 'ProblemUngroupAttributeValueChangeEvent',
+        'delete': 'ProblemUngroupDeleteEvent',
+    },
+
+    # TMF680 - Recommendation Management
+    'queryProductRecommendation': {
+        'create': 'QueryProductRecommendationCreateEvent',
+        'update': 'QueryProductRecommendationAttributeValueChangeEvent',
+        'delete': 'QueryProductRecommendationDeleteEvent',
+    },
+
+    # Additional coverage for modules already emitting notifications
+    'alarm': {
+        'create': 'AlarmCreateEvent',
+        'update': 'AlarmAttributeValueChangeEvent',
+        'state_change': 'AlarmStateChangeEvent',
+        'delete': 'AlarmDeleteEvent',
+    },
+    'appointment': {
+        'create': 'AppointmentCreateEvent',
+        'update': 'AppointmentAttributeValueChangeEvent',
+        'state_change': 'AppointmentStateChangeEvent',
+        'delete': 'AppointmentDeleteEvent',
+    },
+    'communicationMessage': {
+        'create': 'CommunicationMessageCreateEvent',
+        'update': 'CommunicationMessageAttributeValueChangeEvent',
+        'state_change': 'CommunicationMessageStateChangeEvent',
+        'delete': 'CommunicationMessageDeleteEvent',
+    },
+    'device': {
+        'create': 'DeviceCreateEvent',
+        'update': 'DeviceAttributeValueChangeEvent',
+        'state_change': 'DeviceStateChangeEvent',
+        'delete': 'DeviceDeleteEvent',
+    },
+    'document': {
+        'create': 'DocumentCreateEvent',
+        'update': 'DocumentAttributeValueChangeEvent',
+        'state_change': 'DocumentStateChangeEvent',
+        'delete': 'DocumentDeleteEvent',
+    },
+    'entityCatalog': {
+        'create': 'EntityCatalogCreateEvent',
+        'update': 'EntityCatalogAttributeValueChangeEvent',
+        'state_change': 'EntityCatalogStateChangeEvent',
+        'delete': 'EntityCatalogDeleteEvent',
+    },
+    'geographicLocation': {
+        'create': 'GeographicLocationCreateEvent',
+        'update': 'GeographicLocationAttributeValueChangeEvent',
+        'state_change': 'GeographicLocationStateChangeEvent',
+        'delete': 'GeographicLocationDeleteEvent',
+    },
+    'geographicSite': {
+        'create': 'GeographicSiteCreateEvent',
+        'update': 'GeographicSiteAttributeValueChangeEvent',
+        'state_change': 'GeographicSiteStateChangeEvent',
+        'delete': 'GeographicSiteDeleteEvent',
+    },
+    'managedEntity': {
+        'create': 'ManagedEntityCreateEvent',
+        'update': 'ManagedEntityAttributeValueChangeEvent',
+        'state_change': 'ManagedEntityStateChangeEvent',
+        'delete': 'ManagedEntityDeleteEvent',
+    },
+    'nonFunctionalTestResultDefinition': {
+        'create': 'NonFunctionalTestResultDefinitionCreateEvent',
+        'update': 'NonFunctionalTestResultDefinitionAttributeValueChangeEvent',
+        'state_change': 'NonFunctionalTestResultDefinitionStateChangeEvent',
+        'delete': 'NonFunctionalTestResultDefinitionDeleteEvent',
+    },
+    'partyPrivacyAgreement': {
+        'create': 'PartyPrivacyAgreementCreateEvent',
+        'update': 'PartyPrivacyAgreementAttributeValueChangeEvent',
+        'state_change': 'PartyPrivacyAgreementStateChangeEvent',
+        'delete': 'PartyPrivacyAgreementDeleteEvent',
+    },
+    'partyRole': {
+        'create': 'PartyRoleCreateEvent',
+        'update': 'PartyRoleAttributeValueChangeEvent',
+        'state_change': 'PartyRoleStateChangeEvent',
+        'delete': 'PartyRoleDeleteEvent',
+    },
+    'permission': {
+        'create': 'PermissionCreateEvent',
+        'update': 'PermissionAttributeValueChangeEvent',
+        'state_change': 'PermissionStateChangeEvent',
+        'delete': 'PermissionDeleteEvent',
+    },
+    'physicalResource': {
+        'create': 'PhysicalResourceCreateEvent',
+        'update': 'PhysicalResourceAttributeValueChangeEvent',
+        'state_change': 'PhysicalResourceStateChangeEvent',
+        'delete': 'PhysicalResourceDeleteEvent',
+    },
+    'product': {
+        'create': 'ProductCreateEvent',
+        'update': 'ProductAttributeValueChangeEvent',
+        'state_change': 'ProductStateChangeEvent',
+        'delete': 'ProductDeleteEvent',
+    },
+    'checkProductOfferingQualification': {
+        'create': 'CheckProductOfferingQualificationCreateEvent',
+        'update': 'CheckProductOfferingQualificationAttributeValueChangeEvent',
+        'state_change': 'CheckProductOfferingQualificationStateChangeEvent',
+        'delete': 'CheckProductOfferingQualificationDeleteEvent',
+    },
+    'resourceCatalog': {
+        'create': 'ResourceCatalogCreateEvent',
+        'update': 'ResourceCatalogAttributeValueChangeEvent',
+        'state_change': 'ResourceCatalogStateChangeEvent',
+        'delete': 'ResourceCatalogDeleteEvent',
+    },
+    'resourceInventory': {
+        'create': 'ResourceInventoryCreateEvent',
+        'update': 'ResourceInventoryAttributeValueChangeEvent',
+        'state_change': 'ResourceInventoryStateChangeEvent',
+        'delete': 'ResourceInventoryDeleteEvent',
+    },
+    'serviceCatalog': {
+        'create': 'ServiceCatalogCreateEvent',
+        'update': 'ServiceCatalogAttributeValueChangeEvent',
+        'state_change': 'ServiceCatalogStateChangeEvent',
+        'delete': 'ServiceCatalogDeleteEvent',
+    },
+    'serviceSpecification': {
+        'create': 'ServiceSpecificationCreateEvent',
+        'update': 'ServiceSpecificationAttributeValueChangeEvent',
+        'state_change': 'ServiceSpecificationStateChangeEvent',
+        'delete': 'ServiceSpecificationDeleteEvent',
+    },
+    'serviceLevelObjective': {
+        'create': 'ServiceLevelObjectiveCreateEvent',
+        'update': 'ServiceLevelObjectiveAttributeValueChangeEvent',
+        'state_change': 'ServiceLevelObjectiveStateChangeEvent',
+        'delete': 'ServiceLevelObjectiveDeleteEvent',
+    },
+    'serviceTest': {
+        'create': 'ServiceTestCreateEvent',
+        'update': 'ServiceTestAttributeValueChangeEvent',
+        'state_change': 'ServiceTestStateChangeEvent',
+        'delete': 'ServiceTestDeleteEvent',
+    },
+    'serviceTestSpecification': {
+        'create': 'ServiceTestSpecificationCreateEvent',
+        'update': 'ServiceTestSpecificationAttributeValueChangeEvent',
+        'state_change': 'ServiceTestSpecificationStateChangeEvent',
+        'delete': 'ServiceTestSpecificationDeleteEvent',
+    },
+    'shoppingCart': {
+        'create': 'ShoppingCartCreateEvent',
+        'update': 'ShoppingCartAttributeValueChangeEvent',
+        'state_change': 'ShoppingCartStateChangeEvent',
+        'delete': 'ShoppingCartDeleteEvent',
+    },
+    'testDataInstanceDefinition': {
+        'create': 'TestDataInstanceDefinitionCreateEvent',
+        'update': 'TestDataInstanceDefinitionAttributeValueChangeEvent',
+        'state_change': 'TestDataInstanceDefinitionStateChangeEvent',
+        'delete': 'TestDataInstanceDefinitionDeleteEvent',
+    },
+    'transferBalance': {
+        'create': 'TransferBalanceCreateEvent',
+        'update': 'TransferBalanceAttributeValueChangeEvent',
+        'state_change': 'TransferBalanceStateChangeEvent',
+        'delete': 'TransferBalanceDeleteEvent',
+    },
+    'usageManagement': {
+        'create': 'UsageManagementCreateEvent',
+        'update': 'UsageManagementAttributeValueChangeEvent',
+        'state_change': 'UsageManagementStateChangeEvent',
+        'delete': 'UsageManagementDeleteEvent',
+    },
+    'queryUsageConsumption': {
+        'create': 'QueryUsageConsumptionCreateEvent',
+        'update': 'QueryUsageConsumptionAttributeValueChangeEvent',
+        'state_change': 'QueryUsageConsumptionStateChangeEvent',
+        'delete': 'QueryUsageConsumptionDeleteEvent',
+    },
+    'usageConsumptionReport': {
+        'create': 'UsageConsumptionReportCreateEvent',
+        'update': 'UsageConsumptionReportAttributeValueChangeEvent',
+        'state_change': 'UsageConsumptionReportStateChangeEvent',
+        'delete': 'UsageConsumptionReportDeleteEvent',
+    },
+    'userinfo': {
+        'create': 'UserinfoCreateEvent',
+        'update': 'UserinfoAttributeValueChangeEvent',
+        'state_change': 'UserinfoStateChangeEvent',
+        'delete': 'UserinfoDeleteEvent',
+    },
+    'riskAssessment': {
+        'create': 'RiskAssessmentCreateEvent',
+        'update': 'RiskAssessmentAttributeValueChangeEvent',
+        'state_change': 'RiskAssessmentStateChangeEvent',
+        'delete': 'RiskAssessmentDeleteEvent',
     },
 }
 
@@ -597,3 +1244,7 @@ class TMFHubSubscription(models.Model):
             except Exception as e:
                 _logger.error(f"TMF Hub Error ({sub.callback}): {e}")
                 sub.sudo().write({'last_status': f"Error: {str(e)}"})
+
+
+
+

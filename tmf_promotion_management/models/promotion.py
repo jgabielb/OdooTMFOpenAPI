@@ -41,6 +41,24 @@ class TMFPromotion(models.Model):
         ("tmf_id_uniq", "unique(tmf_id)", "TMF671: id must be unique."),
     ]
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "PromotionCreateEvent",
+            "update": "PromotionAttributeValueChangeEvent",
+            "delete": "PromotionDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf("/tmf-api/promotionManagement/v4") for rec in self]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("promotion", event_name, payload)
+            except Exception:
+                continue
+
     @api.constrains("pattern_json", "valid_for_json")
     def _check_json(self):
         for rec in self:
@@ -166,3 +184,20 @@ class TMFPromotion(models.Model):
         if not self.href:
             self.href = f"{api_base}/promotion/{self.tmf_id}"
         return self
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.to_tmf("/tmf-api/promotionManagement/v4") for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

@@ -45,6 +45,25 @@ class TMFPartyInteraction(models.Model):
 
     tmf_type = fields.Char(string="@type", required=True, default="PartyInteraction")
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "PartyInteractionCreateEvent",
+            "update": "PartyInteractionAttributeValueChangeEvent",
+            "delete": "PartyInteractionDeleteEvent",
+        }
+        if payloads is None:
+            host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+            payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("partyInteraction", event_name, payload)
+            except Exception:
+                continue
+
     def _get_tmf_api_path(self):
         return f"{API_BASE}/{RESOURCE}"
 
@@ -82,4 +101,18 @@ class TMFPartyInteraction(models.Model):
         # ensure tmf_id exists if your mixin doesn't set it (safe)
         for vals in vals_list:
             vals.setdefault("tmf_id", str(uuid.uuid4()))
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

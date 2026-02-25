@@ -45,5 +45,6 @@
 
     <menuitem id="menu_tmf_test_data_instance_definition"
               name="TestDataInstanceDefinition"
+              parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_test_data_instance_definition"/>
 </odoo>

@@ -73,6 +73,24 @@ class TMF672Permission(models.Model):
 
     _sql_constraints = [("tmf672_permission_tmf_id_uniq", "unique(tmf_id)", "TMF672 Permission id must be unique.")]
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "PermissionCreateEvent",
+            "update": "PermissionAttributeValueChangeEvent",
+            "delete": "PermissionDeleteEvent",
+        }
+        if payloads is None:
+            payloads = [rec.tmf_to_payload() for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("permission", event_name, payload)
+            except Exception:
+                continue
+
     @api.constrains("user_json", "valid_for_start")
     def _check_mandatory(self):
         for rec in self:
@@ -156,3 +174,20 @@ class TMF672Permission(models.Model):
         rec = env["tmf672.permission"].sudo().create(vals)
         rec.sudo().write({"href": f"{api_base_path}/permission/{rec.tmf_id}"})
         return rec
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        payloads = [rec.tmf_to_payload() for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res

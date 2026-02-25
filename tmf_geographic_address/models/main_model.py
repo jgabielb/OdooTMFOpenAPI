@@ -60,6 +60,25 @@ class TMFGeographicAddress(models.Model):
         "tmf.geographic.sub.address", "address_id", string="geographicSubAddress"
     )
 
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "GeographicAddressCreateEvent",
+            "update": "GeographicAddressAttributeValueChangeEvent",
+            "delete": "GeographicAddressDeleteEvent",
+        }
+        if payloads is None:
+            host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+            payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("geographicAddress", event_name, payload)
+            except Exception:
+                continue
+
     def _href(self):
         # controller will override base, but keep a safe fallback
         return f"/tmf-api/geographicAddressManagement/v4/geographicAddress/{self.tmf_id or self.id}"
@@ -101,6 +120,24 @@ class TMFGeographicAddress(models.Model):
             return filtered
 
         return payload
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 class TMFGeographicSubAddress(models.Model):
@@ -163,6 +200,25 @@ class TMFGeographicAddressValidation(models.Model):
         default="done",
         required=True,
     )
+
+    def _notify(self, action, payloads=None):
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "GeographicAddressValidationCreateEvent",
+            "update": "GeographicAddressValidationAttributeValueChangeEvent",
+            "delete": "GeographicAddressValidationDeleteEvent",
+        }
+        if payloads is None:
+            host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+            payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("geographicAddressValidation", event_name, payload)
+            except Exception:
+                continue
 
     def to_tmf_json(self, host_url="", fields_filter=None):
         host_url = (host_url or "").rstrip("/")
@@ -236,6 +292,24 @@ class TMFGeographicAddressValidation(models.Model):
             return {k: v for k, v in payload.items() if k in ff}
 
         return payload
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify("update")
+        return res
+
+    def unlink(self):
+        host_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        payloads = [rec.to_tmf_json(host_url=host_url) for rec in self]
+        res = super().unlink()
+        self._notify("delete", payloads=payloads)
+        return res
 
 
 class TMFGeographicAddressSeed(models.AbstractModel):

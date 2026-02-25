@@ -7,6 +7,8 @@
     <field name="arch" type="xml">
       <list string="Customer Bills">
         <field name="name"/>
+        <field name="partner_id"/>
+        <field name="move_id"/>
         <field name="state"/>
         <field name="bill_date"/>
         <field name="tmf_id"/>
@@ -23,6 +25,8 @@
         <sheet>
           <group>
             <field name="name"/>
+            <field name="partner_id"/>
+            <field name="move_id"/>
             <field name="state"/>
             <field name="bill_date"/>
             <field name="bill_cycle_id"/>
@@ -51,7 +55,7 @@
     <field name="view_mode">list,form</field>
   </record>
 
-  <menuitem id="menu_tmf_customer_bill_root" name="TMF Billing" sequence="30"/>
+  <menuitem id="menu_tmf_customer_bill_root" name="TMF Billing" parent="tmf_product_catalog.menu_tmf_root" sequence="30"/>
   <menuitem id="menu_tmf_customer_bill" name="Customer Bills" parent="menu_tmf_customer_bill_root" action="action_tmf_customer_bill" sequence="10"/>
 
 </odoo>

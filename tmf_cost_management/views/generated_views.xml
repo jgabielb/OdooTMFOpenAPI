@@ -1,0 +1,79 @@
+<odoo>
+    <record id="view_tmf_actual_cost_tree" model="ir.ui.view">
+        <field name="name">tmf.actual.cost.tree</field>
+        <field name="model">tmf.actual.cost</field>
+        <field name="arch" type="xml">
+            <list string="ActualCost">
+                <field name="tmf_id"/>
+                <field name="state"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_actual_cost_form" model="ir.ui.view">
+        <field name="name">tmf.actual.cost.form</field>
+        <field name="model">tmf.actual.cost</field>
+        <field name="arch" type="xml">
+            <form string="ActualCost">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="state"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_actual_cost" model="ir.actions.act_window">
+        <field name="name">Actual Cost</field>
+        <field name="res_model">tmf.actual.cost</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_actual_cost" name="Actual Cost" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_actual_cost"/>
+
+    <record id="view_tmf_projected_cost_tree" model="ir.ui.view">
+        <field name="name">tmf.projected.cost.tree</field>
+        <field name="model">tmf.projected.cost</field>
+        <field name="arch" type="xml">
+            <list string="ProjectedCost">
+                <field name="tmf_id"/>
+                <field name="state"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_projected_cost_form" model="ir.ui.view">
+        <field name="name">tmf.projected.cost.form</field>
+        <field name="model">tmf.projected.cost</field>
+        <field name="arch" type="xml">
+            <form string="ProjectedCost">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="state"/>
+                    </group>
+                    <group>
+                        <field name="payload_json"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_projected_cost" model="ir.actions.act_window">
+        <field name="name">Projected Cost</field>
+        <field name="res_model">tmf.projected.cost</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_projected_cost" name="Projected Cost" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_projected_cost"/>
+</odoo>

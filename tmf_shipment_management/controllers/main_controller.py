@@ -248,3 +248,4 @@ class TMF711Controller(http.Controller):
     @http.route(f"{API_BASE}/listener/shipmentSpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listen_shipment_spec_delete(self, **_params):
         return self._listener_ok()
+

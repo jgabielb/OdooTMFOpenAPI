@@ -71,7 +71,7 @@ class TMFDigitalIdentity(models.Model):
             "@baseType": self.base_type,
             "@schemaLocation": self.schema_location,
         }
-        return _compact(payload)
+        return self._tmf_normalize_payload(_compact(payload))
 
     def from_tmf_json(self, data, partial=False):
         vals = {}
@@ -144,3 +144,4 @@ class TMFDigitalIdentity(models.Model):
             except Exception:
                 pass
         return res
+

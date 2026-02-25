@@ -41,6 +41,7 @@ class TroubleTicket(models.Model):
     resolution_date = fields.Datetime(string="Resolution Date")
 
     partner_id = fields.Many2one('res.partner', string="Customer")
+    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
     service_id = fields.Many2one('tmf.service', string="Affected Service")
     channel = fields.Char(string="Channel")
     note = fields.Text(string="Notes")
@@ -149,6 +150,24 @@ class TroubleTicket(models.Model):
 
         return data
 
+    def _sync_helpdesk_ticket(self):
+        Ticket = self.env["helpdesk.ticket"].sudo()
+        Team = self.env["helpdesk.team"].sudo()
+        team = Team.search([], limit=1)
+        if not team:
+            return
+        for rec in self:
+            vals = {
+                "name": rec.name or f"TMF TroubleTicket {rec.tmf_id or rec.id}",
+                "description": rec.description or rec.note or "",
+                "team_id": team.id,
+                "partner_id": rec.partner_id.id if rec.partner_id and rec.partner_id.exists() else False,
+            }
+            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
+                rec.helpdesk_ticket_id.write(vals)
+            else:
+                rec.helpdesk_ticket_id = Ticket.create(vals).id
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -161,6 +180,7 @@ class TroubleTicket(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_helpdesk_ticket()
         for rec in recs:
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(
@@ -175,6 +195,7 @@ class TroubleTicket(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        self._sync_helpdesk_ticket()
         for rec in self:
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(

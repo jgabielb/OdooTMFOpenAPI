@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
 TMF_BASE = "/tmf-api/partyManagement/v5"
 
@@ -20,6 +20,27 @@ class ResPartner(models.Model):
         ('active', 'Active'),
         ('closed', 'Closed'),
     ], string="TMF Status", default='initialized')
+
+    def _notify_tmf_party(self, action, payloads=None):
+        managed = self.filtered(lambda r: r.tmf_managed)
+        if not managed and payloads is None:
+            return
+        hub = self.env["tmf.hub.subscription"].sudo()
+        event_map = {
+            "create": "PartyCreateEvent",
+            "update": "PartyAttributeValueChangeEvent",
+            "delete": "PartyDeleteEvent",
+        }
+        event_name = event_map.get(action)
+        if not event_name:
+            return
+        if payloads is None:
+            payloads = [rec.to_tmf_json() for rec in managed]
+        for payload in payloads:
+            try:
+                hub._notify_subscribers("party", event_name, payload)
+            except Exception:
+                continue
 
     def _tmf_public_status(self):
         """Return a CTK/schema-safe status value."""
@@ -68,3 +89,22 @@ class ResPartner(models.Model):
             }
 
         return payload
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._notify_tmf_party("create")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self._notify_tmf_party("update")
+        return res
+
+    def unlink(self):
+        managed = self.filtered(lambda r: r.tmf_managed)
+        payloads = [rec.to_tmf_json() for rec in managed]
+        res = super().unlink()
+        if payloads:
+            self._notify_tmf_party("delete", payloads=payloads)
+        return res
