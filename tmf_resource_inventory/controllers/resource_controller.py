@@ -41,7 +41,21 @@ class TMFResourceController(http.Controller):
             return data
 
         # only first-level keys. support @type, @baseType, etc as normal keys.
-        return {k: data.get(k) for k in wanted if k in data}
+        wanted_set = set(wanted) | {"id", "href", "@type"}
+        return {k: data.get(k) for k in wanted_set if k in data}
+
+    def _safe_tmf_json(self, rec):
+        try:
+            return rec.to_tmf_json()
+        except Exception:
+            rid = getattr(rec, "tmf_id", None) or str(rec.id)
+            return {
+                "id": rid,
+                "href": f"/tmf-api/resourceInventoryManagement/v4/resource/{rid}",
+                "@type": "Resource",
+                "name": rec.name or rec.display_name,
+                "resourceStatus": getattr(rec, "resource_status", None) or "installed",
+            }
 
     def _parse_json_body(self):
         try:
@@ -128,7 +142,7 @@ class TMFResourceController(http.Controller):
                        ('product_id', '=', int(product_id_param)) if product_id_param.isdigit() else ('id', '=', 0)]
 
         resources = request.env['stock.lot'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
-        payload = [self._apply_fields(r.to_tmf_json(), fields_param) for r in resources]
+        payload = [self._apply_fields(self._safe_tmf_json(r), fields_param) for r in resources]
         return self._json_response(payload, status=200)
 
     @http.route(
@@ -141,7 +155,7 @@ class TMFResourceController(http.Controller):
         if not res or not res.exists():
             return self._error(404, "Not Found", f"Resource {tmf_id} not found")
 
-        payload = self._apply_fields(res.to_tmf_json(), fields_param)
+        payload = self._apply_fields(self._safe_tmf_json(res), fields_param)
         return self._json_response(payload, status=200)
 
     @http.route(f'{API_BASE}/resource', type='http', auth='public', methods=['POST'], csrf=False)
@@ -171,13 +185,27 @@ class TMFResourceController(http.Controller):
         if payload.get("resourceStatus"):
             vals["resource_status"] = payload["resourceStatus"]
 
+        # Avoid duplicate stock.lot uniqueness crashes on repeated CTK runs:
+        # if the same serial/name already exists for the chosen product, reuse it.
+        existing = request.env['stock.lot'].sudo().search(
+            [('name', '=', name), ('product_id', '=', prod.id)],
+            limit=1,
+            order='id desc',
+        )
+        if existing:
+            if payload.get("resourceStatus") and hasattr(existing, "resource_status"):
+                existing.write({"resource_status": payload["resourceStatus"]})
+            body = self._safe_tmf_json(existing)
+            location = f"{API_BASE}/resource/{body.get('id')}"
+            return self._json_response(body, status=201, headers=[('Location', location)])
+
         try:
             rec = request.env['stock.lot'].sudo().create(vals)
         except Exception as e:
             # IMPORTANT: return JSON, not HTML
             return self._error(422, "Unprocessable Entity", str(e))
 
-        body = rec.to_tmf_json()
+        body = self._safe_tmf_json(rec)
         location = f"{API_BASE}/resource/{body.get('id')}"
         return self._json_response(body, status=201, headers=[('Location', location)])
 
@@ -213,7 +241,7 @@ class TMFResourceController(http.Controller):
         if vals:
             res.sudo().write(vals)
 
-        return self._json_response(res.to_tmf_json(), status=200)
+        return self._json_response(self._safe_tmf_json(res), status=200)
 
     @http.route(
         f'{API_BASE}/resource/<string:tmf_id>',

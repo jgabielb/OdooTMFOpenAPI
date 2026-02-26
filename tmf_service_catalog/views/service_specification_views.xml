@@ -17,6 +17,7 @@
                             <field name="description"/>
                             <field name="version"/>
                             <field name="is_bundle"/>
+                            <field name="product_tmpl_id"/>
                         </group>
                         <group>
                             <field name="lifecycle_status"/>
@@ -47,6 +48,7 @@
                 <field name="lifecycle_status"/>
                 <field name="version"/>
                 <field name="is_bundle"/>
+                <field name="product_tmpl_id"/>
                 <field name="last_update"/>
                 <field name="description"/>
             </list>

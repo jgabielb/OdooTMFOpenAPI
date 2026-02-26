@@ -121,7 +121,7 @@ class TMFServiceProblem(models.Model):
     trouble_ticket_json = fields.Text(string="troubleTicket")            # 0..*
     underlying_alarm_json = fields.Text(string="underlyingAlarm")        # 0..*
     underlying_problem_json = fields.Text(string="underlyingProblem")    # 0..*
-    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
+    helpdesk_ticket_id = fields.Integer(string="Helpdesk Ticket ID")
 
     # Non-patchable per TMF rules
     first_alert_json = fields.Text(string="firstAlert")                  # 0..1
@@ -168,6 +168,8 @@ class TMFServiceProblem(models.Model):
         return self.env["res.partner"]
 
     def _sync_helpdesk_ticket(self):
+        if not self.env.registry.get("helpdesk.ticket") or not self.env.registry.get("helpdesk.team"):
+            return
         Ticket = self.env["helpdesk.ticket"].sudo()
         Team = self.env["helpdesk.team"].sudo()
         team = Team.search([], limit=1)
@@ -181,10 +183,12 @@ class TMFServiceProblem(models.Model):
                 "team_id": team.id,
                 "partner_id": partner.id if partner and partner.exists() else False,
             }
-            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
-                rec.helpdesk_ticket_id.write(vals)
-            else:
-                rec.helpdesk_ticket_id = Ticket.create(vals).id
+            if rec.helpdesk_ticket_id:
+                existing = Ticket.browse(rec.helpdesk_ticket_id)
+                if existing.exists():
+                    existing.write(vals)
+                    continue
+            rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceProblemManagement/v5/serviceProblem"
@@ -228,8 +232,10 @@ class TMFServiceProblem(models.Model):
             base["statusChangeDate"] = self.status_change_date.isoformat()
 
         # Complex fields: enforce array/object cardinalities
-        op = _json_load(self.originator_party_json)
-        base["originatorParty"] = _as_object(op)
+        op = _as_object(_json_load(self.originator_party_json))
+        if isinstance(op, dict) and "@type" not in op:
+            op["@type"] = "RelatedPartyRefOrPartyRoleRef"
+        base["originatorParty"] = op
 
         base["affectedLocation"] = _as_array(_json_load(self.affected_location_json))
         base["affectedResource"] = _as_array(_json_load(self.affected_resource_json))

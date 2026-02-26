@@ -95,6 +95,8 @@ class TMFShipment(models.Model):
     shipment_tracking_json = fields.Text(string="shipmentTracking")
     shipping_instruction_json = fields.Text(string="shippingInstruction")
     weight_json = fields.Text(string="weight")
+    partner_id = fields.Many2one("res.partner", string="Customer", copy=False, index=True)
+    picking_id = fields.Many2one("stock.picking", string="Stock Picking", copy=False, index=True)
 
     def _get_tmf_api_path(self):
         return "/shipmentManagement/v4/shipment"
@@ -119,6 +121,13 @@ class TMFShipment(models.Model):
         payload["shipmentPrice"] = _loads(self.shipment_price_json)
         payload["shipmentSpecification"] = _loads(self.shipment_specification_json)
         payload["shipmentTracking"] = _loads(self.shipment_tracking_json)
+        if self.picking_id and not payload.get("shipmentTracking"):
+            payload["shipmentTracking"] = {
+                "id": str(self.picking_id.id),
+                "href": f"/web#id={self.picking_id.id}&model=stock.picking&view_type=form",
+                "status": self.picking_id.state,
+                "trackingNumber": self.picking_id.carrier_tracking_ref,
+            }
         payload["shippingInstruction"] = _loads(self.shipping_instruction_json)
         payload["weight"] = _loads(self.weight_json)
         return self._tmf_normalize_payload(_compact(payload))
@@ -156,9 +165,78 @@ class TMFShipment(models.Model):
             vals["state"] = data.get("state")
         return vals
 
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        related = _loads(self.related_party_json)
+        entries = related if isinstance(related, list) else []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            pid = str(entry.get("id") or "").strip()
+            pname = str(entry.get("name") or "").strip()
+            if pid and "tmf_id" in Partner._fields:
+                partner = Partner.search([("tmf_id", "=", pid)], limit=1)
+                if partner:
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+                create_vals = {"name": pname}
+                if pid and "tmf_id" in Partner._fields:
+                    create_vals["tmf_id"] = pid
+                return Partner.create(create_vals)
+        return Partner
+
+    def _resolve_picking(self):
+        self.ensure_one()
+        Picking = self.env["stock.picking"].sudo()
+        tokens = []
+        external_ident = _loads(self.external_identifier_json)
+        if isinstance(external_ident, list):
+            for item in external_ident:
+                if isinstance(item, dict):
+                    token = str(item.get("id") or item.get("value") or "").strip()
+                    if token:
+                        tokens.append(token)
+        related_ship = _loads(self.related_shipment_json)
+        if isinstance(related_ship, list):
+            for item in related_ship:
+                if isinstance(item, dict):
+                    token = str(item.get("id") or "").strip()
+                    if token:
+                        tokens.append(token)
+        if self.name:
+            tokens.append(self.name)
+        if self.tmf_id:
+            tokens.append(self.tmf_id)
+        for token in tokens:
+            picking = Picking.search(
+                ["|", ("origin", "=", token), ("name", "=", token)],
+                limit=1,
+                order="id desc",
+            )
+            if picking:
+                return picking
+        return Picking
+
+    def _sync_odoo_links(self):
+        for rec in self:
+            vals = {}
+            partner = rec._resolve_partner()
+            if partner and rec.partner_id != partner:
+                vals["partner_id"] = partner.id
+            picking = rec._resolve_picking()
+            if picking and rec.picking_id != picking:
+                vals["picking_id"] = picking.id
+            if vals:
+                rec.with_context(skip_tmf711_sync=True).write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_odoo_links()
         for rec in recs:
             self._notify("shipment", "create", rec)
         return recs
@@ -166,6 +244,8 @@ class TMFShipment(models.Model):
     def write(self, vals):
         state_changed = "state" in vals
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf711_sync"):
+            self._sync_odoo_links()
         for rec in self:
             self._notify("shipment", "update", rec)
             if state_changed:

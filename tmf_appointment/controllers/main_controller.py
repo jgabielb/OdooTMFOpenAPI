@@ -6,6 +6,14 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class TMFController(http.Controller):
+    @staticmethod
+    def _normalize_dt(raw):
+        if not raw:
+            return False
+        text = str(raw).strip().replace("Z", "")
+        if "." in text:
+            text = text.split(".", 1)[0]
+        return text.replace("T", " ")
 
     # 1. LIST
     @http.route('/tmf-api/appointmentManagement/v4/appointment', type='http', auth='public', methods=['GET'], csrf=False)
@@ -37,22 +45,25 @@ class TMFController(http.Controller):
             vals = {}
             
             # 1. Map Simple Fields
-            for field in ['category', 'description', 'external_id', 'status', 'note']:
-                if field in data:
-                    vals[field] = data[field]
+            for src, dst in [('category', 'category'), ('description', 'description'), ('status', 'status'), ('note', 'note')]:
+                if src in data:
+                    vals[dst] = data[src]
+            if 'externalId' in data:
+                vals['external_id'] = data['externalId']
+            elif 'external_id' in data:
+                vals['external_id'] = data['external_id']
+            if 'relatedParty' in data:
+                vals['related_party'] = json.dumps(data.get('relatedParty'), ensure_ascii=False)
             
             # 2. Map & Sanitize Dates (validFor)
             # CTK sends "2018-02-15T16:00:00.000Z", Odoo hates the "Z" and ".000"
             valid_for = data.get('validFor', {})
             if valid_for:
                 if 'startDateTime' in valid_for:
-                    # Strip 'Z' and milliseconds if present
-                    raw_start = valid_for['startDateTime'].replace('Z', '').split('.')[0]
-                    vals['valid_for_start'] = raw_start.replace('T', ' ')
+                    vals['valid_for_start'] = self._normalize_dt(valid_for['startDateTime'])
                     
                 if 'endDateTime' in valid_for:
-                    raw_end = valid_for['endDateTime'].replace('Z', '').split('.')[0]
-                    vals['valid_for_end'] = raw_end.replace('T', ' ')
+                    vals['valid_for_end'] = self._normalize_dt(valid_for['endDateTime'])
             
             # 3. Create
             new_rec = request.env['tmf.appointment'].sudo().create(vals)
@@ -76,16 +87,22 @@ class TMFController(http.Controller):
             data = json.loads(request.httprequest.data)
             vals = {}
             
-            for field in ['category', 'description', 'external_id', 'status']:
-                if field in data:
-                    vals[field] = data[field]
+            for src, dst in [('category', 'category'), ('description', 'description'), ('status', 'status')]:
+                if src in data:
+                    vals[dst] = data[src]
+            if 'externalId' in data:
+                vals['external_id'] = data['externalId']
+            elif 'external_id' in data:
+                vals['external_id'] = data['external_id']
+            if 'relatedParty' in data:
+                vals['related_party'] = json.dumps(data.get('relatedParty'), ensure_ascii=False)
 
             valid_for = data.get('validFor')
             if isinstance(valid_for, dict):
                 if 'startDateTime' in valid_for:
-                    vals['valid_for_start'] = valid_for['startDateTime']
+                    vals['valid_for_start'] = self._normalize_dt(valid_for['startDateTime'])
                 if 'endDateTime' in valid_for:
-                    vals['valid_for_end'] = valid_for['endDateTime']
+                    vals['valid_for_end'] = self._normalize_dt(valid_for['endDateTime'])
 
             record.write(vals)
             

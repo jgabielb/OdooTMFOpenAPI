@@ -6,6 +6,8 @@
             <form>
                 <sheet>
                     <group>
+                <field name="tmf_id" readonly="1"/>
+                <field name="href" readonly="1"/>
                 <field name="conformance_comparator"/>
                 <field name="conformance_target"/>
                 <field name="grace_times"/>
@@ -17,6 +19,7 @@
                 <field name="service_level_objective_parameter"/>
                 <field name="tolerance_period"/>
                 <field name="valid_for"/>
+                <field name="helpdesk_sla_id"/>
                     </group>
                 </sheet>
             </form>
@@ -28,6 +31,7 @@
         <field name="model">tmf.service.level.objective</field>
         <field name="arch" type="xml">
             <list>
+                <field name="tmf_id"/>
                 <field name="conformance_comparator"/>
                 <field name="conformance_target"/>
                 <field name="grace_times"/>
@@ -39,6 +43,7 @@
                 <field name="service_level_objective_parameter"/>
                 <field name="tolerance_period"/>
                 <field name="valid_for"/>
+                <field name="helpdesk_sla_id"/>
             </list>
         </field>
     </record>

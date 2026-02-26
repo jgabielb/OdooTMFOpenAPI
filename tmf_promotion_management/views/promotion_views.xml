@@ -10,6 +10,7 @@
                 <field name="name"/>
                 <field name="lifecycle_status"/>
                 <field name="promotion_type"/>
+                <field name="pricelist_id"/>
                 <field name="last_update"/>
             </list>
         </field>
@@ -28,6 +29,9 @@
                         <field name="description"/>
                         <field name="lifecycle_status"/>
                         <field name="promotion_type"/>
+                        <field name="partner_id"/>
+                        <field name="pricelist_id"/>
+                        <field name="pricelist_item_id"/>
                         <field name="last_update" readonly="1"/>
                     </group>
 

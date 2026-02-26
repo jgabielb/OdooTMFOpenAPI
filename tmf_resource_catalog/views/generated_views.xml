@@ -9,6 +9,7 @@
                         <field name="name" required="1"/>
                         <field name="description"/>
                         <field name="version"/>
+                        <field name="product_tmpl_id"/>
                         <field name="lifecycle_status"/>
                         <field name="last_update"/>
                     </group>
@@ -31,6 +32,7 @@
             <list string="Resource Catalogs">
                 <field name="name"/>
                 <field name="version"/>
+                <field name="product_tmpl_id"/>
                 <field name="lifecycle_status"/>
                 <field name="last_update"/>
                 <field name="description"/>

@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 import re
 import traceback
+import time
 from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
@@ -797,6 +798,14 @@ TMF_EVENT_NAME_MAP = {
         'information_required': 'ShippingOrderInformationRequiredEvent',
     },
 
+    # TMF684 - Shipment Tracking Management
+    'shipmentTracking': {
+        'create': 'ShipmentTrackingCreateEvent',
+        'update': 'ShipmentTrackingAttributeValueChangeEvent',
+        'state_change': 'ShipmentTrackingStateChangeEvent',
+        'delete': 'ShipmentTrackingDeleteEvent',
+    },
+
     # TMF654 - Prepay Balance Management
     'bucket': {
         'create': 'BucketCreateEvent',
@@ -1171,6 +1180,28 @@ class TMFHubSubscription(models.Model):
     active = fields.Boolean(default=True)
     last_status = fields.Char()
 
+    def _safe_set_last_status(self, sub, status_text, retries=2):
+        for attempt in range(retries + 1):
+            try:
+                with self.env.cr.savepoint():
+                    sub.sudo().write({"last_status": status_text})
+                return
+            except Exception as e:
+                msg = str(e).lower()
+                is_serialization = (
+                    getattr(e, "pgcode", None) == "40001"
+                    or "could not serialize access due to concurrent update" in msg
+                )
+                if is_serialization and attempt < retries:
+                    time.sleep(0.05 * (attempt + 1))
+                    continue
+                _logger.warning(
+                    "TMF Hub: failed to update last_status for subscription %s: %s",
+                    sub.id,
+                    e,
+                )
+                return
+
     @api.model
     def _resolve_event_names(self, api_name, input_event_type):
         """
@@ -1240,10 +1271,10 @@ class TMFHubSubscription(models.Model):
 
             try:
                 resp = requests.post(sub.callback, json=payload, headers=headers, timeout=5)
-                sub.sudo().write({'last_status': f"{resp.status_code} {resp.reason}"})
+                self._safe_set_last_status(sub, f"{resp.status_code} {resp.reason}")
             except Exception as e:
                 _logger.error(f"TMF Hub Error ({sub.callback}): {e}")
-                sub.sudo().write({'last_status': f"Error: {str(e)}"})
+                self._safe_set_last_status(sub, f"Error: {str(e)}")
 
 
 

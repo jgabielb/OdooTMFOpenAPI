@@ -25,6 +25,8 @@ class TMFSalesLead(models.Model):
     product_specification = fields.Json(default=list)
     target_product_schema = fields.Json(default=dict)
     crm_lead_id = fields.Many2one("crm.lead", string="CRM Lead", index=True, ondelete="set null")
+    partner_id = fields.Many2one("res.partner", string="Partner", index=True, ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Sales Order", index=True, ondelete="set null")
     extra_json = fields.Json(default=dict)
 
     @staticmethod
@@ -63,6 +65,11 @@ class TMFSalesLead(models.Model):
             payload["marketingCampaign"] = self.marketing_campaign
         if self.sales_opportunity:
             payload["salesOpportunity"] = self.sales_opportunity
+        elif self.sale_order_id:
+            payload["salesOpportunity"] = {
+                "id": self.sale_order_id.name or str(self.sale_order_id.id),
+                "@type": "SalesOpportunityRef",
+            }
         if self.product:
             payload["product"] = self.product
         if self.product_offering:
@@ -100,15 +107,48 @@ class TMFSalesLead(models.Model):
 
     def _crm_vals(self):
         self.ensure_one()
-        return {
+        vals = {
             "name": self.name or "SalesLead",
             "description": self.description or False,
             "priority": self._tmf_priority_to_crm(self.priority),
         }
+        if self.partner_id:
+            vals["partner_id"] = self.partner_id.id
+        return vals
+
+    def _resolve_partner_from_tmf(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        entries = self.related_party if isinstance(self.related_party, list) else []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            pid = str(entry.get("id") or "").strip()
+            pname = str(entry.get("name") or "").strip()
+            if pid and "tmf_id" in Partner._fields:
+                partner = Partner.search([("tmf_id", "=", pid)], limit=1)
+                if partner:
+                    return partner
+            if pid.isdigit():
+                partner = Partner.browse(int(pid))
+                if partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+                create_vals = {"name": pname}
+                if pid and "tmf_id" in Partner._fields:
+                    create_vals["tmf_id"] = pid
+                return Partner.create(create_vals)
+        return Partner
 
     def _sync_to_crm_lead(self):
         crm_model = self.env["crm.lead"].sudo().with_context(skip_tmf_bridge=True)
         for rec in self:
+            partner = rec.partner_id or rec._resolve_partner_from_tmf()
+            if partner and rec.partner_id != partner:
+                rec.with_context(skip_crm_sync=True, skip_sale_sync=True).write({"partner_id": partner.id})
             vals = rec._crm_vals()
             if rec.crm_lead_id:
                 rec.crm_lead_id.with_context(skip_tmf_bridge=True).write(vals)
@@ -119,6 +159,41 @@ class TMFSalesLead(models.Model):
                 rec.with_context(skip_crm_sync=True).write({"crm_lead_id": crm_lead.id})
                 crm_lead.with_context(skip_tmf_bridge=True).write({"tmf_sales_lead_id": rec.id})
 
+    def _sync_to_sale_order(self):
+        SaleOrder = self.env["sale.order"].sudo().with_context(skip_tmf_bridge=True)
+        for rec in self:
+            partner = rec.partner_id
+            if not partner:
+                continue
+            order = rec.sale_order_id
+            if not order:
+                opportunity = rec.sales_opportunity if isinstance(rec.sales_opportunity, dict) else {}
+                opp_id = str(opportunity.get("id") or "").strip()
+                if opp_id:
+                    if opp_id.isdigit():
+                        candidate = SaleOrder.browse(int(opp_id))
+                        if candidate.exists():
+                            order = candidate
+                    if not order:
+                        order = SaleOrder.search(
+                            ["|", ("name", "=", opp_id), ("client_order_ref", "=", opp_id)],
+                            limit=1,
+                            order="id desc",
+                        )
+            vals = {
+                "partner_id": partner.id,
+                "client_order_ref": rec.tmf_id,
+                "origin": rec.name or rec.tmf_id,
+            }
+            if rec.crm_lead_id and "opportunity_id" in SaleOrder._fields:
+                vals["opportunity_id"] = rec.crm_lead_id.id
+            if order:
+                order.write(vals)
+            else:
+                order = SaleOrder.create(vals)
+            if order and rec.sale_order_id != order:
+                rec.with_context(skip_sale_sync=True, skip_crm_sync=True).write({"sale_order_id": order.id})
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -128,6 +203,8 @@ class TMFSalesLead(models.Model):
         recs = super().create(vals_list)
         if not self.env.context.get("skip_crm_sync"):
             recs._sync_to_crm_lead()
+        if not self.env.context.get("skip_sale_sync"):
+            recs._sync_to_sale_order()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -140,6 +217,8 @@ class TMFSalesLead(models.Model):
         res = super().write(vals)
         if not self.env.context.get("skip_crm_sync"):
             self._sync_to_crm_lead()
+        if not self.env.context.get("skip_sale_sync"):
+            self._sync_to_sale_order()
         for rec in self:
             self._notify("update", rec)
             if "status" in vals and previous.get(rec.id) != rec.status:
@@ -152,6 +231,8 @@ class TMFSalesLead(models.Model):
             for rec in self:
                 if rec.crm_lead_id and rec.crm_lead_id.tmf_sales_lead_id.id == rec.id:
                     rec.crm_lead_id.with_context(skip_tmf_bridge=True).write({"tmf_sales_lead_id": False})
+                if rec.sale_order_id and "tmf_sales_lead_id" in rec.sale_order_id._fields:
+                    rec.sale_order_id.with_context(skip_tmf_bridge=True).write({"tmf_sales_lead_id": False})
         res = super().unlink()
         for resource in payloads:
             try:

@@ -21,6 +21,11 @@
                         <field name="name"/>
                         <field name="description"/>
                         <field name="state"/>
+                        <field name="partner_id"/>
+                        <field name="account_move_id"/>
+                        <field name="analytic_account_id"/>
+                        <field name="cost_amount"/>
+                        <field name="cost_currency"/>
                     </group>
                     <group>
                         <field name="payload_json"/>
@@ -60,6 +65,11 @@
                         <field name="name"/>
                         <field name="description"/>
                         <field name="state"/>
+                        <field name="partner_id"/>
+                        <field name="account_move_id"/>
+                        <field name="analytic_account_id"/>
+                        <field name="cost_amount"/>
+                        <field name="cost_currency"/>
                     </group>
                     <group>
                         <field name="payload_json"/>

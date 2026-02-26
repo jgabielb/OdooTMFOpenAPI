@@ -1,6 +1,10 @@
 import json
 from datetime import datetime, timezone
 from odoo import api, fields, models
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 
 def _dumps(value):
@@ -217,6 +221,73 @@ class TMFDunningCase(models.Model):
     note_json = fields.Text(string="note")
     related_party_json = fields.Text(string="relatedParty")
     valid_for_json = fields.Text(string="validFor")
+    partner_id = fields.Many2one("res.partner", string="Partner", copy=False, index=True)
+    account_move_id = fields.Many2one("account.move", string="Invoice/Move", copy=False, index=True)
+
+    def _extract_partner_from_payload(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        related = _loads(self.related_party_json)
+        entries = related if isinstance(related, list) else [related]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            pid = str(entry.get("id") or "").strip()
+            pname = str(entry.get("name") or "").strip()
+            if pid and "tmf_id" in Partner._fields:
+                partner = Partner.search([("tmf_id", "=", pid)], limit=1)
+                if partner:
+                    return partner
+            if pid.isdigit():
+                partner = Partner.browse(int(pid))
+                if partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return Partner
+
+    def _extract_move_from_payload(self):
+        self.ensure_one()
+        Move = self.env["account.move"].sudo()
+        billing = _loads(self.billing_account_json)
+        if not isinstance(billing, dict):
+            return Move
+
+        bid = str(billing.get("id") or "").strip()
+        bref = str(billing.get("accountBalance", "") or "").strip()
+        bname = str(billing.get("name") or "").strip()
+
+        if bid.isdigit():
+            move = Move.browse(int(bid))
+            if move.exists():
+                return move
+
+        for value in [bid, bname, bref]:
+            if not value:
+                continue
+            for field_name in ("name", "ref", "payment_reference"):
+                if field_name in Move._fields:
+                    move = Move.search([(field_name, "=", value)], limit=1)
+                    if move:
+                        return move
+
+        return Move
+
+    def _sync_odoo_links(self):
+        for rec in self:
+            partner = rec.partner_id or rec._extract_partner_from_payload()
+            move = rec.account_move_id or rec._extract_move_from_payload()
+            vals = {}
+            if partner and rec.partner_id != partner:
+                vals["partner_id"] = partner.id
+            if move and rec.account_move_id != move:
+                vals["account_move_id"] = move.id
+                if not vals.get("partner_id") and not rec.partner_id and move.partner_id:
+                    vals["partner_id"] = move.partner_id.id
+            if vals:
+                rec.with_context(skip_tmf_dunning_sync=True).write(vals)
 
     def _get_tmf_api_path(self):
         return "/dunningCase/v4/dunningCase"
@@ -272,6 +343,11 @@ class TMFDunningCase(models.Model):
             vals.setdefault("creation_date", vals.get("creation_date") or self._now_iso())
             vals.setdefault("last_update_date", vals.get("last_update_date") or vals.get("creation_date"))
         recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_dunning_sync"):
+            try:
+                recs._sync_odoo_links()
+            except Exception:
+                _logger.exception("TMF728 failed to sync partner/account links during create")
         for rec in recs:
             self._notify("dunningCase", "create", rec)
         return recs
@@ -282,6 +358,11 @@ class TMFDunningCase(models.Model):
             vals = dict(vals)
             vals["last_update_date"] = self._now_iso()
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf_dunning_sync"):
+            try:
+                self._sync_odoo_links()
+            except Exception:
+                _logger.exception("TMF728 failed to sync partner/account links during write")
         for rec in self:
             self._notify("dunningCase", "update", rec)
             if status_changed:

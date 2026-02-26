@@ -1,9 +1,12 @@
 import json
+import logging
+from datetime import datetime, date
 from odoo import api, fields, models
 
 
 API_BASE = "/tmf-api/ResourceActivationAndConfiguration/v4"
 BASE_PATH = f"{API_BASE}/resource"
+_logger = logging.getLogger(__name__)
 
 
 def _dumps(value):
@@ -79,34 +82,49 @@ class TMF702Resource(models.Model):
                     rec.partner_id = partner.id
 
             project = Project.search([], limit=1)
+            deadline = False
+            if isinstance(rec.end_operating_date, datetime):
+                deadline = rec.end_operating_date.date()
+            elif isinstance(rec.end_operating_date, date):
+                deadline = rec.end_operating_date
             task_vals = {
                 "name": rec.name or f"TMF Resource {rec.tmf_id or rec.id}",
                 "description": rec.description or "",
                 "partner_id": partner.id if partner and partner.exists() else False,
-                "date_deadline": rec.end_operating_date.date() if rec.end_operating_date else False,
             }
+            if deadline:
+                task_vals["date_deadline"] = deadline
             if project:
                 task_vals["project_id"] = project.id
-            if rec.project_task_id and rec.project_task_id.exists():
-                rec.project_task_id.write(task_vals)
-            else:
-                rec.project_task_id = Task.create(task_vals).id
+            try:
+                if rec.project_task_id and rec.project_task_id.exists():
+                    rec.project_task_id.write(task_vals)
+                else:
+                    rec.project_task_id = Task.create(task_vals).id
+            except Exception:
+                _logger.exception("TMF702: failed to sync project task for resource %s", rec.tmf_id or rec.id)
 
             picking_type = PickingType.search([("code", "=", "outgoing")], limit=1) or PickingType.search([], limit=1)
             if picking_type:
+                src_location = picking_type.default_location_src_id.id if picking_type.default_location_src_id else False
+                dst_location = picking_type.default_location_dest_id.id if picking_type.default_location_dest_id else False
                 pick_vals = {
                     "partner_id": partner.id if partner and partner.exists() else False,
                     "origin": rec.tmf_id,
-                    "scheduled_date": rec.start_operating_date or False,
                     "note": rec.description or "",
                     "picking_type_id": picking_type.id,
-                    "location_id": picking_type.default_location_src_id.id,
-                    "location_dest_id": picking_type.default_location_dest_id.id,
+                    "location_id": src_location,
+                    "location_dest_id": dst_location,
                 }
-                if rec.picking_id and rec.picking_id.exists():
-                    rec.picking_id.write(pick_vals)
-                else:
-                    rec.picking_id = Picking.create(pick_vals).id
+                if rec.start_operating_date:
+                    pick_vals["scheduled_date"] = rec.start_operating_date
+                try:
+                    if rec.picking_id and rec.picking_id.exists():
+                        rec.picking_id.write(pick_vals)
+                    else:
+                        rec.picking_id = Picking.create(pick_vals).id
+                except Exception:
+                    _logger.exception("TMF702: failed to sync stock picking for resource %s", rec.tmf_id or rec.id)
 
     def _get_tmf_api_path(self):
         return BASE_PATH

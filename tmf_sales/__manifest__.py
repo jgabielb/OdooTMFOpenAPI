@@ -5,7 +5,7 @@
     "author": "Joao Gabriel",
     "category": "TMF",
     "version": "0.1",
-    "depends": ["tmf_base", "tmf_product_catalog", "crm"],
+    "depends": ["tmf_base", "tmf_product_catalog", "crm", "sale_management"],
     "data": [
         "security/ir.model.access.csv",
         "views/generated_views.xml",

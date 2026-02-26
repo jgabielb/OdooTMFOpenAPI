@@ -210,3 +210,60 @@ class TMF652ResourceOrderController(http.Controller):
             return _json_response(ro.to_tmf_json(), status=200)
         except Exception as e:
             return _error(500, "Internal error retrieving ResourceOrder", details=str(e))
+
+    @http.route(f"{API_BASE}/resourceOrder/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    def patch_resource_order(self, rid, **kwargs):
+        try:
+            ro = request.env["tmf.resource.order"].sudo().search([("tmf_id", "=", rid)], limit=1)
+            if not ro:
+                return _error(404, "ResourceOrder not found")
+
+            body = _parse_json()
+            if body is None or not isinstance(body, dict):
+                return _error(400, "Invalid JSON")
+
+            non_patchable = {
+                "id", "href", "orderDate", "completionDate", "cancellationDate", "cancellationReason",
+                "@type", "@schemaLocation", "@baseType",
+            }
+            illegal = sorted(non_patchable.intersection(body.keys()))
+            if illegal:
+                return _error(400, f"Non-patchable attribute(s): {', '.join(illegal)}")
+
+            vals = {}
+            if "state" in body:
+                vals["state"] = body.get("state")
+            if "description" in body:
+                vals["description"] = body.get("description")
+            if "name" in body:
+                vals["name"] = body.get("name")
+            if "priority" in body:
+                vals["priority"] = body.get("priority")
+            if "orderType" in body:
+                vals["orderType"] = body.get("orderType")
+            if "requestedStartDate" in body:
+                vals["requestedStartDate"] = _to_dt(body.get("requestedStartDate"))
+            if "requestedCompletionDate" in body:
+                vals["requestedCompletionDate"] = _to_dt(body.get("requestedCompletionDate"))
+            if "expectedCompletionDate" in body:
+                vals["expectedCompletionDate"] = _to_dt(body.get("expectedCompletionDate"))
+
+            if vals:
+                ro.sudo().write(vals)
+
+            return _json_response(ro.to_tmf_json(), status=200)
+        except Exception as e:
+            _logger.exception("PATCH /resourceOrder failed")
+            return _error(500, "Internal error patching ResourceOrder", details=str(e))
+
+    @http.route(f"{API_BASE}/resourceOrder/<string:rid>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    def delete_resource_order(self, rid, **kwargs):
+        try:
+            ro = request.env["tmf.resource.order"].sudo().search([("tmf_id", "=", rid)], limit=1)
+            if not ro:
+                return _error(404, "ResourceOrder not found")
+            ro.unlink()
+            return request.make_response("", status=204)
+        except Exception as e:
+            _logger.exception("DELETE /resourceOrder failed")
+            return _error(500, "Internal error deleting ResourceOrder", details=str(e))

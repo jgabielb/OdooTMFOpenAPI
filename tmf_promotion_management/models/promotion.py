@@ -4,6 +4,7 @@ from odoo.exceptions import ValidationError
 import json
 from datetime import datetime, timezone
 import uuid
+import logging
 
 
 def _uuid():
@@ -12,6 +13,9 @@ def _uuid():
 def _utcnow_id():
     # matches your example: 2026-02-03T14:47:34Z
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+_logger = logging.getLogger(__name__)
 
 
 class TMFPromotion(models.Model):
@@ -36,10 +40,115 @@ class TMFPromotion(models.Model):
     # Complex structures as JSON text
     pattern_json = fields.Text(string="pattern")   # PromotionPattern[*] :contentReference[oaicite:3]{index=3}
     valid_for_json = fields.Text(string="validFor")  # TimePeriod :contentReference[oaicite:4]{index=4}
+    partner_id = fields.Many2one("res.partner", string="Partner", copy=False, index=True)
+    pricelist_id = fields.Many2one("product.pricelist", string="Pricelist", copy=False, index=True)
+    pricelist_item_id = fields.Many2one("product.pricelist.item", string="Pricelist Item", copy=False, index=True)
 
     _sql_constraints = [
         ("tmf_id_uniq", "unique(tmf_id)", "TMF671: id must be unique."),
     ]
+
+    @staticmethod
+    def _extract_discount_percent(pattern_obj):
+        def walk(node):
+            if isinstance(node, dict):
+                for key in ("discount", "percentage", "percent", "discountPercent"):
+                    if key in node:
+                        try:
+                            value = float(node.get(key))
+                            return value if value > 1.0 else value * 100.0
+                        except Exception:
+                            pass
+                for value in node.values():
+                    result = walk(value)
+                    if result is not None:
+                        return result
+            elif isinstance(node, list):
+                for item in node:
+                    result = walk(item)
+                    if result is not None:
+                        return result
+            return None
+
+        return walk(pattern_obj)
+
+    @staticmethod
+    def _extract_validity(valid_for_obj):
+        if not isinstance(valid_for_obj, dict):
+            return False, False
+        start = valid_for_obj.get("startDateTime") or valid_for_obj.get("startDate")
+        end = valid_for_obj.get("endDateTime") or valid_for_obj.get("endDate")
+        start_dt = fields.Datetime.to_datetime(start) if start else False
+        end_dt = fields.Datetime.to_datetime(end) if end else False
+        return start_dt, end_dt
+
+    def _resolve_partner_from_pattern(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        pattern = json.loads(self.pattern_json) if self.pattern_json else []
+        candidates = pattern if isinstance(pattern, list) else [pattern]
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                continue
+            party = candidate.get("relatedParty")
+            entries = party if isinstance(party, list) else [party]
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                pid = str(entry.get("id") or "").strip()
+                pname = str(entry.get("name") or "").strip()
+                if pid and "tmf_id" in Partner._fields:
+                    partner = Partner.search([("tmf_id", "=", pid)], limit=1)
+                    if partner:
+                        return partner
+                if pid.isdigit():
+                    partner = Partner.browse(int(pid))
+                    if partner.exists():
+                        return partner
+                if pname:
+                    partner = Partner.search([("name", "=", pname)], limit=1)
+                    if partner:
+                        return partner
+                    return Partner.create({"name": pname})
+        return Partner
+
+    def _sync_pricing(self):
+        Pricelist = self.env["product.pricelist"].sudo().with_context(skip_tmf_promo_sync=True)
+        Item = self.env["product.pricelist.item"].sudo().with_context(skip_tmf_promo_sync=True)
+        for rec in self:
+            pattern = json.loads(rec.pattern_json) if rec.pattern_json else {}
+            discount = rec._extract_discount_percent(pattern)
+            if discount is None:
+                continue
+            start_dt, end_dt = rec._extract_validity(json.loads(rec.valid_for_json) if rec.valid_for_json else {})
+            partner = rec.partner_id or rec._resolve_partner_from_pattern()
+            if partner and rec.partner_id != partner:
+                rec.with_context(skip_tmf_promo_sync=True).write({"partner_id": partner.id})
+
+            pricelist_vals = {
+                "name": rec.name or f"TMF Promotion {rec.tmf_id}",
+                "active": (rec.lifecycle_status or "").lower() not in {"retirement", "retired", "suspend", "suspended"},
+            }
+            pricelist = rec.pricelist_id
+            if pricelist:
+                pricelist.write(pricelist_vals)
+            else:
+                pricelist = Pricelist.create(pricelist_vals)
+                rec.with_context(skip_tmf_promo_sync=True).write({"pricelist_id": pricelist.id})
+
+            item_vals = {
+                "pricelist_id": pricelist.id,
+                "compute_price": "percentage",
+                "percent_price": -abs(float(discount)),
+                "applied_on": "3_global",
+                "date_start": start_dt or False,
+                "date_end": end_dt or False,
+            }
+            if rec.pricelist_item_id:
+                rec.pricelist_item_id.write(item_vals)
+            else:
+                item = Item.create(item_vals)
+                rec.with_context(skip_tmf_promo_sync=True).write({"pricelist_item_id": item.id})
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -188,11 +297,21 @@ class TMFPromotion(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_promo_sync"):
+            try:
+                recs._sync_pricing()
+            except Exception:
+                _logger.exception("TMF671 pricing sync failed during create; continuing without blocking API.")
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf_promo_sync"):
+            try:
+                self._sync_pricing()
+            except Exception:
+                _logger.exception("TMF671 pricing sync failed during write; continuing without blocking API.")
         self._notify("update")
         return res
 

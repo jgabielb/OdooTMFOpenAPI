@@ -19,6 +19,8 @@
                             <field name="valid_for_start" string="Start Date"/>
                             <field name="valid_for_end" string="End Date"/>
                             <field name="external_id"/>
+                            <field name="partner_id"/>
+                            <field name="calendar_event_id"/>
                         </group>
                         <group string="System Data">
                             <field name="creation_date" readonly="1"/>
@@ -53,6 +55,8 @@
                 <field name="status" widget="badge"/>
                 <field name="valid_for_start"/>
                 <field name="valid_for_end"/>
+                <field name="partner_id"/>
+                <field name="calendar_event_id"/>
             </list>
         </field>
     </record>

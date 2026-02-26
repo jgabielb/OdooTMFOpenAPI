@@ -16,9 +16,39 @@ class TMFModel(models.Model):
     related_party_json = fields.Json()
     valid_for_json = fields.Json()
     raw_json = fields.Json(string="tmfPayload")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", copy=False, index=True)
 
     def _get_tmf_api_path(self):
         return "/tmf-api/resourceCatalogManagement/v5/resourceSpecification"
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id:
+            return self.product_tmpl_id
+        if self.tmf_id and "tmf_id" in ProductTmpl._fields:
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(self.tmf_id))], limit=1)
+            if tmpl:
+                return tmpl
+        if self.name:
+            tmpl = ProductTmpl.search([("name", "=", self.name)], limit=1)
+            if tmpl:
+                return tmpl
+            vals = {"name": self.name}
+            if "detailed_type" in ProductTmpl._fields:
+                vals["detailed_type"] = "consu"
+            elif "type" in ProductTmpl._fields:
+                vals["type"] = "consu"
+            if "tmf_id" in ProductTmpl._fields and self.tmf_id:
+                vals["tmf_id"] = str(self.tmf_id)
+            return ProductTmpl.create(vals)
+        return ProductTmpl
+
+    def _sync_product_template_link(self):
+        for rec in self:
+            tmpl = rec._resolve_product_template()
+            if tmpl and rec.product_tmpl_id != tmpl:
+                rec.with_context(skip_tmf_catalog_sync=True).write({"product_tmpl_id": tmpl.id})
 
     def to_tmf_json(self, fields=None):
         self.ensure_one()
@@ -71,12 +101,16 @@ class TMFModel(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            recs._sync_product_template_link()
         for rec in recs:
             self._notify('resourceCatalog', 'create', rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            self._sync_product_template_link()
         for rec in self:
             self._notify('resourceCatalog', 'update', rec)
         return res
@@ -116,6 +150,36 @@ class TMFResourceSpecification(models.Model):
     lifecycle_status = fields.Char()
     last_update = fields.Datetime()
     raw_json = fields.Json(string="tmfPayload")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", copy=False, index=True)
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id:
+            return self.product_tmpl_id
+        if self.tmf_id and "tmf_id" in ProductTmpl._fields:
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(self.tmf_id))], limit=1)
+            if tmpl:
+                return tmpl
+        if self.name:
+            tmpl = ProductTmpl.search([("name", "=", self.name)], limit=1)
+            if tmpl:
+                return tmpl
+            vals = {"name": self.name}
+            if "detailed_type" in ProductTmpl._fields:
+                vals["detailed_type"] = "consu"
+            elif "type" in ProductTmpl._fields:
+                vals["type"] = "consu"
+            if "tmf_id" in ProductTmpl._fields and self.tmf_id:
+                vals["tmf_id"] = str(self.tmf_id)
+            return ProductTmpl.create(vals)
+        return ProductTmpl
+
+    def _sync_product_template_link(self):
+        for rec in self:
+            tmpl = rec._resolve_product_template()
+            if tmpl and rec.product_tmpl_id != tmpl:
+                rec.with_context(skip_tmf_catalog_sync=True).write({"product_tmpl_id": tmpl.id})
 
     def to_tmf_json(self, fields=None):
         self.ensure_one()
@@ -170,3 +234,16 @@ class TMFResourceSpecification(models.Model):
             "lifecycle_status": raw.get("lifecycleStatus", self.lifecycle_status),
             "last_update": fields.Datetime.now(),
         })
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            recs._sync_product_template_link()
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            self._sync_product_template_link()
+        return res

@@ -87,7 +87,7 @@ class TMFAlarm(models.Model):
     crossed_threshold_information = fields.Json(string="crossedThresholdInformation")  # CrossedThresholdInformation
     parent_alarm = fields.Json(string="parentAlarm", default=list)          # [AlarmRef]
     place = fields.Json(string="place", default=list)                       # [RelatedPlace]
-    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
+    helpdesk_ticket_id = fields.Integer(string="Helpdesk Ticket ID")
 
     # -------------------------
     # TMF helpers
@@ -189,6 +189,8 @@ class TMFAlarm(models.Model):
         return payload
 
     def _sync_helpdesk_ticket(self):
+        if not self.env.registry.get("helpdesk.ticket") or not self.env.registry.get("helpdesk.team"):
+            return
         Ticket = self.env["helpdesk.ticket"].sudo()
         Team = self.env["helpdesk.team"].sudo()
         team = Team.search([], limit=1)
@@ -200,10 +202,12 @@ class TMFAlarm(models.Model):
                 "description": rec.alarm_details or rec.probable_cause or "",
                 "team_id": team.id,
             }
-            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
-                rec.helpdesk_ticket_id.write(vals)
-            else:
-                rec.helpdesk_ticket_id = Ticket.create(vals).id
+            if rec.helpdesk_ticket_id:
+                existing = Ticket.browse(rec.helpdesk_ticket_id)
+                if existing.exists():
+                    existing.write(vals)
+                    continue
+            rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     # -------------------------
     # CRUD hooks + notifications

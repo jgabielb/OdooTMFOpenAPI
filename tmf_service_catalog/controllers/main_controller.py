@@ -5,7 +5,7 @@ from odoo.http import request
 
 
 class TMFServiceCatalogController(http.Controller):
-    BASE = "/tmf-api/serviceCatalogManagement/v4/"
+    BASE = "/tmf-api/serviceCatalogManagement/v4"
 
     # ---------- helpers ----------
     def _json_response(self, payload, status=200, extra_headers=None):
@@ -52,7 +52,7 @@ class TMFServiceCatalogController(http.Controller):
 
     # ---------- endpoints ----------
     # LIST
-    @http.route(BASE, type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([BASE, BASE + "/"], type="http", auth="public", methods=["GET"], csrf=False)
     def list_service_catalog(self, **params):
         env = request.env["tmf.service.catalog"].sudo()
         offset = int(params.get("offset", 0) or 0)
@@ -64,7 +64,7 @@ class TMFServiceCatalogController(http.Controller):
         return self._json_response(out, status=200)
 
     # CREATE
-    @http.route(BASE, type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([BASE, BASE + "/"], type="http", auth="public", methods=["POST"], csrf=False)
     def create_service_catalog(self, **params):
         try:
             data = self._parse_body_json()

@@ -41,7 +41,7 @@ class TroubleTicket(models.Model):
     resolution_date = fields.Datetime(string="Resolution Date")
 
     partner_id = fields.Many2one('res.partner', string="Customer")
-    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
+    helpdesk_ticket_id = fields.Integer(string="Helpdesk Ticket ID")
     service_id = fields.Many2one('tmf.service', string="Affected Service")
     channel = fields.Char(string="Channel")
     note = fields.Text(string="Notes")
@@ -142,6 +142,7 @@ class TroubleTicket(models.Model):
 
         if self.partner_id:
             data["relatedParty"].append({
+                "@type": "RelatedPartyRefOrPartyRoleRef",
                 "id": str(self.partner_id.tmf_id or self.partner_id.id),
                 "name": self.partner_id.name,
                 "role": "Customer",
@@ -151,6 +152,8 @@ class TroubleTicket(models.Model):
         return data
 
     def _sync_helpdesk_ticket(self):
+        if not self.env.registry.get("helpdesk.ticket") or not self.env.registry.get("helpdesk.team"):
+            return
         Ticket = self.env["helpdesk.ticket"].sudo()
         Team = self.env["helpdesk.team"].sudo()
         team = Team.search([], limit=1)
@@ -163,10 +166,12 @@ class TroubleTicket(models.Model):
                 "team_id": team.id,
                 "partner_id": rec.partner_id.id if rec.partner_id and rec.partner_id.exists() else False,
             }
-            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
-                rec.helpdesk_ticket_id.write(vals)
-            else:
-                rec.helpdesk_ticket_id = Ticket.create(vals).id
+            if rec.helpdesk_ticket_id:
+                existing = Ticket.browse(rec.helpdesk_ticket_id)
+                if existing.exists():
+                    existing.write(vals)
+                    continue
+            rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -220,3 +225,51 @@ class TroubleTicket(models.Model):
             except Exception:
                 continue
         return res
+
+
+class TroubleTicketSpecification(models.Model):
+    _name = 'tmf.trouble.ticket.specification'
+    _description = 'TMF Trouble Ticket Specification'
+    _inherit = ['tmf.model.mixin']
+
+    name = fields.Char(required=True, index=True)
+    description = fields.Text()
+    lifecycle_status = fields.Char(default='active')
+    version = fields.Char(default='1.0')
+    creation_date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    last_update = fields.Datetime(compute='_compute_last_update', store=True)
+
+    @api.depends('write_date')
+    def _compute_last_update(self):
+        for rec in self:
+            rec.last_update = rec.write_date
+
+    def _get_tmf_api_path(self):
+        return "/troubleTicketManagement/v5/troubleTicketSpecification"
+
+    def to_tmf_json(self):
+        self.ensure_one()
+        href = getattr(
+            self,
+            'tmf_href',
+            f"/tmf-api{self._get_tmf_api_path()}/{self.tmf_id or self.id}",
+        )
+        data = {
+            "id": str(self.tmf_id or self.id),
+            "href": href,
+            "@type": "TroubleTicketSpecification",
+            "name": self.name,
+        }
+        if self.description:
+            data["description"] = self.description
+        if self.lifecycle_status:
+            data["lifecycleStatus"] = self.lifecycle_status
+        if self.version:
+            data["version"] = self.version
+        creation = _dt_to_rfc3339_z(self.creation_date)
+        if creation:
+            data["creationDate"] = creation
+        updated = _dt_to_rfc3339_z(self.last_update)
+        if updated:
+            data["lastUpdate"] = updated
+        return data

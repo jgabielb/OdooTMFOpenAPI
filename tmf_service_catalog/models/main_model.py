@@ -1,5 +1,4 @@
 from odoo import models, fields, api
-from odoo.tools import date_utils
 
 class TMFServiceCatalog(models.Model):
     _name = 'tmf.service.catalog'
@@ -18,10 +17,40 @@ class TMFServiceCatalog(models.Model):
     category = fields.Json(string="category")          # array of ServiceCategoryRef
     related_party = fields.Json(string="relatedParty") # array of RelatedPartyRefOrPartyRoleRef
     valid_for = fields.Json(string="validFor")         # TimePeriod object
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", copy=False, index=True)
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id:
+            return self.product_tmpl_id
+        if self.tmf_id and "tmf_id" in ProductTmpl._fields:
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(self.tmf_id))], limit=1)
+            if tmpl:
+                return tmpl
+        if self.name:
+            tmpl = ProductTmpl.search([("name", "=", self.name)], limit=1)
+            if tmpl:
+                return tmpl
+            vals = {"name": self.name}
+            if "detailed_type" in ProductTmpl._fields:
+                vals["detailed_type"] = "service"
+            elif "type" in ProductTmpl._fields:
+                vals["type"] = "service"
+            if "tmf_id" in ProductTmpl._fields and self.tmf_id:
+                vals["tmf_id"] = str(self.tmf_id)
+            return ProductTmpl.create(vals)
+        return ProductTmpl
+
+    def _sync_product_template_link(self):
+        for rec in self:
+            tmpl = rec._resolve_product_template()
+            if tmpl and rec.product_tmpl_id != tmpl:
+                rec.with_context(skip_tmf_catalog_sync=True).write({"product_tmpl_id": tmpl.id})
 
     def _get_tmf_api_path(self):
         # TMF633 v4 resource base
-        return "/tmf-api/serviceCatalogManagement/v4/"
+        return "/tmf-api/serviceCatalogManagement/v4"
 
     def _tmf_href(self):
         self.ensure_one()
@@ -51,6 +80,8 @@ class TMFServiceCatalog(models.Model):
         for vals in vals_list:
             vals.setdefault("last_update", now)
         recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            recs._sync_product_template_link()
         for rec in recs:
             rec._notify('serviceCatalog', 'create', rec)
         return recs
@@ -58,6 +89,8 @@ class TMFServiceCatalog(models.Model):
     def write(self, vals):
         vals.setdefault("last_update", fields.Datetime.now())
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            self._sync_product_template_link()
         for rec in self:
             rec._notify('serviceCatalog', 'update', rec)
         return res
@@ -102,6 +135,36 @@ class TMFServiceSpecification(models.Model):
     # keep JSON blobs for now (optional but TMF commonly carries them)
     related_party = fields.Json(string="relatedParty")
     valid_for = fields.Json(string="validFor")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", copy=False, index=True)
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id:
+            return self.product_tmpl_id
+        if self.tmf_id and "tmf_id" in ProductTmpl._fields:
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(self.tmf_id))], limit=1)
+            if tmpl:
+                return tmpl
+        if self.name:
+            tmpl = ProductTmpl.search([("name", "=", self.name)], limit=1)
+            if tmpl:
+                return tmpl
+            vals = {"name": self.name}
+            if "detailed_type" in ProductTmpl._fields:
+                vals["detailed_type"] = "service"
+            elif "type" in ProductTmpl._fields:
+                vals["type"] = "service"
+            if "tmf_id" in ProductTmpl._fields and self.tmf_id:
+                vals["tmf_id"] = str(self.tmf_id)
+            return ProductTmpl.create(vals)
+        return ProductTmpl
+
+    def _sync_product_template_link(self):
+        for rec in self:
+            tmpl = rec._resolve_product_template()
+            if tmpl and rec.product_tmpl_id != tmpl:
+                rec.with_context(skip_tmf_catalog_sync=True).write({"product_tmpl_id": tmpl.id})
 
     def _get_tmf_api_path(self):
         return "/tmf-api/serviceCatalogManagement/v4/serviceSpecification"
@@ -135,11 +198,16 @@ class TMFServiceSpecification(models.Model):
                 vals["lifecycle_status"] = "active"
             else:
                 vals["lifecycle_status"] = str(ls).strip().lower()
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            recs._sync_product_template_link()
+        return recs
 
     def write(self, vals):
         vals.setdefault("last_update", fields.Datetime.now())
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf_catalog_sync"):
+            self._sync_product_template_link()
         for rec in self:
             rec._notify('serviceSpecification', 'update', rec)
         return res

@@ -11,7 +11,9 @@
                         <field name="description"/>
                         <field name="priority"/>
                         <field name="expected_close_date"/>
+                        <field name="partner_id"/>
                         <field name="crm_lead_id"/>
+                        <field name="sale_order_id"/>
                     </group>
                 </sheet>
             </form>
@@ -27,7 +29,9 @@
                 <field name="status"/>
                 <field name="priority"/>
                 <field name="expected_close_date"/>
+                <field name="partner_id"/>
                 <field name="crm_lead_id"/>
+                <field name="sale_order_id"/>
             </list>
         </field>
     </record>

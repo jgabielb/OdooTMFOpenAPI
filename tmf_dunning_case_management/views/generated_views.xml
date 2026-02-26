@@ -72,6 +72,8 @@
                 <field name="tmf_id"/>
                 <field name="status"/>
                 <field name="category"/>
+                <field name="partner_id"/>
+                <field name="account_move_id"/>
                 <field name="creation_date"/>
                 <field name="last_update_date"/>
             </list>
@@ -85,8 +87,12 @@
             <form string="DunningCase">
                 <sheet>
                     <group>
+                        <field name="tmf_id" readonly="1"/>
+                        <field name="href" readonly="1"/>
                         <field name="status"/>
                         <field name="category"/>
+                        <field name="partner_id"/>
+                        <field name="account_move_id"/>
                         <field name="creation_date"/>
                         <field name="last_activity_date"/>
                         <field name="last_update_date"/>

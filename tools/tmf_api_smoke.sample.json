@@ -91,6 +91,1019 @@
       }
     },
     {
+      "name": "TMF620 ProductSpecification",
+      "collection_path": "/tmf-api/productCatalogManagement/v5/productSpecification",
+      "id_path": "/tmf-api/productCatalogManagement/v5/productSpecification/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,version",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Product Spec",
+          "description": "created-by-smoke",
+          "productNumber": "SMOKE-SKU-001",
+          "brand": "SmokeBrand",
+          "version": "1.0",
+          "lifecycleStatus": "In Design"
+        },
+        "expected_status": [200, 201],
+        "save_as": "product_spec_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "product-spec-patched-by-smoke",
+          "lifecycleStatus": "Active"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF646 Appointment",
+      "collection_path": "/tmf-api/appointmentManagement/v4/appointment",
+      "id_path": "/tmf-api/appointmentManagement/v4/appointment/{id}",
+      "list": {
+        "query": "fields=id,category,status",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "category": "installation",
+          "description": "created-by-smoke",
+          "externalId": "SMOKE-APPT-001",
+          "status": "initialized",
+          "validFor": {
+            "startDateTime": "2026-03-01T10:00:00.000Z",
+            "endDateTime": "2026-03-01T11:00:00.000Z"
+          },
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "appointment_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "confirmed"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF620 ProductOffering",
+      "collection_path": "/tmf-api/productCatalogManagement/v5/productOffering",
+      "id_path": "/tmf-api/productCatalogManagement/v5/productOffering/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,productSpecification",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Product Offering",
+          "description": "created-by-smoke",
+          "lifecycleStatus": "Active",
+          "productSpecification": {
+            "id": "{{product_spec_id}}",
+            "@referredType": "ProductSpecification"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "product_offering_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "name": "Smoke Product Offering Updated"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF633 ServiceCatalog",
+      "collection_path": "/tmf-api/serviceCatalogManagement/v4/",
+      "id_path": "/tmf-api/serviceCatalogManagement/v4/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,version",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Service Catalog",
+          "description": "created-by-smoke",
+          "version": "1.0",
+          "lifecycleStatus": "active"
+        },
+        "expected_status": [200, 201],
+        "save_as": "service_catalog_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "service-catalog-patched-by-smoke"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF634 ResourceSpecification",
+      "collection_path": "/tmf-api/resourceCatalogManagement/v5/resourceSpecification",
+      "id_path": "/tmf-api/resourceCatalogManagement/v5/resourceSpecification/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,version",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Resource Spec",
+          "description": "created-by-smoke",
+          "version": "1.0",
+          "lifecycleStatus": "active",
+          "@type": "ResourceSpecification"
+        },
+        "expected_status": [200, 201],
+        "save_as": "resource_spec_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "resource-spec-patched-by-smoke"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF671 Promotion",
+      "collection_path": "/tmf-api/promotionManagement/v4/promotion",
+      "id_path": "/tmf-api/promotionManagement/v4/promotion/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,promotionType",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Promotion",
+          "description": "created-by-smoke",
+          "lifecycleStatus": "active",
+          "promotionType": "Discount"
+        },
+        "expected_status": [200, 201],
+        "save_as": "promotion_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "description": "promotion-patched-by-smoke",
+          "lifecycleStatus": "launched"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF657 ServiceLevelObjective",
+      "collection_path": "/tmf-api/serviceQualityManagement/v4/serviceLevelObjective",
+      "id_path": "/tmf-api/serviceQualityManagement/v4/serviceLevelObjective/{id}",
+      "list": {
+        "query": "fields=id,name,conformanceTarget",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke SLO",
+          "conformanceComparator": "lte",
+          "conformanceTarget": "48",
+          "serviceLevelObjectiveParameter": {
+            "serviceQualityParameterName": "responseTime"
+          },
+          "thresholdTarget": "36",
+          "toleranceTarget": "12",
+          "conformancePeriod": {
+            "period": "daily"
+          },
+          "serviceLevelObjectiveConsequence": [
+            {
+              "name": "escalate"
+            }
+          ],
+          "tolerancePeriod": {
+            "period": "PT2H"
+          },
+          "validFor": {
+            "startDateTime": "2026-01-01T00:00:00Z",
+            "endDateTime": "2026-12-31T23:59:59Z"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "slo_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "conformanceTarget": "24",
+          "thresholdTarget": "18"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF728 DunningCase",
+      "collection_path": "/tmf-api/dunningCase/v4/dunningCase",
+      "id_path": "/tmf-api/dunningCase/v4/dunningCase/{id}",
+      "list": {
+        "query": "fields=id,status,category",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "status": "open",
+          "category": "collection",
+          "name": "Smoke Dunning Case",
+          "billingAccount": {
+            "id": "SMOKE-INVOICE-001",
+            "name": "SMOKE-INVOICE-001"
+          },
+          "dunningScenario": {
+            "id": "SCN-01",
+            "name": "Default Scenario"
+          },
+          "dunningCaseRule": [
+            {
+              "id": "RULE-01",
+              "name": "Initial Reminder"
+            }
+          ],
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "dunning_case_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "closed"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF699 SalesLead",
+      "collection_path": "/tmf-api/sales/v4/salesLead",
+      "id_path": "/tmf-api/sales/v4/salesLead/{id}",
+      "list": {
+        "query": "fields=id,name,status,priority",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Sales Lead",
+          "status": "new",
+          "priority": "medium",
+          "description": "created-by-smoke",
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ],
+          "salesOpportunity": {
+            "id": "SMOKE-OPP-001",
+            "@type": "SalesOpportunityRef"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "sales_lead_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "qualified",
+          "priority": "high"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": true,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF670 PaymentMethod",
+      "collection_path": "/tmf-api/paymentMethod/v4/paymentMethod",
+      "id_path": "/tmf-api/paymentMethod/v4/paymentMethod/{id}",
+      "list": {
+        "query": "fields=id,name,status",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Card Method",
+          "@type": "BankCard",
+          "description": "created-by-smoke",
+          "status": "Active"
+        },
+        "expected_status": [200, 201],
+        "save_as": "payment_method_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "Suspended"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF678 CustomerBill",
+      "collection_path": "/tmf-api/customerBillManagement/v5/customerBill",
+      "id_path": "/tmf-api/customerBillManagement/v5/customerBill/{id}",
+      "list": {
+        "query": "fields=id,state,billDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "@type": "CustomerBill",
+          "name": "Smoke Customer Bill",
+          "state": "issued",
+          "billDate": "2026-03-02T10:00:00Z",
+          "billingAccount": {
+            "id": "{{customer_id}}",
+            "@referredType": "Customer"
+          },
+          "billDocument": []
+        },
+        "expected_status": [200, 201],
+        "save_as": "customer_bill_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "settled"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF676 Payment",
+      "collection_path": "/tmf-api/paymentManagement/v4/payment",
+      "id_path": "/tmf-api/paymentManagement/v4/payment/{id}",
+      "list": {
+        "query": "fields=id,status,paymentDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Payment",
+          "status": "done",
+          "account": {
+            "id": "{{customer_id}}",
+            "@referredType": "Customer"
+          },
+          "paymentMethod": {
+            "id": "{{payment_method_id}}",
+            "@type": "paymentMethodRef",
+            "@referredType": "PaymentMethod"
+          },
+          "totalAmount": {
+            "unit": "USD",
+            "value": 25.5
+          },
+          "paymentItem": [
+            {
+              "item": {
+                "id": "{{customer_bill_id}}",
+                "@referredType": "CustomerBill"
+              }
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "payment_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "posted"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF641 ServiceOrder",
+      "collection_path": "/tmf-api/serviceOrdering/v4/serviceOrder",
+      "id_path": "/tmf-api/serviceOrdering/v4/serviceOrder/{id}",
+      "list": {
+        "query": "fields=id,state,orderDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "description": "Smoke Service Order",
+          "category": "service",
+          "priority": "1",
+          "serviceOrderItem": [
+            {
+              "id": "1",
+              "action": "add",
+              "service": {
+                "name": "Smoke Service",
+                "@type": "Service"
+              }
+            }
+          ],
+          "relatedParty": [
+            {
+              "id": "{{customer_id}}",
+              "role": "Customer"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "service_order_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "inProgress",
+          "description": "Smoke Service Order Updated"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF652 ResourceOrder",
+      "collection_path": "/tmf-api/resourceOrdering/v4/resourceOrder",
+      "id_path": "/tmf-api/resourceOrdering/v4/resourceOrder/{id}",
+      "list": {
+        "query": "fields=id,state,orderDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "category": "resource",
+          "description": "Smoke Resource Order",
+          "orderType": "modify",
+          "requestedStartDate": "2026-03-03T09:00:00Z",
+          "requestedCompletionDate": "2026-03-03T12:00:00Z",
+          "relatedParty": [
+            {
+              "id": "{{customer_id}}",
+              "role": "Customer",
+              "@referredType": "Individual"
+            }
+          ],
+          "orderItem": [
+            {
+              "id": "1",
+              "action": "add",
+              "quantity": 1
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "resource_order_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "inProgress",
+          "description": "Resource Order Patched"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF640 ServiceActivation",
+      "collection_path": "/tmf-api/ServiceActivationAndConfiguration/v4/service",
+      "id_path": "/tmf-api/ServiceActivationAndConfiguration/v4/service/{id}",
+      "list": {
+        "query": "fields=id,state,serviceDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Activated Service",
+          "state": "active",
+          "serviceSpecification": {
+            "id": "smoke-spec-001"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "service_activation_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "terminated"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF702 ResourceActivation",
+      "collection_path": "/tmf-api/ResourceActivationAndConfiguration/v4/resource",
+      "id_path": "/tmf-api/ResourceActivationAndConfiguration/v4/resource/{id}",
+      "list": {
+        "query": "fields=id,name,resourceStatus,operationalState",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Activated Resource",
+          "description": "created-by-smoke",
+          "resourceStatus": "active",
+          "operationalState": "enable",
+          "relatedParty": [
+            {
+              "id": "{{customer_id}}",
+              "@referredType": "Individual"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "resource_activation_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "resourceStatus": "inactive",
+          "operationalState": "disable"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF621 TroubleTicket",
+      "collection_path": "/tmf-api/troubleTicketManagement/v5/troubleTicket",
+      "id_path": "/tmf-api/troubleTicketManagement/v5/troubleTicket/{id}",
+      "list": {
+        "query": "fields=id,status,severity,priority",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Trouble Ticket",
+          "description": "created-by-smoke",
+          "ticketType": "Complaint",
+          "severity": "Major",
+          "priority": "High",
+          "status": "Submitted",
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "role": "Customer"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "trouble_ticket_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "inProgress",
+          "severity": "Minor"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF642 Alarm",
+      "collection_path": "/tmf-api/alarmManagement/v5/alarm",
+      "id_path": "/tmf-api/alarmManagement/v5/alarm/{id}",
+      "list": {
+        "query": "fields=id,state,alarmType,perceivedSeverity",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "alarmRaisedTime": "2026-03-03T10:00:00Z",
+          "alarmType": "communicationsAlarm",
+          "perceivedSeverity": "major",
+          "probableCause": "signalLoss",
+          "sourceSystemId": "SMOKE-ALARM-SRC",
+          "state": "raised",
+          "ackState": "unacknowledged"
+        },
+        "expected_status": [200, 201],
+        "save_as": "alarm_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "cleared",
+          "ackState": "acknowledged"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF656 ServiceProblem",
+      "collection_path": "/tmf-api/serviceProblemManagement/v5/serviceProblem",
+      "id_path": "/tmf-api/serviceProblemManagement/v5/serviceProblem/{id}",
+      "list": {
+        "query": "fields=id,status,category,priority",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "@type": "ServiceProblem",
+          "category": "service",
+          "description": "Smoke Service Problem",
+          "priority": 1,
+          "reason": "degradation",
+          "status": "acknowledged",
+          "originatorParty": {
+            "id": "{{customer_id}}",
+            "@referredType": "Individual"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "service_problem_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "resolved",
+          "statusChangeReason": "fixed-by-smoke"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF724 Incident",
+      "collection_path": "/tmf-api/Incident/v4/incident",
+      "id_path": "/tmf-api/Incident/v4/incident/{id}",
+      "list": {
+        "query": "fields=id,state,category,priority",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Incident",
+          "category": "network",
+          "priority": "high",
+          "state": "raised",
+          "ackState": "unacknowledged",
+          "occurTime": "2026-03-03T10:00:00Z",
+          "domain": "mobile",
+          "sourceObject": {
+            "id": "SRC-001"
+          },
+          "relatedParty": [
+            {
+              "id": "{{customer_id}}",
+              "@referredType": "Individual"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "incident_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "resolved"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF931 ApplicationOwner",
+      "collection_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/applicationOwner",
+      "id_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/applicationOwner/{id}",
+      "list": {
+        "query": "fields=id,name,status,approvalStatus",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke App Owner",
+          "description": "created-by-smoke",
+          "engagedParty": {
+            "name": "Smoke Party",
+            "@type": "Organization"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "ogw_app_owner_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "active"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF931 Application",
+      "collection_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/application",
+      "id_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/application/{id}",
+      "list": {
+        "query": "fields=id,name,approvalStatus,operationalState",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Application",
+          "commercialName": "Smoke Application",
+          "applicationOwner": {
+            "id": "{{ogw_app_owner_id}}",
+            "@type": "PartyRoleRef"
+          }
+        },
+        "expected_status": [200, 201],
+        "save_as": "ogw_app_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "operationalState": "disable"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF931 ApiProductOrder",
+      "collection_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/apiProductOrder",
+      "id_path": "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5/apiProductOrder/{id}",
+      "list": {
+        "query": "fields=id,state,creationDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "productOrderItem": [
+            {
+              "id": "1",
+              "action": "add"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "ogw_api_product_order_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF936 ProductOffering",
+      "collection_path": "/tmf-api/openGatewayOperateAPI/v5/productOffering",
+      "id_path": "/tmf-api/openGatewayOperateAPI/v5/productOffering/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,lastUpdate",
+        "expected_status": [200]
+      }
+    },
+    {
+      "name": "TMF936 ProductSpecification",
+      "collection_path": "/tmf-api/openGatewayOperateAPI/v5/productSpecification",
+      "id_path": "/tmf-api/openGatewayOperateAPI/v5/productSpecification/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus,version,lastUpdate",
+        "expected_status": [200]
+      }
+    },
+    {
+      "name": "TMF764 ActualCost",
+      "collection_path": "/tmf-api/costManagement/v5/actualCost",
+      "id_path": "/tmf-api/costManagement/v5/actualCost/{id}",
+      "list": {
+        "query": "fields=id,name,state",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Actual Cost",
+          "state": "acknowledged",
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ],
+          "actualCostItem": [
+            {
+              "id": "01",
+              "amount": {
+                "amount": 100.5,
+                "currencyCode": "USD"
+              }
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "actual_cost_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "done"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF764 ProjectedCost",
+      "collection_path": "/tmf-api/costManagement/v5/projectedCost",
+      "id_path": "/tmf-api/costManagement/v5/projectedCost/{id}",
+      "list": {
+        "query": "fields=id,name,state",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Projected Cost",
+          "state": "acknowledged",
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ],
+          "projectedCostItem": [
+            {
+              "id": "01",
+              "amount": {
+                "amount": 210.75,
+                "currencyCode": "USD"
+              }
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "projected_cost_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "reviewed"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
       "name": "TMF687 Stock",
       "collection_path": "/tmf-api/stock/v4/productStock",
       "id_path": "/tmf-api/stock/v4/productStock/{id}",
@@ -163,6 +1176,242 @@
       "patch": {
         "payload": {
           "reserveProductStockState": "completed"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF639 ResourceInventory",
+      "collection_path": "/tmf-api/resourceInventoryManagement/v4/resource",
+      "id_path": "/tmf-api/resourceInventoryManagement/v4/resource/{id}",
+      "list": {
+        "query": "fields=id,name,resourceStatus,administrativeState,operationalState",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Resource Lot",
+          "serialNumber": "SMOKE-RESOURCE-LOT-001",
+          "resourceStatus": "installed"
+        },
+        "expected_status": [200, 201],
+        "save_as": "resource_inventory_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "resourceStatus": "reserved"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF638 ServiceInventory",
+      "collection_path": "/tmf-api/serviceInventoryManagement/v5/service",
+      "id_path": "/tmf-api/serviceInventoryManagement/v5/service/{id}",
+      "list": {
+        "query": "fields=id,name,state,operatingStatus,relatedParty,supportingResource",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Inventory Service",
+          "state": "active",
+          "operatingStatus": "running",
+          "relatedParty": [
+            {
+              "partyOrPartyRole": {
+                "id": "{{customer_id}}",
+                "name": "Smoke Customer"
+              }
+            }
+          ],
+          "supportingResource": [
+            {
+              "id": "{{resource_inventory_id}}",
+              "@referredType": "Resource"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "service_inventory_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "suspended",
+          "operatingStatus": "degraded"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF700 ShippingOrder",
+      "collection_path": "/tmf-api/shippingOrder/v4.0/shippingOrder",
+      "id_path": "/tmf-api/shippingOrder/v4.0/shippingOrder/{id}",
+      "list": {
+        "query": "fields=id,state,creationDate",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "state": "acknowledged",
+          "shippingOrderItem": [
+            {
+              "id": "1",
+              "action": "add"
+            }
+          ],
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ],
+          "externalId": "SMOKE-SHIPPING-ORDER-001"
+        },
+        "expected_status": [200, 201],
+        "save_as": "shipping_order_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "inProgress"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF711 Shipment",
+      "collection_path": "/tmf-api/shipmentManagement/v4/shipment",
+      "id_path": "/tmf-api/shipmentManagement/v4/shipment/{id}",
+      "list": {
+        "query": "fields=id,name,state,shipmentTracking",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Shipment",
+          "description": "created-by-smoke",
+          "state": "acknowledged",
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ],
+          "externalIdentifier": [
+            {
+              "id": "SMOKE-SHIPPING-ORDER-001"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "shipment_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "state": "inProgress"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF711 ShipmentSpecification",
+      "collection_path": "/tmf-api/shipmentManagement/v4/shipmentSpecification",
+      "id_path": "/tmf-api/shipmentManagement/v4/shipmentSpecification/{id}",
+      "list": {
+        "query": "fields=id,name,lifecycleStatus",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Shipment Spec",
+          "description": "created-by-smoke",
+          "lifecycleStatus": "active"
+        },
+        "expected_status": [200, 201],
+        "save_as": "shipment_spec_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "lifecycleStatus": "launched"
+        },
+        "expected_status": [200]
+      },
+      "delete": {
+        "enabled": false,
+        "expected_status": [200, 202, 204]
+      }
+    },
+    {
+      "name": "TMF684 ShipmentTracking",
+      "collection_path": "/tmf-api/shipmentTracking/v4/shipmentTracking",
+      "id_path": "/tmf-api/shipmentTracking/v4/shipmentTracking/{id}",
+      "list": {
+        "query": "fields=id,trackingNumber,status",
+        "expected_status": [200]
+      },
+      "create": {
+        "payload": {
+          "name": "Smoke Shipment Tracking",
+          "status": "inProgress",
+          "trackingNumber": "SMOKE-TRACK-001",
+          "shipment": {
+            "id": "SMOKE-SHIPPING-ORDER-001",
+            "@type": "ShipmentRef"
+          },
+          "relatedParty": [
+            {
+              "id": "{{partner_id}}",
+              "name": "Smoke Partner",
+              "@type": "RelatedParty"
+            }
+          ]
+        },
+        "expected_status": [200, 201],
+        "save_as": "shipment_tracking_id"
+      },
+      "get_by_id": {
+        "expected_status": [200]
+      },
+      "patch": {
+        "payload": {
+          "status": "delivered"
         },
         "expected_status": [200]
       },

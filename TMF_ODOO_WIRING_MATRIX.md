@@ -82,3 +82,60 @@ This matrix defines where TMF resources should anchor in native Odoo apps so we 
   - TMF936 (`tmf_open_gateway_operate_product_catalog`):
     - `ProductOffering` / `ProductSpecification` link to `product.template` via `product_tmpl_id`.
     - Product template is reused by TMF id/name or auto-created when absent.
+- Shipping/logistics wiring improved:
+  - TMF684 Shipment Tracking (`tmf_shipment_tracking_management`):
+    - links to `res.partner` via `partner_id` (resolved from `relatedParty`).
+    - links to `stock.picking` via `picking_id` (resolved from tracking number, shipment refs, external identifiers).
+    - exposes tracking status/number from linked picking when missing in incoming TMF payload.
+  - TMF700 Shipping Order (`tmf_shipping_order`):
+    - links to `res.partner` via `partner_id` (resolved from `relatedParty`).
+    - links to `stock.picking` via `picking_id` (resolved from external/order references).
+  - TMF711 Shipment Management (`tmf_shipment_management`):
+    - links to `res.partner` via `partner_id` (resolved from `relatedParty`).
+    - links to `stock.picking` via `picking_id` (resolved from external/related shipment references).
+    - `shipmentTracking` payload is backfilled from linked picking state/tracking when absent in TMF payload.
+- TMF699 Sales Management wiring improved:
+  - `tmf.sales.lead` now links to both `crm.lead` (`crm_lead_id`) and `sale.order` (`sale_order_id`).
+  - `relatedParty` is resolved to `res.partner` (`partner_id`) and reused for CRM/Sales synchronization.
+  - Sales quotation/order is reused from `salesOpportunity` references or created when missing.
+- TMF764 Cost Management wiring improved:
+  - `tmf.actual.cost` and `tmf.projected.cost` now link to:
+    - `res.partner` (`partner_id`)
+    - `account.move` (`account_move_id`)
+    - `account.analytic.account` (`analytic_account_id`)
+  - Cost amount/currency are extracted from TMF cost items (`cost_amount`, `cost_currency`) for accounting alignment.
+- TMF671 Promotion wiring improved:
+  - `tmf.promotion` now links to:
+    - `res.partner` (`partner_id`) resolved from `pattern.relatedParty`
+    - `product.pricelist` (`pricelist_id`)
+    - `product.pricelist.item` (`pricelist_item_id`)
+  - TMF promotion discount and validity (`pattern`, `validFor`) now synchronize into native pricelist percentage rules.
+  - TMF671 hub registration now persists in `tmf.hub.subscription` with proper API name (`promotion`) so subscriptions are visible under TMF Hub Subscriptions.
+- TMF728 Dunning Case wiring improved:
+  - `tmf.dunning.case` now links to native accounting and contacts:
+    - `res.partner` (`partner_id`) resolved from `relatedParty`
+    - `account.move` (`account_move_id`) resolved from `billingAccount` references
+  - Partner/account links are synchronized on create/write with safe non-blocking behavior.
+- TMF620/TMF633/TMF634 catalog wiring improved:
+  - TMF633 `tmf.service.catalog` and `tmf.service.specification` now link to native `product.template` via `product_tmpl_id`.
+  - TMF634 `tmf.resource.catalog` and `tmf.resource.specification` now link to native `product.template` via `product_tmpl_id`.
+  - Link synchronization resolves existing template by TMF id/name and creates one when missing.
+- TMF646 Appointment wiring improved:
+  - `tmf.appointment` now links to:
+    - `calendar.event` (`calendar_event_id`)
+    - `res.partner` (`partner_id`) resolved from `relatedParty`
+  - Appointment create/update now synchronizes schedule/title/description into native calendar events.
+
+## Latest Additions
+
+- Finance endpoints expanded for full chain testing:
+  - `POST /tmf-api/customerBillManagement/v5/customerBill`
+  - `PATCH` and `DELETE /tmf-api/paymentManagement/v4/payment/{id}`
+- Fulfillment endpoint expanded for lifecycle testing:
+  - `PATCH` and `DELETE /tmf-api/resourceOrdering/v4/resourceOrder/{id}`
+- Added flow-level smoke coverage in `tools/tmf_api_smoke.sample.json` for:
+  - `TMF638/TMF639` inventory create/patch transitions
+  - `TMF676/TMF678/TMF670` payment/bill/method chain with bill references
+  - `TMF641/TMF652/TMF640/TMF702` fulfillment create/patch transitions
+  - `TMF621/TMF642/TMF656/TMF724` assurance create/patch transitions
+  - `TMF931/TMF936` Open Gateway route/contract baseline checks

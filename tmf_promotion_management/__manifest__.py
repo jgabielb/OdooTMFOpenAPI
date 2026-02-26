@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "category": "TM Forum",
     "summary": "TMF671 Promotion Management API v4",
-    "depends": ["base", "tmf_base"],
+    "depends": ["base", "tmf_base", "product"],
     "data": [
         "security/ir.model.access.csv",
         "views/promotion_views.xml",

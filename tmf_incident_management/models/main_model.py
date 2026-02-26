@@ -19,6 +19,16 @@ def _compact(payload):
     return {k: v for k, v in payload.items() if v is not None}
 
 
+def _as_list(value):
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return value
+    if isinstance(value, dict):
+        return [value]
+    return None
+
+
 class _TMF724CommonMixin(models.AbstractModel):
     _name = "tmf.incident.common.mixin"
     _description = "TMF724 Common Incident Mixin"
@@ -90,7 +100,7 @@ class TMFIncident(models.Model):
     related_entity_json = fields.Text(string="relatedEntity")
     root_cause_json = fields.Text(string="rootCause")
     note_json = fields.Text(string="note")
-    helpdesk_ticket_id = fields.Many2one("helpdesk.ticket", string="Helpdesk Ticket", ondelete="set null")
+    helpdesk_ticket_id = fields.Integer(string="Helpdesk Ticket ID")
 
     def _get_tmf_api_path(self):
         return "/Incident/v4/incident"
@@ -115,6 +125,8 @@ class TMFIncident(models.Model):
         return self.env["res.partner"]
 
     def _sync_helpdesk_ticket(self):
+        if not self.env.registry.get("helpdesk.ticket") or not self.env.registry.get("helpdesk.team"):
+            return
         Ticket = self.env["helpdesk.ticket"].sudo()
         Team = self.env["helpdesk.team"].sudo()
         team = Team.search([], limit=1)
@@ -128,12 +140,15 @@ class TMFIncident(models.Model):
                 "team_id": team.id,
                 "partner_id": partner.id if partner and partner.exists() else False,
             }
-            if rec.helpdesk_ticket_id and rec.helpdesk_ticket_id.exists():
-                rec.helpdesk_ticket_id.write(vals)
-            else:
-                rec.helpdesk_ticket_id = Ticket.create(vals).id
+            if rec.helpdesk_ticket_id:
+                existing = Ticket.browse(rec.helpdesk_ticket_id)
+                if existing.exists():
+                    existing.write(vals)
+                    continue
+            rec.helpdesk_ticket_id = Ticket.create(vals).id
 
     def to_tmf_json(self):
+        source_object = _as_list(_loads(self.source_object_json))
         payload = self._common_to_tmf_json()
         payload.update(
             {
@@ -151,7 +166,7 @@ class TMFIncident(models.Model):
                 "externalIdentifier": self.external_identifier,
                 "severity": self.severity,
                 "urgency": self.urgency,
-                "sourceObject": _loads(self.source_object_json),
+                "sourceObject": source_object,
                 "affectedEntity": _loads(self.affected_entity_json),
                 "eventId": _loads(self.event_id_json),
                 "extensionInfo": _loads(self.extension_info_json),
@@ -195,7 +210,10 @@ class TMFIncident(models.Model):
             ("note", "note_json"),
         ]:
             if key in data:
-                vals[field_name] = _dumps(data.get(key))
+                value = data.get(key)
+                if key == "sourceObject":
+                    value = _as_list(value)
+                vals[field_name] = _dumps(value)
         return vals
 
     @api.model_create_multi

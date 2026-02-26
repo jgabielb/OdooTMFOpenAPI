@@ -88,6 +88,29 @@ class TMFTicketController(http.Controller):
             except Exception as e:
                 return self._error(400, "DELETE_ERROR", str(e))
 
+    @http.route('/tmf-api/troubleTicketManagement/v5/troubleTicketSpecification', type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def ticket_spec_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            return self._create_specification()
+        return self._list_specifications(**params)
+
+    @http.route('/tmf-api/troubleTicketManagement/v5/troubleTicketSpecification/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def ticket_spec_individual_str(self, id, **params):
+        spec = self._find_specification(id)
+        if not spec:
+            return self._error(404, "NOT_FOUND", f"TroubleTicketSpecification {id} not found")
+
+        if request.httprequest.method == 'GET':
+            return self._response(self._filter_fields(spec.to_tmf_json(), params.get('fields')))
+        elif request.httprequest.method == 'PATCH':
+            return self._patch_specification(spec)
+        elif request.httprequest.method == 'DELETE':
+            try:
+                spec.unlink()
+                return Response(status=204)
+            except Exception as e:
+                return self._error(400, "DELETE_ERROR", str(e))
+
     # -------------------------------------------------------------------------
     # Business Logic
     # -------------------------------------------------------------------------
@@ -162,6 +185,52 @@ class TMFTicketController(http.Controller):
             return self._response(ticket.to_tmf_json())
         except Exception as e:
             return self._error(400, "UPDATE_ERROR", str(e))
+
+    def _list_specifications(self, **params):
+        domain = []
+        if params.get('name'):
+            domain.append(('name', '=', params.get('name')))
+        if params.get('id'):
+            domain.append(('tmf_id', '=', params.get('id')))
+
+        specs = request.env['tmf.trouble.ticket.specification'].sudo().search(domain, limit=50, order='id desc')
+        data = [s.to_tmf_json() for s in specs]
+        return self._response(self._filter_fields(data, params.get('fields')))
+
+    def _create_specification(self):
+        try:
+            data = json.loads(request.httprequest.data)
+            vals = {
+                'name': data.get('name') or 'TroubleTicket',
+                'description': data.get('description') or False,
+                'lifecycle_status': data.get('lifecycleStatus') or 'active',
+                'version': data.get('version') or '1.0',
+            }
+            new_spec = request.env['tmf.trouble.ticket.specification'].sudo().create(vals)
+            return self._response(new_spec.to_tmf_json(), status=201)
+        except Exception as e:
+            _logger.exception("TMF621 TroubleTicketSpecification Create Error")
+            return self._error(400, "BAD_REQUEST", f"Creation failed: {str(e)}")
+
+    def _patch_specification(self, specification):
+        try:
+            data = json.loads(request.httprequest.data)
+            vals = {}
+            if 'name' in data:
+                vals['name'] = data['name']
+            if 'description' in data:
+                vals['description'] = data['description']
+            if 'lifecycleStatus' in data:
+                vals['lifecycle_status'] = data['lifecycleStatus']
+            if 'version' in data:
+                vals['version'] = data['version']
+
+            if vals:
+                specification.write(vals)
+
+            return self._response(specification.to_tmf_json())
+        except Exception as e:
+            return self._error(400, "UPDATE_ERROR", str(e))
         
     def _find_ticket(self, id_value):
         Ticket = request.env['tmf.trouble.ticket'].sudo()
@@ -181,4 +250,21 @@ class TMFTicketController(http.Controller):
 
         # 3) fallback por name (si tu name es tipo TT-2026...)
         rec = Ticket.search([('name', '=', s)], limit=1)
+        return rec or False
+
+    def _find_specification(self, id_value):
+        Specification = request.env['tmf.trouble.ticket.specification'].sudo()
+        s = str(id_value)
+
+        if s.isdigit():
+            rec = Specification.browse(int(s))
+            if rec.exists():
+                return rec
+
+        if 'tmf_id' in Specification._fields:
+            rec = Specification.search([('tmf_id', '=', s)], limit=1)
+            if rec:
+                return rec
+
+        rec = Specification.search([('name', '=', s)], limit=1)
         return rec or False

@@ -77,6 +77,23 @@ def _parse_dt_for_domain(val: str):
     except Exception:
         return None
 
+
+def _to_odoo_dt(value):
+    """
+    Normalize incoming RFC3339-ish datetime to Odoo datetime value.
+    Accepts strings like 2026-03-02T10:00:00Z.
+    """
+    if value in (None, "", False):
+        return False
+    s = str(value).strip()
+    if not s:
+        return False
+    s = s.replace("Z", "").replace("T", " ")
+    try:
+        return fields.Datetime.to_datetime(s)
+    except Exception:
+        return False
+
 class TMF678CustomerBillController(http.Controller):
 
     def _seed_if_empty(self, resource: str, model):
@@ -246,6 +263,68 @@ class TMF678CustomerBillController(http.Controller):
         rec.href = rec._compute_href(_host_url(), API_BASE)
 
         body = self._to_tmf("customerBillOnDemand", rec)
+        return request.make_response(json.dumps(body), headers=[("Content-Type", "application/json")], status=201)
+
+    # -----------------------
+    # POST /customerBill
+    # -----------------------
+    @http.route(
+        [f"{API_BASE}/customerBill"],
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+    )
+    def post_customer_bill(self, **kwargs):
+        payload = _json_body_or_400()
+        if payload is None:
+            return request.make_response(json.dumps({"error": "Invalid JSON body"}), headers=[("Content-Type", "application/json")], status=400)
+
+        billing_account = payload.get("billingAccount") or {}
+        related_entities = payload.get("relatedEntity") or []
+        bill_period = payload.get("billingPeriod") or {}
+
+        partner_id = False
+        ba_id = billing_account.get("id")
+        if ba_id:
+            partner = request.env["res.partner"].sudo().search([("tmf_id", "=", str(ba_id))], limit=1)
+            if not partner and str(ba_id).isdigit():
+                partner = request.env["res.partner"].sudo().browse(int(ba_id))
+            if partner and partner.exists():
+                partner_id = partner.id
+
+        move_id = False
+        for ent in related_entities:
+            if not isinstance(ent, dict):
+                continue
+            eid = ent.get("id")
+            if not eid:
+                continue
+            move = request.env["account.move"].sudo().search([("tmf_id", "=", str(eid))], limit=1)
+            if not move and str(eid).isdigit():
+                move = request.env["account.move"].sudo().browse(int(eid))
+            if move and move.exists():
+                move_id = move.id
+                if not partner_id and move.partner_id:
+                    partner_id = move.partner_id.id
+                break
+
+        vals = {
+            "tmf_type": payload.get("@type") or "CustomerBill",
+            "name": payload.get("name"),
+            "state": payload.get("state"),
+            "bill_date": _to_odoo_dt(payload.get("billDate")),
+            "billing_period_start": _to_odoo_dt(bill_period.get("startDateTime")),
+            "billing_period_end": _to_odoo_dt(bill_period.get("endDateTime")),
+            "partner_id": partner_id,
+            "move_id": move_id,
+            "payload": payload,
+            "last_update": fields.Datetime.now(),
+        }
+
+        rec = request.env["tmf.customer.bill"].sudo().create(vals)
+        rec.href = rec._compute_href(_host_url(), API_BASE)
+        body = self._to_tmf("customerBill", rec)
         return request.make_response(json.dumps(body), headers=[("Content-Type", "application/json")], status=201)
 
     # -----------------------

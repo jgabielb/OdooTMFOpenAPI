@@ -122,3 +122,73 @@ class TMF676Controller(http.Controller):
             return _json_response({"error": str(ve)}, status=400)
         except Exception as e:
             return _json_response({"error": str(e)}, status=400)
+
+    # PATCH /payment/{id}
+    @http.route(f"{API_BASE}/payment/<string:tmf_id>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    def patch_payment(self, tmf_id, **params):
+        try:
+            rec = request.env["tmf.payment"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
+            if not rec:
+                return _json_response({"error": "Not found"}, status=404)
+
+            data = json.loads(request.httprequest.data or b"{}")
+            if not isinstance(data, dict):
+                raise ValidationError("Payload must be a JSON object.")
+
+            vals = {}
+            if "authorizationCode" in data:
+                vals["authorization_code"] = data.get("authorizationCode")
+            if "correlatorId" in data:
+                vals["correlator_id"] = data.get("correlatorId")
+            if "description" in data:
+                vals["description"] = data.get("description")
+            if "name" in data:
+                vals["name"] = data.get("name")
+            if "paymentDate" in data:
+                vals["payment_date"] = data.get("paymentDate")
+            if "status" in data:
+                vals["status"] = data.get("status")
+            if "statusDate" in data:
+                vals["status_date"] = data.get("statusDate")
+            if "account" in data:
+                account = data.get("account")
+                if account is not None and (not isinstance(account, dict) or not account.get("id")):
+                    raise ValidationError("TMF676: if provided, 'account.id' is mandatory.")
+                vals["account_json"] = json.dumps(account, ensure_ascii=False) if account is not None else None
+            if "paymentMethod" in data:
+                payment_method = data.get("paymentMethod")
+                if payment_method is not None and not isinstance(payment_method, dict):
+                    raise ValidationError("TMF676: if provided, 'paymentMethod' must be an object.")
+                vals["payment_method_json"] = json.dumps(payment_method, ensure_ascii=False) if payment_method is not None else None
+            if "totalAmount" in data:
+                total = data.get("totalAmount")
+                if total is not None and (
+                    not isinstance(total, dict)
+                    or total.get("unit") in (None, "")
+                    or total.get("value") in (None, "")
+                ):
+                    raise ValidationError("TMF676: if provided, 'totalAmount.unit' and 'totalAmount.value' are mandatory.")
+                vals["total_amount_json"] = json.dumps(total, ensure_ascii=False) if total is not None else None
+            if "channel" in data:
+                vals["channel_json"] = json.dumps(data.get("channel"), ensure_ascii=False) if data.get("channel") is not None else None
+            if "paymentItem" in data:
+                vals["payment_item_json"] = json.dumps(data.get("paymentItem"), ensure_ascii=False) if data.get("paymentItem") is not None else None
+
+            if vals:
+                rec.sudo().write(vals)
+
+            host_url = request.httprequest.host_url.rstrip("/")
+            return _json_response(rec.to_tmf_json(host_url=host_url), status=200)
+        except ValidationError as ve:
+            return _json_response({"error": str(ve)}, status=400)
+        except Exception as e:
+            return _json_response({"error": str(e)}, status=400)
+
+    # DELETE /payment/{id}
+    @http.route(f"{API_BASE}/payment/<string:tmf_id>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    def delete_payment(self, tmf_id, **params):
+        rec = request.env["tmf.payment"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
+        if not rec:
+            return _json_response({"error": "Not found"}, status=404)
+        rec.unlink()
+        return request.make_response("", status=204)

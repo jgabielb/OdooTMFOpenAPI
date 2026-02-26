@@ -79,7 +79,7 @@ def _publish_event(event_type, payment_method_dict):
     The spec shows event envelope structure. :contentReference[oaicite:11]{index=11}
     """
     Hub = request.env["tmf.hub.subscription"].sudo()
-    hubs = Hub.search([("api_name", "=", "TMF670"), ("is_active", "=", True)])
+    hubs = Hub.search([("api_name", "=", "TMF670")])
     if not hubs:
         return
 
@@ -235,7 +235,6 @@ class TMF670HubController(http.Controller):
                 "api_name": "TMF670",
                 "callback": cb,
                 "query": query,
-                "is_active": True,
             })
             # spec example returns 201 + Location header. :contentReference[oaicite:13]{index=13}
             headers = [("Location", f"{HUB_PATH}/{rec.id}")]

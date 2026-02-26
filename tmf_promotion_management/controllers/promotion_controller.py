@@ -88,19 +88,21 @@ class TMF671PromotionController(http.Controller):
             raise ValidationError("Hub: 'callback' is mandatory.")
 
         hub = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf671-promotion-{callback}",
+            "api_name": "promotion",
             "callback": callback,
             "query": payload.get("query"),
-            "api_name": "TMF671",
-            "api_base": API_BASE,
+            "event_type": "any",
+            "content_type": "application/json",
         })
-        location = f"{API_BASE}/hub/{hub.tmf_id}"
-        body = {"id": hub.tmf_id, "callback": hub.callback, "query": hub.query}
+        location = f"{API_BASE}/hub/{hub.id}"
+        body = {"id": str(hub.id), "callback": hub.callback, "query": hub.query}
         return _json_response(body, status=201, headers=[("Location", location)])
 
     @http.route(f"{API_BASE}/hub/<string:hub_id>", type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_hub(self, hub_id, **kwargs):
-        hub = request.env["tmf.hub.subscription"].sudo().search([("tmf_id", "=", hub_id)], limit=1)
-        if not hub:
+        hub = request.env["tmf.hub.subscription"].sudo().browse(int(hub_id)) if str(hub_id).isdigit() else None
+        if not hub or not hub.exists():
             return request.make_response("", status=204)
         hub.unlink()
         return request.make_response("", status=204)

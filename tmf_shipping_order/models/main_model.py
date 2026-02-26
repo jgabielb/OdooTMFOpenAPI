@@ -24,6 +24,8 @@ class TMFShippingOrder(models.Model):
     related_shipment = fields.Json(default=list)
     place = fields.Json(default=list)
     extra_json = fields.Json(default=dict)
+    partner_id = fields.Many2one("res.partner", string="Customer", copy=False, index=True)
+    picking_id = fields.Many2one("stock.picking", string="Delivery Picking", copy=False, index=True)
 
     @staticmethod
     def _now_iso():
@@ -83,6 +85,64 @@ class TMFShippingOrder(models.Model):
         except Exception:
             pass
 
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        entries = self.related_party if isinstance(self.related_party, list) else []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            pid = str(entry.get("id") or "").strip()
+            pname = str(entry.get("name") or "").strip()
+            if pid and "tmf_id" in Partner._fields:
+                partner = Partner.search([("tmf_id", "=", pid)], limit=1)
+                if partner:
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+                create_vals = {"name": pname}
+                if pid and "tmf_id" in Partner._fields:
+                    create_vals["tmf_id"] = pid
+                return Partner.create(create_vals)
+        return Partner
+
+    def _resolve_picking(self):
+        self.ensure_one()
+        Picking = self.env["stock.picking"].sudo()
+        candidates = []
+        if self.external_id:
+            candidates.append(self.external_id)
+        if self.tmf_id:
+            candidates.append(self.tmf_id)
+        for rel in self.related_shipment or []:
+            if isinstance(rel, dict):
+                rid = str(rel.get("id") or "").strip()
+                if rid:
+                    candidates.append(rid)
+        for token in candidates:
+            picking = Picking.search(
+                ["|", ("origin", "=", token), ("name", "=", token)],
+                limit=1,
+                order="id desc",
+            )
+            if picking:
+                return picking
+        return Picking
+
+    def _sync_odoo_links(self):
+        for rec in self:
+            vals = {}
+            partner = rec._resolve_partner()
+            if partner and rec.partner_id != partner:
+                vals["partner_id"] = partner.id
+            picking = rec._resolve_picking()
+            if picking and rec.picking_id != picking:
+                vals["picking_id"] = picking.id
+            if vals:
+                rec.with_context(skip_tmf700_sync=True).write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -90,6 +150,7 @@ class TMFShippingOrder(models.Model):
             vals.setdefault("creation_date", created)
             vals.setdefault("status_change_date", vals.get("status_change_date") or created)
         recs = super().create(vals_list)
+        recs._sync_odoo_links()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -100,6 +161,8 @@ class TMFShippingOrder(models.Model):
         if "state" in vals and "status_change_date" not in vals:
             vals["status_change_date"] = self._now_iso()
         res = super().write(vals)
+        if not self.env.context.get("skip_tmf700_sync"):
+            self._sync_odoo_links()
         for rec in self:
             self._notify("update", rec)
             if "state" in vals and previous.get(rec.id) != rec.state:
