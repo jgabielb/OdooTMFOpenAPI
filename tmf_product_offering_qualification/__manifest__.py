@@ -8,7 +8,8 @@
         'base',
         'web',
         'tmf_base', # Critical: Required for tmf.model.mixin
-        'tmf_product_catalog' # Optional: if you link to products
+        'tmf_product_catalog', # Optional: if you link to products
+        'sale',
     ],
     'data': [
         'security/ir.model.access.csv',
