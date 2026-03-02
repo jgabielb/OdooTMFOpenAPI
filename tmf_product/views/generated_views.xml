@@ -11,7 +11,7 @@
                                 type="object"
                                 class="oe_stat_button"
                                 icon="fa-refresh"
-                                string="Create/Sync Odoo Product"/>
+                                string="Re-sync Odoo Product"/>
                     </div>
 
                     <group string="Sales Mapping" col="2">

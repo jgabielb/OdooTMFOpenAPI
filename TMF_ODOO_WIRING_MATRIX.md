@@ -125,6 +125,31 @@ This matrix defines where TMF resources should anchor in native Odoo apps so we 
     - `calendar.event` (`calendar_event_id`)
     - `res.partner` (`partner_id`) resolved from `relatedParty`
   - Appointment create/update now synchronizes schedule/title/description into native calendar events.
+- TMF product sync UX adjusted:
+  - TMF product to Odoo product synchronization remains automatic on create/write.
+  - Manual form action is now explicitly labeled as re-sync (`Re-sync Odoo Product`) for recovery/maintenance use.
+- Geographic wiring improved:
+  - TMF673 GeographicAddress now supports internal linkage to:
+    - `res.partner` (`partner_id`)
+    - `tmf.geographic.location` (`geographic_location_id`) resolved from `geographicLocation.id` when provided.
+  - TMF674 GeographicSite now supports internal linkage to:
+    - `res.partner` (`partner_id`) resolved from `relatedParty`
+    - `tmf.geographic.address` (`geographic_address_id`) resolved from `place.id`
+    - `stock.location` (`stock_location_id`) resolved by name.
+  - TMF675 GeographicLocation now supports internal linkage to:
+    - `stock.location` (`stock_location_id`) resolved by name.
+- Pre-order flow wiring improved:
+  - TMF663 ShoppingCart (`tmf_shopping_cart`):
+    - now supports internal linkage to `res.partner` (`partner_id`) resolved from `relatedParty`.
+    - now supports internal linkage to draft `sale.order` (`sale_order_id`) using `client_order_ref = tmf_id` when partner is available.
+  - TMF645 ServiceQualification (`tmf_service_qualification`):
+    - now supports internal linkage to `res.partner` (`partner_id`) resolved from `relatedParty`.
+    - now supports internal linkage to `product.template` (`product_tmpl_id`) inferred from linked service specification.
+    - now supports internal linkage to draft `sale.order` (`sale_order_id`) with `client_order_ref = tmf_id`.
+  - TMF679 ProductOfferingQualification (`tmf_product_offering_qualification`):
+    - Query and Check resources now support internal linkage to `res.partner` (`partner_id`) resolved from `relatedParty`.
+    - Query and Check resources now support internal linkage to `product.template` (`product_tmpl_id`) inferred from search criteria and qualification item product references.
+    - Query and Check resources now support internal linkage to draft `sale.order` (`sale_order_id`) with `client_order_ref = tmf_id`.
 
 ## Latest Additions
 

@@ -102,6 +102,86 @@ class TMFQueryProductOfferingQualification(models.Model):
 
     # CTK wants array
     related_party_json = fields.Json(string="relatedParty", default=list)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Draft Sale Order", ondelete="set null")
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        if self.partner_id and self.partner_id.exists():
+            return self.partner_id
+        parties = _as_arr(self.related_party_json, default=[])
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            pname = party.get("name")
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return Partner.browse([])
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id and self.product_tmpl_id.exists():
+            return self.product_tmpl_id
+
+        criteria = _as_obj(self.search_criteria_json, default={})
+        candidates = [
+            criteria.get("id"),
+            (criteria.get("productOffering") or {}).get("id") if isinstance(criteria.get("productOffering"), dict) else None,
+            (criteria.get("product") or {}).get("id") if isinstance(criteria.get("product"), dict) else None,
+        ]
+        for cid in candidates:
+            if not cid:
+                continue
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(cid))], limit=1)
+            if not tmpl and str(cid).isdigit():
+                tmpl = ProductTmpl.browse(int(cid))
+            if tmpl and tmpl.exists():
+                return tmpl
+        return ProductTmpl.browse([])
+
+    def _sync_odoo_links(self):
+        SaleOrder = self.env["sale.order"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner and partner.exists() and rec.partner_id != partner:
+                rec.partner_id = partner.id
+
+            tmpl = rec._resolve_product_template()
+            if tmpl and tmpl.exists() and rec.product_tmpl_id != tmpl:
+                rec.product_tmpl_id = tmpl.id
+
+            try:
+                if rec.sale_order_id and rec.sale_order_id.exists():
+                    continue
+                if not rec.partner_id:
+                    continue
+                so = SaleOrder.search(
+                    [("partner_id", "=", rec.partner_id.id), ("state", "=", "draft"), ("client_order_ref", "=", rec.tmf_id)],
+                    limit=1,
+                )
+                if not so:
+                    so = SaleOrder.create(
+                        {
+                            "partner_id": rec.partner_id.id,
+                            "client_order_ref": rec.tmf_id,
+                            "origin": f"TMF679-Query:{rec.tmf_id}",
+                        }
+                    )
+                rec.sale_order_id = so.id
+            except Exception:
+                pass
 
     state = fields.Selection(
         [
@@ -157,7 +237,9 @@ class TMFQueryProductOfferingQualification(models.Model):
             desc = vals.get("description")
             vals["description"] = desc if isinstance(desc, str) else (desc or "")
 
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._sync_odoo_links()
+        return recs
 
     def write(self, vals):
         if "search_criteria_json" in vals:
@@ -178,7 +260,10 @@ class TMFQueryProductOfferingQualification(models.Model):
             desc = vals.get("description")
             vals["description"] = desc if isinstance(desc, str) else (desc or "")
 
-        return super().write(vals)
+        res = super().write(vals)
+        if any(k in vals for k in ("related_party_json", "search_criteria_json", "partner_id", "product_tmpl_id", "sale_order_id")):
+            self._sync_odoo_links()
+        return res
 
     @api.model
     def create_from_json(self, data):
@@ -250,6 +335,81 @@ class TMFCheckProductOfferingQualification(models.Model):
     )
 
     related_party_json = fields.Json(string="relatedParty", default=list)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Draft Sale Order", ondelete="set null")
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        if self.partner_id and self.partner_id.exists():
+            return self.partner_id
+        parties = _as_arr(self.related_party_json, default=[])
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            pname = party.get("name")
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return Partner.browse([])
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        ProductTmpl = self.env["product.template"].sudo()
+        if self.product_tmpl_id and self.product_tmpl_id.exists():
+            return self.product_tmpl_id
+        for item in self.item_ids:
+            prod = _as_obj(item.product_json, default={})
+            pid = prod.get("id")
+            if not pid:
+                continue
+            tmpl = ProductTmpl.search([("tmf_id", "=", str(pid))], limit=1)
+            if not tmpl and str(pid).isdigit():
+                tmpl = ProductTmpl.browse(int(pid))
+            if tmpl and tmpl.exists():
+                return tmpl
+        return ProductTmpl.browse([])
+
+    def _sync_odoo_links(self):
+        SaleOrder = self.env["sale.order"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner and partner.exists() and rec.partner_id != partner:
+                rec.partner_id = partner.id
+
+            tmpl = rec._resolve_product_template()
+            if tmpl and tmpl.exists() and rec.product_tmpl_id != tmpl:
+                rec.product_tmpl_id = tmpl.id
+
+            try:
+                if rec.sale_order_id and rec.sale_order_id.exists():
+                    continue
+                if not rec.partner_id:
+                    continue
+                so = SaleOrder.search(
+                    [("partner_id", "=", rec.partner_id.id), ("state", "=", "draft"), ("client_order_ref", "=", rec.tmf_id)],
+                    limit=1,
+                )
+                if not so:
+                    so = SaleOrder.create(
+                        {
+                            "partner_id": rec.partner_id.id,
+                            "client_order_ref": rec.tmf_id,
+                            "origin": f"TMF679-Check:{rec.tmf_id}",
+                        }
+                    )
+                rec.sale_order_id = so.id
+            except Exception:
+                pass
 
     def _compute_href(self):
         base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
@@ -314,6 +474,7 @@ class TMFCheckProductOfferingQualification(models.Model):
                 "state": item_data.get("state", "done"),
             })
 
+        record._sync_odoo_links()
         return record
 
     @api.model_create_multi
@@ -326,6 +487,7 @@ class TMFCheckProductOfferingQualification(models.Model):
                 vals["description"] = desc if isinstance(desc, str) else (desc or "")
 
         recs = super().create(vals_list)
+        recs._sync_odoo_links()
         for rec in recs:
             rec._notify("checkProductOfferingQualification", "create")
         return recs
@@ -339,6 +501,8 @@ class TMFCheckProductOfferingQualification(models.Model):
 
         old_states = {rec.id: rec.state for rec in self} if "state" in vals else {}
         res = super().write(vals)
+        if any(k in vals for k in ("related_party_json", "partner_id", "product_tmpl_id", "sale_order_id")):
+            self._sync_odoo_links()
         for rec in self:
             if "state" in vals and vals["state"] != old_states.get(rec.id):
                 rec._notify("checkProductOfferingQualification", "stateChange")

@@ -42,8 +42,41 @@ class TMFPartyInteraction(models.Model):
     interaction_relationship = fields.Json(string="interactionRelationship")
     note = fields.Json(string="note")
     related_party = fields.Json(string="relatedParty")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     tmf_type = fields.Char(string="@type", required=True, default="PartyInteraction")
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        parties = _as_list(self.related_party)
+        if not parties:
+            return self.env["res.partner"]
+
+        Partner = self.env["res.partner"].sudo()
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            pname = party.get("name")
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return self.env["res.partner"]
+
+    def _sync_partner_link(self):
+        for rec in self:
+            if rec.partner_id and rec.partner_id.exists():
+                continue
+            partner = rec._resolve_partner_from_related_party()
+            if partner and partner.exists():
+                rec.partner_id = partner.id
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -102,11 +135,14 @@ class TMFPartyInteraction(models.Model):
         for vals in vals_list:
             vals.setdefault("tmf_id", str(uuid.uuid4()))
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "related_party" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         self._notify("update")
         return res
 

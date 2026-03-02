@@ -97,15 +97,35 @@ class TMFCustomer(models.Model):
         # Party Logic: If generic "party" or "engagedParty" is provided
         party_data = data.get("party") or data.get("engagedParty")
         
-        if party_data and 'id' in party_data:
-            # 1. Try to find existing Partner by TMF ID
-            partner = self.env['res.partner'].sudo().search([('tmf_id', '=', party_data['id'])], limit=1)
-            
-            # 2. If not found, try by Odoo ID
-            if not partner and party_data['id'].isdigit():
-                partner = self.env['res.partner'].sudo().browse(int(party_data['id']))
-            
-            if partner.exists():
+        if party_data:
+            partner = self.env['res.partner']
+            party_id = party_data.get("id")
+            party_name = party_data.get("name")
+
+            if party_id:
+                # 1. Try to find existing partner by TMF id
+                partner = self.env['res.partner'].sudo().search([('tmf_id', '=', str(party_id))], limit=1)
+                # 2. Fallback to native numeric partner id
+                if not partner and str(party_id).isdigit():
+                    partner = self.env['res.partner'].sudo().browse(int(party_id))
+                    if not partner.exists():
+                        partner = self.env['res.partner']
+
+            # 3. Fallback by name when id is absent/unresolved
+            if not partner and party_name:
+                partner = self.env['res.partner'].sudo().search([('name', '=', party_name)], limit=1)
+
+            # 4. Create partner as last resort when engagedParty is present
+            if not partner:
+                create_vals = {'name': party_name or vals.get('name') or data.get('name') or 'TMF Customer'}
+                if party_id:
+                    create_vals['tmf_id'] = str(party_id)
+                partner = self.env['res.partner'].sudo().create(create_vals)
+
+            if partner and partner.exists():
+                # Keep a stable external link when payload includes an external party id
+                if party_id and not partner.tmf_id:
+                    partner.sudo().write({'tmf_id': str(party_id)})
                 vals['partner_id'] = partner.id
         
         # Fallback: If creating and no partner found, create one

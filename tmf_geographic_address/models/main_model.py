@@ -52,6 +52,8 @@ class TMFGeographicAddress(models.Model):
     street_name = fields.Char()
     street_nr = fields.Char()
     street_type = fields.Char()
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    geographic_location_id = fields.Many2one("tmf.geographic.location", string="Geographic Location", ondelete="set null")
 
     # --- Complex structures as JSON ---
     geographic_location_json = fields.Text(string="geographicLocation")        # GeographicLocationRefOrValue
@@ -78,6 +80,54 @@ class TMFGeographicAddress(models.Model):
                 hub._notify_subscribers("geographicAddress", event_name, payload)
             except Exception:
                 continue
+
+    def _safe_json_dict(self, raw):
+        if not raw:
+            return {}
+        if isinstance(raw, dict):
+            return raw
+        try:
+            data = json.loads(raw)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        if self.partner_id and self.partner_id.exists():
+            return self.partner_id
+        if self.name:
+            partner = Partner.search([("name", "=", self.name)], limit=1)
+            if partner:
+                return partner
+        return Partner.browse([])
+
+    def _resolve_geographic_location(self):
+        self.ensure_one()
+        Location = self.env["tmf.geographic.location"].sudo()
+        if self.geographic_location_id and self.geographic_location_id.exists():
+            return self.geographic_location_id
+        geo = self._safe_json_dict(self.geographic_location_json)
+        gid = geo.get("id")
+        if gid:
+            location = Location.search([("tmf_id", "=", str(gid))], limit=1)
+            if location:
+                return location
+            if str(gid).isdigit():
+                location = Location.browse(int(gid))
+                if location.exists():
+                    return location
+        return Location.browse([])
+
+    def _sync_links(self):
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner and partner.exists() and rec.partner_id != partner:
+                rec.partner_id = partner.id
+            location = rec._resolve_geographic_location()
+            if location and location.exists() and rec.geographic_location_id != location:
+                rec.geographic_location_id = location.id
 
     def _href(self):
         # controller will override base, but keep a safe fallback
@@ -124,11 +174,14 @@ class TMFGeographicAddress(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_links()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if any(k in vals for k in ("name", "partner_id", "geographic_location_json", "geographic_location_id")):
+            self._sync_links()
         self._notify("update")
         return res
 

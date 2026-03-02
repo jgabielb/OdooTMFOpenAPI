@@ -34,6 +34,57 @@ class TmfShoppingCart(models.Model):
     cart_total_price_ids = fields.One2many("tmf.shopping.cart.price", "cart_id", string="cartTotalPrice")
     contact_medium_ids = fields.One2many("tmf.contact.medium", "shopping_cart_id", string="contactMedium")
     related_party_ids = fields.One2many("tmf.related.party", "shopping_cart_id", string="relatedParty")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Draft Sale Order", ondelete="set null")
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        if self.partner_id and self.partner_id.exists():
+            return self.partner_id
+        for rp in self.related_party_ids:
+            pid = getattr(rp, "tmf_party_id", None)
+            pname = getattr(rp, "name", None)
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return Partner.browse([])
+
+    def _sync_odoo_links(self):
+        SaleOrder = self.env["sale.order"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            if partner and partner.exists() and rec.partner_id != partner:
+                rec.partner_id = partner.id
+
+            # Keep sale order linkage best-effort and non-blocking for CTK safety.
+            try:
+                if rec.sale_order_id and rec.sale_order_id.exists():
+                    continue
+                if not rec.partner_id:
+                    continue
+                order = SaleOrder.search(
+                    [("partner_id", "=", rec.partner_id.id), ("state", "=", "draft"), ("client_order_ref", "=", rec.tmf_id)],
+                    limit=1,
+                )
+                if not order:
+                    order = SaleOrder.create(
+                        {
+                            "partner_id": rec.partner_id.id,
+                            "client_order_ref": rec.tmf_id,
+                            "origin": f"TMF663:{rec.tmf_id}",
+                        }
+                    )
+                rec.sale_order_id = order.id
+            except Exception:
+                pass
 
     def _notify(self, api_name, action, record):
         try:
@@ -52,6 +103,7 @@ class TmfShoppingCart(models.Model):
             vals.setdefault("last_update", now)
 
         recs = super().create(vals_list)
+        recs._sync_odoo_links()
 
         for rec in recs:
             try:
@@ -65,6 +117,8 @@ class TmfShoppingCart(models.Model):
         vals.setdefault("last_update", fields.Datetime.now())
 
         res = super().write(vals)
+        if "partner_id" in vals or "related_party_ids" in vals:
+            self._sync_odoo_links()
 
         for rec in self:
             try:

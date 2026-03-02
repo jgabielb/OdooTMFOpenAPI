@@ -82,6 +82,85 @@ class ServiceQualification(models.Model):
     # Convenience links (optional; used by your current feasibility demo logic)
     place_id = fields.Many2one("tmf.geographic.address", string="Service Address")
     service_specification_id = fields.Many2one("tmf.product.specification", string="Service Specification")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Draft Sale Order", ondelete="set null")
+
+    def _safe_json_load(self, value, default):
+        if value in (None, False, ""):
+            return default
+        if isinstance(value, (list, dict)):
+            return value
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, type(default)) else default
+        except Exception:
+            return default
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        Partner = self.env["res.partner"].sudo()
+        if self.partner_id and self.partner_id.exists():
+            return self.partner_id
+        parties = self._safe_json_load(self.related_party_json, [])
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            pid = party.get("id")
+            pname = party.get("name")
+            if pid:
+                partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+                if not partner and str(pid).isdigit():
+                    partner = Partner.browse(int(pid))
+                if partner and partner.exists():
+                    return partner
+            if pname:
+                partner = Partner.search([("name", "=", pname)], limit=1)
+                if partner:
+                    return partner
+        return Partner.browse([])
+
+    def _resolve_product_template(self):
+        self.ensure_one()
+        if self.product_tmpl_id and self.product_tmpl_id.exists():
+            return self.product_tmpl_id
+        if self.service_specification_id and hasattr(self.service_specification_id, "product_tmpl_id"):
+            tmpl = self.service_specification_id.product_tmpl_id
+            if tmpl and tmpl.exists():
+                return tmpl
+        return self.env["product.template"]
+
+    def _sync_odoo_links(self):
+        SaleOrder = self.env["sale.order"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner and partner.exists() and rec.partner_id != partner:
+                rec.partner_id = partner.id
+
+            tmpl = rec._resolve_product_template()
+            if tmpl and tmpl.exists() and rec.product_tmpl_id != tmpl:
+                rec.product_tmpl_id = tmpl.id
+
+            try:
+                if rec.sale_order_id and rec.sale_order_id.exists():
+                    continue
+                if not rec.partner_id:
+                    continue
+                so = SaleOrder.search(
+                    [("partner_id", "=", rec.partner_id.id), ("state", "=", "draft"), ("client_order_ref", "=", rec.tmf_id)],
+                    limit=1,
+                )
+                if not so:
+                    so = SaleOrder.create(
+                        {
+                            "partner_id": rec.partner_id.id,
+                            "client_order_ref": rec.tmf_id,
+                            "origin": f"TMF645:{rec.tmf_id}",
+                        }
+                    )
+                rec.sale_order_id = so.id
+            except Exception:
+                pass
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -126,6 +205,7 @@ class ServiceQualification(models.Model):
             vals.setdefault("state", "acknowledged")
 
         recs = super().create(vals_list)
+        recs._sync_odoo_links()
 
         # If sync requested, complete immediately
         for rec in recs:
@@ -142,6 +222,17 @@ class ServiceQualification(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        if any(
+            k in vals
+            for k in (
+                "related_party_json",
+                "partner_id",
+                "service_specification_id",
+                "product_tmpl_id",
+                "sale_order_id",
+            )
+        ):
+            self._sync_odoo_links()
         self._notify("update")
         return res
 

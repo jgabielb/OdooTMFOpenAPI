@@ -100,6 +100,27 @@ def _create_product_offering_ref(po_dict):
     }).id
 
 
+def _resolve_partner_from_related_party(related_party):
+    parties = related_party if isinstance(related_party, list) else []
+    Partner = request.env["res.partner"].sudo()
+    for party in parties:
+        if not isinstance(party, dict):
+            continue
+        pid = party.get("id")
+        pname = party.get("name")
+        if pid:
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner.id
+        if pname:
+            partner = Partner.search([("name", "=", pname)], limit=1)
+            if partner:
+                return partner.id
+    return False
+
+
 class TMFShoppingCartController(http.Controller):
 
     @http.route(BASE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
@@ -146,6 +167,7 @@ class TMFShoppingCartController(http.Controller):
                 # keep these optional; avoid type problems
                 "tmf_base_type": payload.get("@baseType") or False,
                 "tmf_schema_location": payload.get("@schemaLocation") or False,
+                "partner_id": _resolve_partner_from_related_party(payload.get("relatedParty")),
             })
 
             # cartItem optional

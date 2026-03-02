@@ -14,6 +14,7 @@ class TMFPartyRole(models.Model):
     role = fields.Char(string="role")
     status = fields.Char(string="status")
     status_reason = fields.Char(string="statusReason")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     # Store complex substructures as JSON (string) to keep controller simple & CTK-friendly
     engaged_party_json = fields.Text(string="engagedParty", required=True)
@@ -26,6 +27,38 @@ class TMFPartyRole(models.Model):
     payment_method_json = fields.Text(string="paymentMethod")
     related_party_json = fields.Text(string="relatedParty")
     valid_for_json = fields.Text(string="validFor")
+
+    def _resolve_partner_from_payload(self):
+        self.ensure_one()
+        party = self._loads(self.engaged_party_json)
+        if not isinstance(party, dict):
+            return self.env["res.partner"]
+
+        pid = party.get("id")
+        pname = party.get("name")
+        Partner = self.env["res.partner"].sudo()
+
+        if pid:
+            partner = Partner.search([("tmf_id", "=", str(pid))], limit=1)
+            if not partner and str(pid).isdigit():
+                partner = Partner.browse(int(pid))
+            if partner and partner.exists():
+                return partner
+
+        if pname:
+            partner = Partner.search([("name", "=", pname)], limit=1)
+            if partner:
+                return partner
+
+        return self.env["res.partner"]
+
+    def _sync_partner_link(self):
+        for rec in self:
+            if rec.partner_id and rec.partner_id.exists():
+                continue
+            partner = rec._resolve_partner_from_payload()
+            if partner and partner.exists():
+                rec.partner_id = partner.id
 
     def _get_tmf_api_path(self):
         # Base resource path must be /partyRole in this API. :contentReference[oaicite:9]{index=9}
@@ -80,12 +113,15 @@ class TMFPartyRole(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         for rec in recs:
             self._notify("partyRole", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "engaged_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         for rec in self:
             self._notify("partyRole", "update", rec)
         return res
