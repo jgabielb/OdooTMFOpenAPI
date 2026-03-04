@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from odoo import api, fields, models
 
 
@@ -18,6 +19,10 @@ def _loads(value):
 
 def _compact(payload):
     return {k: v for k, v in payload.items() if v is not None and v is not False}
+
+
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class TMFGenericResource(models.Model):
@@ -60,6 +65,23 @@ class TMFGenericResource(models.Model):
             payload["@baseType"] = self.base_type
         if self.schema_location:
             payload["@schemaLocation"] = self.schema_location
+
+        if self.resource_type == "alarm":
+            stable_alarm_time = self._tmf_iso_datetime(self.create_date) or _now_iso()
+            payload.setdefault("alarmRaisedTime", stable_alarm_time)
+            payload.setdefault("alarmType", "processingErrorAlarm")
+            payload.setdefault(
+                "alarmedObject",
+                {
+                    "id": "unknown-resource",
+                    "href": "/tmf-api/resourceInventoryManagement/v4/resource/unknown-resource",
+                },
+            )
+            payload.setdefault("perceivedSeverity", "MAJOR")
+            payload.setdefault("probableCause", "thresholdCrossed")
+            payload.setdefault("sourceSystemId", "odoo")
+            payload.setdefault("state", self.state or "raised")
+
         return _compact(payload)
 
     def from_tmf_json(self, data, resource_type=None, partial=False):

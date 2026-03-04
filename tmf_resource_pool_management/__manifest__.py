@@ -3,7 +3,7 @@
     "version": "19.0.1.0.0",
     "summary": "TMF685 Resource Pool Management API (CTK-oriented)",
     "category": "TMF Open API",
-    "depends": ["tmf_base"],
+    "depends": ["tmf_base", "product", "stock"],
     "data": [
         "security/ir.model.access.csv",
         "views/capacity_specification_views.xml",

@@ -9,6 +9,17 @@ def _rfc3339_now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
+def _safe_date(value):
+    if not value:
+        return False
+    # Odoo may carry booleans for unset/invalid datetime values; guard before .date()
+    if isinstance(value, bool):
+        return False
+    if hasattr(value, "date"):
+        return value.date()
+    return False
+
+
 # ------------------------------------------------------------
 # Sub-resources
 # ------------------------------------------------------------
@@ -285,7 +296,7 @@ class TMFResourceOrder(models.Model):
                 "name": rec.name or rec.description or f"TMF ResourceOrder {rec.tmf_id}",
                 "description": rec.description or "",
                 "partner_id": partner.id if partner and partner.exists() else False,
-                "date_deadline": rec.requestedCompletionDate.date() if rec.requestedCompletionDate else False,
+                "date_deadline": _safe_date(rec.requestedCompletionDate),
             }
             if project:
                 task_vals["project_id"] = project.id
@@ -347,13 +358,20 @@ class TMFResourceOrder(models.Model):
 
         recs = super().create(vals_list)
         recs._compute_href()
-        recs._sync_fulfillment_records()
+        try:
+            recs._sync_fulfillment_records()
+        except Exception:
+            # Fulfillment sync should never break TMF API create flow.
+            pass
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
-        self._sync_fulfillment_records()
+        try:
+            self._sync_fulfillment_records()
+        except Exception:
+            pass
         self._notify("update")
         return res
 

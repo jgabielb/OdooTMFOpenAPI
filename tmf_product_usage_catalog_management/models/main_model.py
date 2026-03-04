@@ -33,9 +33,23 @@ class TMFProductUsageSpecification(models.Model):
     tmf_type_value = fields.Char(string="@type")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/productUsageCatalogManagement/v5/productUsageSpecification"
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -83,6 +97,7 @@ class TMFProductUsageSpecification(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_product_link()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -90,6 +105,8 @@ class TMFProductUsageSpecification(models.Model):
     def write(self, vals):
         lifecycle_changed = "lifecycle_status" in vals
         res = super().write(vals)
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         for rec in self:
             self._notify("update", rec)
             if lifecycle_changed:

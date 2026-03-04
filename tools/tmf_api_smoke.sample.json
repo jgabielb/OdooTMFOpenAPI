@@ -10,6 +10,22 @@
   "vars": {
     "partner_id": "1"
   },
+  "scenario_defaults": {
+    "list_fields_enabled": true,
+    "list_fields_query": "fields=id",
+    "list_fields_expected_status": [200],
+    "get_by_id_fields_enabled": true,
+    "get_by_id_fields_query": "fields=id",
+    "get_by_id_fields_expected_status": [200],
+    "list_by_id_filter_enabled": true,
+    "list_by_id_filter_param": "id",
+    "list_by_id_filter_expected_status": [200],
+    "not_found_enabled": true,
+    "not_found_suffix": "-missing",
+    "not_found_expected_status": [400, 404],
+    "verify_deleted_enabled": false,
+    "verify_deleted_expected_status": [404]
+  },
   "tests": [
     {
       "name": "TMF629 Customer",

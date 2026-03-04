@@ -139,17 +139,38 @@ class TMFOrderingController(http.Controller):
 
     def _resolve_order_line_product(self, item, fallback_product):
         odoo_prod = fallback_product
-        po = item.get("productOffering") if isinstance(item, dict) else None
-        po_id = po.get("id") if isinstance(po, dict) else None
-        if not po_id:
+        if not isinstance(item, dict):
             return odoo_prod
 
         ProductTemplate = request.env["product.template"].sudo()
-        tmpl = ProductTemplate.search([("tmf_id", "=", str(po_id))], limit=1)
-        if not tmpl and str(po_id).isdigit():
-            tmpl = ProductTemplate.browse(int(po_id))
-        if tmpl and tmpl.exists() and tmpl.product_variant_id:
-            return tmpl.product_variant_id
+        TMFProduct = request.env["tmf.product"].sudo()
+
+        # 1) Preferred path: ProductOfferingRef -> product.template(tmf_id) -> variant
+        po = item.get("productOffering")
+        po_id = po.get("id") if isinstance(po, dict) else None
+        if po_id:
+            tmpl = ProductTemplate.search([("tmf_id", "=", str(po_id))], limit=1)
+            if not tmpl and str(po_id).isdigit():
+                tmpl = ProductTemplate.browse(int(po_id))
+            if tmpl and tmpl.exists() and tmpl.product_variant_id:
+                return tmpl.product_variant_id
+
+        # 2) Secondary path: ProductRefOrValue -> tmf.product(tmf_id) -> linked odoo product
+        prod = item.get("product")
+        prod_id = prod.get("id") if isinstance(prod, dict) else None
+        if prod_id:
+            tmf_prod = TMFProduct.search([("tmf_id", "=", str(prod_id))], limit=1)
+            if not tmf_prod and str(prod_id).isdigit():
+                tmf_prod = TMFProduct.browse(int(prod_id))
+            if tmf_prod and tmf_prod.exists():
+                if "odoo_product_id" in tmf_prod._fields and tmf_prod.odoo_product_id:
+                    return tmf_prod.odoo_product_id
+                # Last chance for legacy links by name
+                tmpl = ProductTemplate.search([("name", "=", tmf_prod.name)], limit=1)
+                if tmpl and tmpl.exists() and tmpl.product_variant_id:
+                    return tmpl.product_variant_id
+
+        # 3) CTK-safe fallback
         return odoo_prod
 
     def _absolute_location(self, href, fallback_id=None):

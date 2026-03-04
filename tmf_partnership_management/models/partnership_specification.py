@@ -12,10 +12,24 @@ class TMFPartnershipSpecification(models.Model):
     name = fields.Char(required=True)
     description = fields.Text()
     role_specification_json = fields.Text(string="roleSpecification")  # list of objects as JSON string
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     _sql_constraints = [
         ("tmf_id_unique", "unique(tmf_id)", "TMF id must be unique."),
     ]
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def _to_tmf_json(self):
         return {
@@ -47,11 +61,14 @@ class TMFPartnershipSpecification(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_product_link()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         self._notify("update")
         return res
 

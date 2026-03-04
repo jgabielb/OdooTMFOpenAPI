@@ -6,6 +6,7 @@ from odoo.http import request
 
 # TMF936 CTK base URL is /tmf-api/openGatewayOperateAPI/v5
 API_BASE = "/tmf-api/openGatewayOperateAPI/v5"
+API_BASE_ALT = "/tmf-api/openGatewayOperateAPIProductCatalog/v5"
 
 RESOURCES = {
     "productOffering": {
@@ -107,6 +108,12 @@ def _guess_api_name(query):
     return "productOffering"
 
 
+def _alias(path):
+    if path.startswith(API_BASE):
+        return [path, path.replace(API_BASE, API_BASE_ALT, 1)]
+    return [path]
+
+
 class TMF936Controller(http.Controller):
     def _ensure_seed_record(self, api_name):
         cfg = RESOURCES[api_name]
@@ -185,23 +192,23 @@ class TMF936Controller(http.Controller):
             return _error(404, f"{api_name} {rid} not found")
         return _json_response(_fields_filter(_normalize_payload(api_name, rec.to_tmf_json()), params.get("fields")), status=200)
 
-    @http.route(RESOURCES["productOffering"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["productOffering"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_product_offering(self, **params):
         return self._list("productOffering", **params)
 
-    @http.route(f"{RESOURCES['productOffering']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['productOffering']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_product_offering(self, rid, **params):
         return self._get("productOffering", rid, **params)
 
-    @http.route(RESOURCES["productSpecification"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["productSpecification"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_product_specification(self, **params):
         return self._list("productSpecification", **params)
 
-    @http.route(f"{RESOURCES['productSpecification']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['productSpecification']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_product_specification(self, rid, **params):
         return self._get("productSpecification", rid, **params)
 
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/hub", f"{API_BASE_ALT}/hub"], type="http", auth="public", methods=["POST"], csrf=False)
     def register_listener(self, **_params):
         data = _parse_json()
         if not isinstance(data, dict):
@@ -223,14 +230,14 @@ class TMF936Controller(http.Controller):
         )
         return _json_response(_subscription_json(rec), status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([f"{API_BASE}/hub/<string:sid>", f"{API_BASE_ALT}/hub/<string:sid>"], type="http", auth="public", methods=["GET"], csrf=False)
     def get_listener(self, sid, **_params):
         rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
         if not rec or not rec.exists() or rec.api_name not in RESOURCES:
             return _error(404, f"Hub subscription {sid} not found")
         return _json_response(_subscription_json(rec), status=200)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    @http.route([f"{API_BASE}/hub/<string:sid>", f"{API_BASE_ALT}/hub/<string:sid>"], type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_listener(self, sid, **_params):
         rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
         if not rec or not rec.exists() or rec.api_name not in RESOURCES:
@@ -244,18 +251,18 @@ class TMF936Controller(http.Controller):
             return _error(400, "Invalid JSON body")
         return request.make_response("", status=204)
 
-    @http.route(f"{API_BASE}/listener/productOfferingAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/listener/productOfferingAttributeValueChangeEvent", f"{API_BASE_ALT}/listener/productOfferingAttributeValueChangeEvent"], type="http", auth="public", methods=["POST"], csrf=False)
     def listen_product_offering_change(self, **_params):
         return self._listener_ok()
 
-    @http.route(f"{API_BASE}/listener/productOfferingCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/listener/productOfferingCreateEvent", f"{API_BASE_ALT}/listener/productOfferingCreateEvent"], type="http", auth="public", methods=["POST"], csrf=False)
     def listen_product_offering_create(self, **_params):
         return self._listener_ok()
 
-    @http.route(f"{API_BASE}/listener/productOfferingDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/listener/productOfferingDeleteEvent", f"{API_BASE_ALT}/listener/productOfferingDeleteEvent"], type="http", auth="public", methods=["POST"], csrf=False)
     def listen_product_offering_delete(self, **_params):
         return self._listener_ok()
 
-    @http.route(f"{API_BASE}/listener/productOfferingStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/listener/productOfferingStateChangeEvent", f"{API_BASE_ALT}/listener/productOfferingStateChangeEvent"], type="http", auth="public", methods=["POST"], csrf=False)
     def listen_product_offering_state(self, **_params):
         return self._listener_ok()

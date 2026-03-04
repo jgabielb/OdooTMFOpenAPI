@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 import json
 
 API_BASE = "/tmf-api/userRolePermissionManagement/v4"
+ALT_BASES = ["/userrolepermission/v4"]
 
 
 # -------------------- helpers --------------------
@@ -75,7 +76,10 @@ def _ensure_href(rec, resource_name):
 class TMF672Controller(http.Controller):
 
     # ---------------- Permission ----------------
-    @http.route(f"{API_BASE}/permission", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/permission", f"{API_BASE}/Permission"] + [f"{b}/permission" for b in ALT_BASES] + [f"{b}/Permission" for b in ALT_BASES],
+        type="http", auth="public", methods=["GET"], csrf=False
+    )
     def list_permission(self, **query):
         return _safe(lambda: self._list_permission_impl(**query))
 
@@ -109,7 +113,12 @@ class TMF672Controller(http.Controller):
 
         return _json_response(out, status=200)
 
-    @http.route(f"{API_BASE}/permission/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/permission/<string:rid>", f"{API_BASE}/Permission/<string:rid>"]
+        + [f"{b}/permission/<string:rid>" for b in ALT_BASES]
+        + [f"{b}/Permission/<string:rid>" for b in ALT_BASES],
+        type="http", auth="public", methods=["GET"], csrf=False
+    )
     def get_permission(self, rid, **query):
         return _safe(lambda: self._get_permission_impl(rid, **query))
 
@@ -122,7 +131,10 @@ class TMF672Controller(http.Controller):
         payload = rec.tmf_to_payload(api_base_path=API_BASE)
         return _json_response(_apply_fields_filter(payload, query.get("fields")), status=200)
 
-    @http.route(f"{API_BASE}/permission", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/permission", f"{API_BASE}/Permission"] + [f"{b}/permission" for b in ALT_BASES] + [f"{b}/Permission" for b in ALT_BASES],
+        type="http", auth="public", methods=["POST"], csrf=False
+    )
     def post_permission(self, **_kw):
         return _safe(lambda: self._post_permission_impl())
 
@@ -132,7 +144,12 @@ class TMF672Controller(http.Controller):
         _ensure_href(rec, "permission")
         return _json_response(rec.tmf_to_payload(api_base_path=API_BASE), status=201)
 
-    @http.route(f"{API_BASE}/permission/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/permission/<string:rid>", f"{API_BASE}/Permission/<string:rid>"]
+        + [f"{b}/permission/<string:rid>" for b in ALT_BASES]
+        + [f"{b}/Permission/<string:rid>" for b in ALT_BASES],
+        type="http", auth="public", methods=["PATCH"], csrf=False
+    )
     def patch_permission(self, rid, **_kw):
         return _safe(lambda: self._patch_permission_impl(rid))
 
@@ -168,7 +185,10 @@ class TMF672Controller(http.Controller):
         return _json_response(rec.tmf_to_payload(api_base_path=API_BASE), status=200)
 
     # ---------------- UserRole ----------------
-    @http.route(f"{API_BASE}/userRole", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/userRole", f"{API_BASE}/UserRole"] + [f"{b}/userRole" for b in ALT_BASES] + [f"{b}/UserRole" for b in ALT_BASES],
+        type="http", auth="public", methods=["GET"], csrf=False
+    )
     def list_user_role(self, **query):
         return _safe(lambda: self._list_user_role_impl(**query))
 
@@ -194,7 +214,12 @@ class TMF672Controller(http.Controller):
 
         return _json_response(out, status=200)
 
-    @http.route(f"{API_BASE}/userRole/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/userRole/<string:rid>", f"{API_BASE}/UserRole/<string:rid>"]
+        + [f"{b}/userRole/<string:rid>" for b in ALT_BASES]
+        + [f"{b}/UserRole/<string:rid>" for b in ALT_BASES],
+        type="http", auth="public", methods=["GET"], csrf=False
+    )
     def get_user_role(self, rid, **query):
         return _safe(lambda: self._get_user_role_impl(rid, **query))
 
@@ -207,7 +232,10 @@ class TMF672Controller(http.Controller):
         payload = rec.tmf_to_payload(api_base_path=API_BASE)
         return _json_response(_apply_fields_filter(payload, query.get("fields")), status=200)
 
-    @http.route(f"{API_BASE}/userRole", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/userRole", f"{API_BASE}/UserRole"] + [f"{b}/userRole" for b in ALT_BASES] + [f"{b}/UserRole" for b in ALT_BASES],
+        type="http", auth="public", methods=["POST"], csrf=False
+    )
     def post_user_role(self, **_kw):
         return _safe(lambda: self._post_user_role_impl())
 
@@ -217,7 +245,12 @@ class TMF672Controller(http.Controller):
         _ensure_href(rec, "userRole")
         return _json_response(rec.tmf_to_payload(api_base_path=API_BASE), status=201)
 
-    @http.route(f"{API_BASE}/userRole/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route(
+        [f"{API_BASE}/userRole/<string:rid>", f"{API_BASE}/UserRole/<string:rid>"]
+        + [f"{b}/userRole/<string:rid>" for b in ALT_BASES]
+        + [f"{b}/UserRole/<string:rid>" for b in ALT_BASES],
+        type="http", auth="public", methods=["PATCH"], csrf=False
+    )
     def patch_user_role(self, rid, **_kw):
         return _safe(lambda: self._patch_user_role_impl(rid))
 

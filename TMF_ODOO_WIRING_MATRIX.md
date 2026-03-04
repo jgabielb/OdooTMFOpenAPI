@@ -150,6 +150,152 @@ This matrix defines where TMF resources should anchor in native Odoo apps so we 
     - Query and Check resources now support internal linkage to `res.partner` (`partner_id`) resolved from `relatedParty`.
     - Query and Check resources now support internal linkage to `product.template` (`product_tmpl_id`) inferred from search criteria and qualification item product references.
     - Query and Check resources now support internal linkage to draft `sale.order` (`sale_order_id`) with `client_order_ref = tmf_id`.
+- Governance and access wiring improved:
+  - TMF651 Agreement (`tmf_agreement`):
+    - `tmf.agreement` now links to `res.partner` via `partner_id` resolved from `engagedParty`.
+  - TMF666 Account (`tmf_account`):
+    - `tmf.account` now links to `res.partner` via `partner_id` resolved from `relatedParty`.
+  - TMF667 Document (`tmf_document`):
+    - `tmf.document` now links to `res.partner` via `partner_id` resolved from `relatedParty`.
+  - TMF662 Entity Catalog (`tmf_entity_catalog`):
+    - `tmf.entity.catalog` and `tmf.entity.specification` now link to `product.template` via `product_tmpl_id` (reuse by TMF id/name or auto-create when missing).
+  - TMF672 User Role Permission (`tmf_user_role_permission`):
+    - `tmf672.user.role` now links to native access-control objects:
+      - `res.groups` via `group_id` (resolved from `involvementRole`)
+      - `res.users` via `user_id`
+    - `tmf672.permission` now links to:
+      - `res.partner` via `user_partner_id` (resolved from TMF `user`)
+      - `res.users` via `user_id` (resolved from linked partner user)
+- Customer engagement and identity wiring improved:
+  - TMF681 Communication Message (`tmf_communication_message`):
+    - `tmf.communication.message` now links to `res.partner` via `partner_id` resolved from TMF `sender`.
+  - TMF717 Customer360 (`tmf_customer360`):
+    - `tmf.customer360` now links to `res.partner` via `partner_id` resolved from `customerRef`, fallback `engagedParty`, then first `relatedParty`.
+  - TMF720 Digital Identity (`tmf_digital_identity_management`):
+    - `tmf.digital.identity` now links to:
+      - `res.partner` via `partner_id` resolved from `individualIdentified`, `partyRoleIdentified`, or first `relatedParty`.
+      - `res.users` via `user_id` resolved from the linked partner.
+- Collaboration and recommendation wiring improved:
+  - TMF668 Partnership (`tmf_partnership_management`):
+    - `tmf.partnership` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `partner`.
+      - `tmf.partnership.specification` via `specification_id` resolved from TMF `specification`.
+    - `tmf.partnership.specification` now links to `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback by name).
+  - TMF680 Recommendation (`tmf_recommendation_management`):
+    - `tmf.query.product.recommendation` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `sale.order` via `sale_order_id` resolved from shopping cart/order references (or partner draft fallback).
+      - `product.template` via `product_tmpl_id` resolved from recommendation item product refs.
+  - TMF727 Service Usage (`tmf_service_usage_management`):
+    - `tmf.service.usage` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `sale.order` via `sale_order_id` resolved from TMF `service.id` mapped to `client_order_ref`.
+- Operations and governance wiring improved:
+  - TMF713 Work Management (`tmf_work_management`):
+    - `tmf.work` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `project.task` via `project_task_id` (reuse by partner/name or auto-create fallback).
+    - `tmf.work.specification` now links to `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback by name).
+  - TMF701 Process Flow (`tmf_process_flow`):
+    - process flow resources (`tmf.process.flow`, `tmf.process.flow.specification`, `tmf.task.flow`, `tmf.task.flow.specification`) now support native links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `project.task` via `project_task_id` (reuse by name/partner or auto-create fallback).
+  - TMF725 Metadata Catalog Management (`tmf_metadata_catalog_management`):
+    - `tmf.metadata.catalog` and `tmf.metadata.specification` now link to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback by name).
+  - TMF688 Event Management (`tmf_event`):
+    - `tmf.event` now links to `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+- Device and resource-pool wiring improved:
+  - TMF_Device (`tmf_device`):
+    - `tmf.device` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.product` via `product_id` (resolved by TMF id/name).
+      - `stock.lot` via `stock_lot_id` (resolved by `serialNumber`).
+  - TMF_ManagedEntity (`tmf_managed_entity`):
+    - `tmf.managed.entity` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.template` via `product_tmpl_id` (resolved by TMF id/name).
+  - TMF908 IoT Agent and Device (`tmf_iot_agent_device_management`):
+    - generic IoT resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `tmf.device` via `device_id` resolved by payload/id/name.
+  - TMF914 IoT Service Management (`tmf_iot_service_management`):
+    - generic IoT service resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `sale.order` via `sale_order_id` resolved from payload order references.
+  - TMF685 Resource Pool Management (`tmf_resource_pool_management`):
+    - `tmf.resource.pool` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `stock.location` via `stock_location_id` (resolved by pool name).
+    - `tmf.resource.pool.specification` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback).
+- NaaS, outage, and balance wiring improved:
+  - TMF909 Network as a Service (`tmf_network_as_a_service_management`):
+    - generic NaaS resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `sale.order` via `sale_order_id` resolved from service/order references.
+  - TMF777 Outage (`tmf_outage_management`):
+    - `tmf.outage` now links to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `helpdesk.ticket` via `helpdesk_ticket_id` (reuse by partner/name or auto-create fallback).
+  - TMF910 Self Care (`tmf_self_care_management`):
+    - generic self-care resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `helpdesk.ticket` via `helpdesk_ticket_id` (reuse by partner/name or auto-create fallback).
+  - TMF759 Private Optimized Binding (`tmf_private_optimized_binding`):
+    - private binding resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `product.template` via `product_tmpl_id` (resolved by TMF id/name).
+  - TMF Transfer Balance (`tmf_transfer_balance`):
+    - `tmf.transfer.balance` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `account.payment` via `account_payment_id` (best-effort by partner history).
+      - `account.move` via `account_move_id` (best-effort by partner history).
+  - TMF635 Usage (`tmf_usage`):
+    - `tmf.usage` now links to:
+      - `res.partner` via `partner_id` resolved from usage `relatedParty`.
+      - `sale.order` via `sale_order_id` (best-effort by partner).
+    - `tmf.usage.specification` now links to:
+      - `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback).
+- Asset and warranty wiring improved:
+  - TMF Physical Resource (`tmf_physical_resource`):
+    - `tmf.physical.resource` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.product` via `product_id` resolved by resource name.
+      - `stock.lot` via `stock_lot_id` resolved by `serialNumber`.
+  - TMF768 Resource Role (`tmf_resource_role_management`):
+    - resource-role resources now link to:
+      - `res.partner` via `partner_id` resolved from payload `relatedParty`.
+      - `product.template` via `product_tmpl_id` resolved by TMF id/name.
+  - TMF767 Product Usage Catalog (`tmf_product_usage_catalog_management`):
+    - `tmf.product.usage.specification` now links to `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback).
+  - TMF715 Warranty (`tmf_warranty_management`):
+    - warranty resources now link to:
+      - `res.partner` via `partner_id` resolved from `relatedParty`.
+    - `tmf.warranty.specification` now links to:
+      - `product.template` via `product_tmpl_id` (reuse by TMF id/name, auto-create fallback).
+- Final governance and identity wiring improved:
+  - TMF Permission (`tmf_permission`):
+    - `tmf.permission` now links to:
+      - `res.partner` via `user_partner_id` resolved from TMF `user`.
+      - `res.users` via `user_id` resolved from linked partner user.
+  - TMF691 Userinfo (`tmf_userinfo`):
+    - `tmf.userinfo` now links to:
+      - `res.partner` via `partner_id` resolved by `sub`, fallback email/name.
+      - `res.users` via `user_id` resolved from linked partner.
+  - TMF710 General Test Artifact (`tmf_general_test_artifact`):
+    - `tmf.general.test.artifact` now links to:
+      - `res.partner` via `partner_id` resolved from `relatedParty`.
+      - `product.template` via `product_tmpl_id` resolved by TMF id.
+  - TMF AI Contract Specification (`tmf_ai_contract_specification`):
+    - `tmf.ai.contract.specification` now links to:
+      - `res.partner` via `partner_id` resolved from TMF `relatedParty`.
+      - `product.template` via `product_tmpl_id` resolved by TMF id/name (create fallback by name).
+  - TMF703 Entity Inventory (`tmf_entity`):
+    - `tmf.entity` now links to `product.template` via `product_tmpl_id` (reuse by TMF id).
+    - `tmf.entity.association` now links to `product.template` via `product_tmpl_id` (reuse/create by association name).
 
 ## Latest Additions
 

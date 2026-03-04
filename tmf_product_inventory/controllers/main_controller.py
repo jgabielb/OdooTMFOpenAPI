@@ -161,6 +161,31 @@ def _normalize_product_response(rec, data: dict):
         else:
             data.pop(k, None)
 
+    # TMF637 CTK expects each productCharacteristic item to declare @type.
+    chars = data.get("productCharacteristic")
+    if isinstance(chars, list):
+        normalized_chars = []
+        for item in chars:
+            if isinstance(item, dict):
+                one = dict(item)
+                one.setdefault("@type", "StringCharacteristic")
+                normalized_chars.append(one)
+            else:
+                normalized_chars.append(item)
+        data["productCharacteristic"] = normalized_chars
+
+    parties = data.get("relatedParty")
+    if isinstance(parties, list):
+        normalized_parties = []
+        for item in parties:
+            if isinstance(item, dict):
+                one = dict(item)
+                one.setdefault("@type", "RelatedPartyRefOrPartyRoleRef")
+                normalized_parties.append(one)
+            else:
+                normalized_parties.append(item)
+        data["relatedParty"] = normalized_parties
+
     return data
 
 

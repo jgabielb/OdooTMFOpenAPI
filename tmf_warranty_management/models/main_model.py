@@ -36,6 +36,7 @@ class _TMF715WarrantyMixin(models.AbstractModel):
     tmf_type_value = fields.Char(string="@type")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     def _common_to_tmf_json(self):
         self.ensure_one()
@@ -84,6 +85,38 @@ class _TMF715WarrantyMixin(models.AbstractModel):
         except Exception:
             pass
 
+    def _resolve_partner_from_json_text(self, json_text):
+        refs = _loads(json_text)
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            if not hasattr(rec, "related_party_json"):
+                continue
+            partner = rec._resolve_partner_from_json_text(getattr(rec, "related_party_json"))
+            if partner:
+                rec.partner_id = partner.id
+
 
 class TMFWarranty(models.Model):
     _name = "tmf.warranty"
@@ -108,6 +141,7 @@ class TMFWarranty(models.Model):
     warranty_agreement_json = fields.Text(string="warrantyAgreement")
     warranty_relationship_json = fields.Text(string="warrantyRelationship")
     warranty_specification_json = fields.Text(string="warrantySpecification")
+    sale_order_id = fields.Many2one("sale.order", string="Sale Order", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/warrantyManagement/v4/warranty"
@@ -166,6 +200,7 @@ class TMFWarranty(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         for rec in recs:
             self._notify("warranty", "create", rec)
         return recs
@@ -173,6 +208,8 @@ class TMFWarranty(models.Model):
     def write(self, vals):
         state_changed = "state" in vals or "status" in vals
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         for rec in self:
             self._notify("warranty", "update", rec)
             if state_changed:
@@ -215,6 +252,20 @@ class TMFWarrantySpecification(models.Model):
     warranty_duration_json = fields.Text(string="warrantyDuration")
     warranty_spec_relationship_json = fields.Text(string="warrantySpecRelationship")
     warranty_specification_json = fields.Text(string="warrantySpecification")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def _get_tmf_api_path(self):
         return "/warrantyManagement/v4/warrantySpecification"
@@ -269,6 +320,8 @@ class TMFWarrantySpecification(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
+        recs._sync_product_link()
         for rec in recs:
             self._notify("warrantySpecification", "create", rec)
         return recs
@@ -276,6 +329,10 @@ class TMFWarrantySpecification(models.Model):
     def write(self, vals):
         state_changed = "state" in vals or "lifecycle_status" in vals
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         for rec in self:
             self._notify("warrantySpecification", "update", rec)
             if state_changed:

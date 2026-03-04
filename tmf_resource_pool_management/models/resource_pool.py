@@ -40,6 +40,47 @@ class TMFResourcePool(models.Model):
     operational_state = fields.Char()
     usage_state = fields.Char()
     resource_status = fields.Char()
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    stock_location_id = fields.Many2one("stock.location", string="Stock Location", ondelete="set null")
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        refs = _as_list(self.related_party)
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _resolve_stock_location(self):
+        self.ensure_one()
+        env_loc = self.env["stock.location"].sudo()
+        if self.name:
+            loc = env_loc.search([("name", "=", self.name)], limit=1)
+            if loc:
+                return loc
+        return False
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner:
+                rec.partner_id = partner.id
+            loc = rec._resolve_stock_location()
+            if loc:
+                rec.stock_location_id = loc.id
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -97,11 +138,14 @@ class TMFResourcePool(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "related_party" in vals or "name" in vals or "partner_id" in vals or "stock_location_id" in vals:
+            self._sync_native_links()
         self._notify("update")
         return res
 

@@ -6,7 +6,7 @@
     "category": "TMF",
     "license": "LGPL-3",
     "author": "Your Company",
-    "depends": ["base", "tmf_base"],
+    "depends": ["base", "tmf_base", "product"],
     "data": [
         "security/ir.model.access.csv",
         "views/generated_views.xml",

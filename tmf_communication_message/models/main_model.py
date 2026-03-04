@@ -34,6 +34,7 @@ class TMFCommunicationMessage(models.Model):
 
     # sender is mandatory (object)
     sender = fields.Json(string="sender", required=True, default=dict, help="Sender object")  # M
+    partner_id = fields.Many2one("res.partner", string="Sender Partner", ondelete="set null")
 
     # ---------------------------
     # Optional fields (not mandated by TMF681 conformance profile)
@@ -60,6 +61,30 @@ class TMFCommunicationMessage(models.Model):
         # Your controller is using /tmf-api/communicationManagement/v4/communicationMessage
         # Keep this aligned with your routing/base; adjust if your mixin builds href from it.
         return "/tmf-api/communicationManagement/v4/communicationMessage"
+
+    def _resolve_partner_from_ref(self, ref):
+        if not isinstance(ref, dict):
+            return False
+        env_partner = self.env["res.partner"].sudo()
+        rid = ref.get("id")
+        if rid:
+            partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+            if partner:
+                return partner
+            if str(rid).isdigit():
+                partner = env_partner.browse(int(rid))
+                if partner.exists():
+                    return partner
+        name = (ref.get("name") or "").strip()
+        if name:
+            return env_partner.search([("name", "=", name)], limit=1)
+        return False
+
+    def _sync_sender_partner(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_ref(rec.sender or {})
+            if partner:
+                rec.partner_id = partner.id
 
     # ------------------------------------------------------------
     # Validation to keep CTK happy and align with conformance rules
@@ -147,12 +172,15 @@ class TMFCommunicationMessage(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_sender_partner()
         for rec in recs:
             rec._notify("communicationMessage", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "sender" in vals or "partner_id" in vals:
+            self._sync_sender_partner()
         for rec in self:
             rec._notify("communicationMessage", "update", rec)
         return res

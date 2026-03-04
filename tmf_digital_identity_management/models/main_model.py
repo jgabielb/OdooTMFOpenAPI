@@ -29,6 +29,8 @@ class TMFDigitalIdentity(models.Model):
     last_update = fields.Char(string="lastUpdate")
     nickname = fields.Char(string="nickname")
     status = fields.Char(string="status")
+    partner_id = fields.Many2one("res.partner", string="Related Partner", ondelete="set null")
+    user_id = fields.Many2one("res.users", string="Related User", ondelete="set null")
 
     attachment_json = fields.Text(string="attachment")
     contact_medium_json = fields.Text(string="contactMedium")
@@ -49,6 +51,46 @@ class TMFDigitalIdentity(models.Model):
     @staticmethod
     def _now_iso():
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def _resolve_partner_from_ref(self, ref):
+        if not isinstance(ref, dict):
+            return False
+        env_partner = self.env["res.partner"].sudo()
+        rid = ref.get("id")
+        if rid:
+            partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+            if partner:
+                return partner
+            if str(rid).isdigit():
+                partner = env_partner.browse(int(rid))
+                if partner.exists():
+                    return partner
+        name = (ref.get("name") or "").strip()
+        if name:
+            return env_partner.search([("name", "=", name)], limit=1)
+        return False
+
+    def _pick_partner_ref(self):
+        self.ensure_one()
+        for blob in (self.individual_identified_json, self.party_role_identified_json):
+            ref = _loads(blob)
+            if isinstance(ref, dict):
+                return ref
+        related = _loads(self.related_party_json)
+        if isinstance(related, list) and related:
+            first = related[0]
+            if isinstance(first, dict):
+                return first
+        return {}
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_ref(rec._pick_partner_ref())
+            if partner:
+                rec.partner_id = partner.id
+                user = self.env["res.users"].sudo().search([("partner_id", "=", partner.id)], limit=1)
+                if user:
+                    rec.user_id = user.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -118,6 +160,7 @@ class TMFDigitalIdentity(models.Model):
             vals.setdefault("last_update", vals.get("last_update") or created)
             vals.setdefault("status", vals.get("status") or "active")
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -125,6 +168,14 @@ class TMFDigitalIdentity(models.Model):
     def write(self, vals):
         state_changed = "status" in vals
         res = super().write(vals)
+        if (
+            "individual_identified_json" in vals
+            or "party_role_identified_json" in vals
+            or "related_party_json" in vals
+            or "partner_id" in vals
+            or "user_id" in vals
+        ):
+            self._sync_native_links()
         for rec in self:
             self._notify("update", rec)
             if state_changed:

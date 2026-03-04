@@ -32,6 +32,32 @@ class TMFAgreement(models.Model):
     associated_agreement = fields.Json()
     characteristic = fields.Json()
     engaged_party = fields.Json(required=True)           # engagedParty (mandatory on create)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+
+    def _resolve_partner_from_ref(self, ref):
+        if not isinstance(ref, dict):
+            return False
+        env = self.env["res.partner"].sudo()
+        rid = (ref.get("id") or "").strip() if isinstance(ref.get("id"), str) else ref.get("id")
+        if rid:
+            partner = env.search([("tmf_id", "=", str(rid))], limit=1)
+            if partner:
+                return partner
+            if str(rid).isdigit():
+                partner = env.browse(int(rid))
+                if partner.exists():
+                    return partner
+        name = (ref.get("name") or "").strip()
+        if name:
+            return env.search([("name", "=", name)], limit=1)
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            partner_ref = rec.engaged_party or {}
+            partner = rec._resolve_partner_from_ref(partner_ref)
+            if partner:
+                rec.partner_id = partner.id
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -66,11 +92,14 @@ class TMFAgreement(models.Model):
         records = super().create(vals_list)
         for r in records:
             r._ensure_defaults()
+        records._sync_partner_link()
         records._notify("create")
         return records
 
     def write(self, vals):
         res = super().write(vals)
+        if "engaged_party" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         self._notify("update")
         return res
 

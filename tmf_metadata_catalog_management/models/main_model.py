@@ -32,6 +32,7 @@ class _TMF725CommonMixin(models.AbstractModel):
     tmf_type_value = fields.Char(string="@type")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     @staticmethod
     def _now_iso():
@@ -76,6 +77,38 @@ class _TMF725CommonMixin(models.AbstractModel):
         except Exception:
             pass
 
+    def _resolve_partner_from_json_text(self, json_text):
+        refs = _loads(json_text)
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            if not hasattr(rec, "related_party_json"):
+                continue
+            partner = rec._resolve_partner_from_json_text(getattr(rec, "related_party_json"))
+            if partner:
+                rec.partner_id = partner.id
+
 
 class TMFMetadataCatalog(models.Model):
     _name = "tmf.metadata.catalog"
@@ -87,6 +120,20 @@ class TMFMetadataCatalog(models.Model):
     attachment_json = fields.Text(string="attachment")
     metadata_category_json = fields.Text(string="metadataCategory")
     related_party_json = fields.Text(string="relatedParty")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def _get_tmf_api_path(self):
         return "/metadataCatalog/v4/metadataCatalog"
@@ -125,6 +172,8 @@ class TMFMetadataCatalog(models.Model):
         for vals in vals_list:
             vals.setdefault("last_update_date", vals.get("last_update_date") or vals.get("last_update") or self._now_iso())
         recs = super().create(vals_list)
+        recs._sync_partner_link()
+        recs._sync_product_link()
         for rec in recs:
             self._notify("metadataCatalog", "create", rec)
         return recs
@@ -132,6 +181,10 @@ class TMFMetadataCatalog(models.Model):
     def write(self, vals):
         status_changed = "lifecycle_status" in vals
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         for rec in self:
             self._notify("metadataCatalog", "update", rec)
             if status_changed:
@@ -313,6 +366,20 @@ class TMFMetadataSpecification(models.Model):
     related_party_json = fields.Text(string="relatedParty")
     target_entity_schema_json = fields.Text(string="targetEntitySchema")
     valid_for_json = fields.Text(string="validFor")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def _get_tmf_api_path(self):
         return "/metadataCatalog/v4/metadataSpecification"
@@ -358,6 +425,8 @@ class TMFMetadataSpecification(models.Model):
         for vals in vals_list:
             vals.setdefault("last_update", vals.get("last_update") or self._now_iso())
         recs = super().create(vals_list)
+        recs._sync_partner_link()
+        recs._sync_product_link()
         for rec in recs:
             self._notify("metadataSpecification", "create", rec)
         return recs
@@ -365,6 +434,10 @@ class TMFMetadataSpecification(models.Model):
     def write(self, vals):
         status_changed = "lifecycle_status" in vals
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         for rec in self:
             self._notify("metadataSpecification", "update", rec)
             if status_changed:

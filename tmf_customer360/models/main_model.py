@@ -28,6 +28,7 @@ class TMFCustomer360(models.Model):
     name = fields.Char(string="name")
     status = fields.Char(string="status")
     status_reason = fields.Char(string="statusReason")
+    partner_id = fields.Many2one("res.partner", string="Customer Partner", ondelete="set null")
 
     engaged_party_json = fields.Text(string="engagedParty")
     customer_ref_json = fields.Text(string="customerRef")
@@ -54,6 +55,44 @@ class TMFCustomer360(models.Model):
     tmf_type_value = fields.Char(string="@type")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+
+    def _resolve_partner_from_ref(self, ref):
+        if not isinstance(ref, dict):
+            return False
+        env_partner = self.env["res.partner"].sudo()
+        rid = ref.get("id")
+        if rid:
+            partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+            if partner:
+                return partner
+            if str(rid).isdigit():
+                partner = env_partner.browse(int(rid))
+                if partner.exists():
+                    return partner
+        name = (ref.get("name") or "").strip()
+        if name:
+            return env_partner.search([("name", "=", name)], limit=1)
+        return False
+
+    def _pick_partner_ref(self):
+        self.ensure_one()
+        # Priority: customerRef -> engagedParty -> first relatedParty item.
+        for blob in (self.customer_ref_json, self.engaged_party_json):
+            ref = _loads(blob)
+            if isinstance(ref, dict):
+                return ref
+        related = _loads(self.related_party_json)
+        if isinstance(related, list) and related:
+            first = related[0]
+            if isinstance(first, dict):
+                return first
+        return {}
+
+    def _sync_partner_link(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_ref(rec._pick_partner_ref())
+            if partner:
+                rec.partner_id = partner.id
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -155,11 +194,19 @@ class TMFCustomer360(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if (
+            "customer_ref_json" in vals
+            or "engaged_party_json" in vals
+            or "related_party_json" in vals
+            or "partner_id" in vals
+        ):
+            self._sync_partner_link()
         self._notify("update")
         return res
 

@@ -16,6 +16,8 @@ class TMFProcessFlowMixin(models.AbstractModel):
     related_entity = fields.Json(default=list)
     related_party = fields.Json(default=list)
     extra_json = fields.Json(default=dict)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    project_task_id = fields.Many2one("project.task", string="Project Task", ondelete="set null")
 
     @staticmethod
     def _now_iso():
@@ -26,6 +28,54 @@ class TMFProcessFlowMixin(models.AbstractModel):
 
     def _tmf_type_name(self):
         return "ProcessFlow"
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        refs = self.related_party
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_native_links(self):
+        env_task = self.env["project.task"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            if partner:
+                rec.partner_id = partner.id
+            if rec.project_task_id and rec.project_task_id.exists():
+                continue
+            try:
+                task_name = rec.name or f"{rec._tmf_type_name()}:{rec.tmf_id}"
+                domain = [("name", "=", task_name)]
+                if rec.partner_id:
+                    domain = [("partner_id", "=", rec.partner_id.id), ("name", "=", task_name)]
+                task = env_task.search(domain, limit=1)
+                if not task:
+                    vals = {"name": task_name}
+                    if rec.partner_id:
+                        vals["partner_id"] = rec.partner_id.id
+                    task = env_task.create(vals)
+                rec.project_task_id = task.id
+            except Exception:
+                pass
 
     def _base_payload(self):
         self.ensure_one()
@@ -70,6 +120,7 @@ class TMFProcessFlowMixin(models.AbstractModel):
         for vals in vals_list:
             vals.setdefault("process_flow_date", vals.get("process_flow_date") or self._now_iso())
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -77,6 +128,8 @@ class TMFProcessFlowMixin(models.AbstractModel):
     def write(self, vals):
         previous = {rec.id: rec.state for rec in self}
         res = super().write(vals)
+        if "related_party" in vals or "partner_id" in vals or "project_task_id" in vals or "name" in vals:
+            self._sync_native_links()
         for rec in self:
             self._notify("update", rec)
             if "state" in vals and previous.get(rec.id) != rec.state:

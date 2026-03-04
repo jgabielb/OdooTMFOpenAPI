@@ -102,9 +102,12 @@ class ResPartner(models.Model):
         return res
 
     def unlink(self):
-        managed = self.filtered(lambda r: r.tmf_managed)
+        existing = self.exists()
+        if not existing:
+            return True
+        managed = existing.filtered(lambda r: r.tmf_managed)
         payloads = [rec.to_tmf_json() for rec in managed]
-        res = super().unlink()
+        res = super(ResPartner, existing).unlink()
         if payloads:
             self._notify_tmf_party("delete", payloads=payloads)
         return res

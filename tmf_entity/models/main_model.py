@@ -26,9 +26,19 @@ class TMFEntity(models.Model):
     tmf_type_value = fields.Char(string="@type", default="Entity")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/entityInventory/v4/entity"
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -63,12 +73,15 @@ class TMFEntity(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_product_link()
         for rec in recs:
             self._notify("create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
         for rec in self:
             self._notify("update", rec)
         return res
@@ -105,9 +118,20 @@ class TMFAssociation(models.Model):
     tmf_type_value = fields.Char(string="@type", default="Association")
     base_type = fields.Char(string="@baseType")
     schema_location = fields.Char(string="@schemaLocation")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/entityInventory/v4/association"
+
+    def _sync_native_links(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            if rec.name and not rec.product_tmpl_id:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+                if not pt:
+                    pt = env_pt.create({"name": rec.name})
+                rec.product_tmpl_id = pt.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -165,12 +189,15 @@ class TMFAssociation(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify("create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "name" in vals or "product_tmpl_id" in vals:
+            self._sync_native_links()
         for rec in self:
             self._notify("update", rec)
         return res

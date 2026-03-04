@@ -237,6 +237,82 @@ def _run_one_test(
         if not ok:
             failed_steps += 1
 
+    # 3b) Extended read scenarios (optional)
+    scenarios_cfg = t.get("scenarios", {}) if isinstance(t.get("scenarios"), dict) else {}
+    scenario_defaults = vars_map.get("__scenario_defaults__", {}) if isinstance(vars_map.get("__scenario_defaults__"), dict) else {}
+
+    def _scenario_bool(key: str, default: bool = False) -> bool:
+        if key in scenarios_cfg:
+            return bool(scenarios_cfg.get(key))
+        return bool(scenario_defaults.get(key, default))
+
+    def _scenario_value(key: str, default: Any = None) -> Any:
+        if key in scenarios_cfg:
+            return scenarios_cfg.get(key)
+        return scenario_defaults.get(key, default)
+
+    if _scenario_bool("list_fields_enabled", False):
+        fields_query = _interpolate(_scenario_value("list_fields_query", "fields=id"), step_vars)
+        fields_expected = _scenario_value("list_fields_expected_status", [200])
+        fields_url = _build_url(base_url, collection_path, fields_query)
+        total_steps += 1
+        ok, _, _, _ = _step(f"{name} list-fields", "GET", fields_url, headers, fields_expected, timeout=timeout, logs=logs)
+        if not ok:
+            failed_steps += 1
+
+    if id_value and id_path and _scenario_bool("get_by_id_fields_enabled", False):
+        id_fields_query = _interpolate(_scenario_value("get_by_id_fields_query", "fields=id"), step_vars)
+        id_fields_expected = _scenario_value("get_by_id_fields_expected_status", [200])
+        id_fields_url = _build_url(base_url, id_path.replace("{id}", str(id_value)), id_fields_query)
+        total_steps += 1
+        ok, _, _, _ = _step(
+            f"{name} get-by-id-fields",
+            "GET",
+            id_fields_url,
+            headers,
+            id_fields_expected,
+            timeout=timeout,
+            logs=logs,
+        )
+        if not ok:
+            failed_steps += 1
+
+    if id_value and _scenario_bool("list_by_id_filter_enabled", False):
+        id_param = str(_scenario_value("list_by_id_filter_param", "id"))
+        id_filter_query = f"{urllib.parse.quote_plus(id_param)}={urllib.parse.quote_plus(str(id_value))}"
+        id_filter_expected = _scenario_value("list_by_id_filter_expected_status", [200])
+        id_filter_url = _build_url(base_url, collection_path, id_filter_query)
+        total_steps += 1
+        ok, _, _, _ = _step(
+            f"{name} list-by-id-filter",
+            "GET",
+            id_filter_url,
+            headers,
+            id_filter_expected,
+            timeout=timeout,
+            logs=logs,
+        )
+        if not ok:
+            failed_steps += 1
+
+    if id_value and id_path and _scenario_bool("not_found_enabled", False):
+        suffix = str(_scenario_value("not_found_suffix", "-not-found"))
+        not_found_id = f"{id_value}{suffix}"
+        not_found_expected = _scenario_value("not_found_expected_status", [404])
+        not_found_url = _build_url(base_url, id_path.replace("{id}", not_found_id))
+        total_steps += 1
+        ok, _, _, _ = _step(
+            f"{name} get-not-found",
+            "GET",
+            not_found_url,
+            headers,
+            not_found_expected,
+            timeout=timeout,
+            logs=logs,
+        )
+        if not ok:
+            failed_steps += 1
+
     # 4) PATCH (optional)
     patch_cfg = t.get("patch")
     if isinstance(patch_cfg, dict) and id_value and id_path:
@@ -266,6 +342,21 @@ def _run_one_test(
         ok, _, _, _ = _step(f"{name} delete", "DELETE", delete_url, headers, delete_expected, timeout=timeout, logs=logs)
         if not ok:
             failed_steps += 1
+        if ok and _scenario_bool("verify_deleted_enabled", False):
+            verify_deleted_expected = _scenario_value("verify_deleted_expected_status", [404])
+            verify_deleted_url = _build_url(base_url, id_path.replace("{id}", str(id_value)))
+            total_steps += 1
+            ok2, _, _, _ = _step(
+                f"{name} verify-deleted",
+                "GET",
+                verify_deleted_url,
+                headers,
+                verify_deleted_expected,
+                timeout=timeout,
+                logs=logs,
+            )
+            if not ok2:
+                failed_steps += 1
 
     return _TestResult(index, name, logs, total_steps, failed_steps, saved_vars)
 
@@ -323,6 +414,7 @@ def run(config: Dict[str, Any], workers: int = 4) -> int:
     headers = _make_headers(config.get("default_headers", {}), config.get("auth", {}))
     tests = config.get("tests", [])
     vars_map: Dict[str, Any] = dict(config.get("vars", {}) or {})
+    vars_map["__scenario_defaults__"] = dict(config.get("scenario_defaults", {}) or {})
 
     total_steps = 0
     failed_steps = 0

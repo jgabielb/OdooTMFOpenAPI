@@ -46,6 +46,7 @@ class TMFDocument(models.Model):
     external_identifier_json = fields.Text(string="externalIdentifier")        # ExternalIdentifier[*]
     related_entity_json = fields.Text(string="relatedEntity")         # RelatedEntity[*]
     related_party_json = fields.Text(string="relatedParty")           # RelatedParty[*]
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     def _get_tmf_api_path(self):
         # Controller exposes /tmf-api/document/v4/document
@@ -118,16 +119,50 @@ class TMFDocument(models.Model):
 
         return vals
 
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        parties = _loads(self.related_party_json) or []
+        if not isinstance(parties, list):
+            parties = [parties] if parties else []
+        env = self.env["res.partner"].sudo()
+        for party in parties:
+            if not isinstance(party, dict):
+                continue
+            rid = party.get("id")
+            if rid:
+                partner = env.search([("tmf_id", "=", str(rid))], limit=1)
+                if partner:
+                    return partner
+                if str(rid).isdigit():
+                    partner = env.browse(int(rid))
+                    if partner.exists():
+                        return partner
+            name = (party.get("name") or "").strip()
+            if name:
+                partner = env.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            if partner:
+                rec.partner_id = partner.id
+
     # ---------- Notifications (aligned event names) ----------
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         for rec in recs:
             rec._notify("DocumentCreateEvent")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         for rec in self:
             rec._notify("DocumentChangeEvent")
         return res

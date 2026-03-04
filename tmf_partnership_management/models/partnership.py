@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 from odoo import models, fields, api
 
 
@@ -14,10 +15,68 @@ class TMFPartnership(models.Model):
 
     specification_json = fields.Text(string="specification")  # ref object as JSON string
     partner_json = fields.Text(string="partner")              # list as JSON string
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    specification_id = fields.Many2one("tmf.partnership.specification", string="Specification", ondelete="set null")
 
     _sql_constraints = [
         ("tmf_id_unique", "unique(tmf_id)", "TMF id must be unique."),
     ]
+
+    def _json_load(self, value, default):
+        if not value:
+            return default
+        try:
+            return json.loads(value)
+        except Exception:
+            return default
+
+    def _resolve_partner_from_payload(self):
+        self.ensure_one()
+        data = self._json_load(self.partner_json, [])
+        if isinstance(data, dict):
+            data = [data]
+        env_partner = self.env["res.partner"].sudo()
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            rid = item.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (item.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _resolve_spec_from_payload(self):
+        self.ensure_one()
+        data = self._json_load(self.specification_json, {})
+        if not isinstance(data, dict):
+            return False
+        env_spec = self.env["tmf.partnership.specification"].sudo()
+        rid = data.get("id")
+        if rid:
+            spec = env_spec.search([("tmf_id", "=", str(rid))], limit=1)
+            if spec:
+                return spec
+        name = (data.get("name") or "").strip()
+        if name:
+            return env_spec.search([("name", "=", name)], limit=1)
+        return False
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_payload()
+            if partner:
+                rec.partner_id = partner.id
+            spec = rec._resolve_spec_from_payload()
+            if spec:
+                rec.specification_id = spec.id
 
     def _to_tmf_json(self):
         return {
@@ -49,11 +108,19 @@ class TMFPartnership(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if (
+            "partner_json" in vals
+            or "specification_json" in vals
+            or "partner_id" in vals
+            or "specification_id" in vals
+        ):
+            self._sync_native_links()
         self._notify("update")
         return res
 

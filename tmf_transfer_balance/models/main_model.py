@@ -29,9 +29,63 @@ class TMFModel(models.Model):
     related_party = fields.Char(string="relatedParty", help="Used to provide information about any other entity with relation to the operation")
     requestor = fields.Char(string="requestor", help="Identifier for the user/customer/entity that performs the top-up action. This can be used to indicat")
     transfer_cost = fields.Char(string="transferCost", help="Associated cost to be charged for the transfer operation (can be monetary or non-monetary)")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    account_payment_id = fields.Many2one("account.payment", string="Account Payment", ondelete="set null")
+    account_move_id = fields.Many2one("account.move", string="Account Move", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/transfer_balanceManagement/v4/TransferBalance"
+
+    def _safe_json(self, value, default):
+        if not value:
+            return default
+        if isinstance(value, (dict, list)):
+            return value
+        try:
+            return json.loads(value)
+        except Exception:
+            return default
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        refs = self._safe_json(self.related_party, [])
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_native_links(self):
+        env_payment = self.env["account.payment"].sudo()
+        env_move = self.env["account.move"].sudo()
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner:
+                rec.partner_id = partner.id
+            if not rec.account_payment_id and rec.partner_id:
+                pay = env_payment.search([("partner_id", "=", rec.partner_id.id)], limit=1, order="id desc")
+                if pay:
+                    rec.account_payment_id = pay.id
+            if not rec.account_move_id and rec.partner_id:
+                move = env_move.search([("partner_id", "=", rec.partner_id.id), ("move_type", "in", ["out_invoice", "out_refund"])], limit=1, order="id desc")
+                if move:
+                    rec.account_move_id = move.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -68,12 +122,15 @@ class TMFModel(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify('transferBalance', 'create', rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "related_party" in vals or "partner_id" in vals or "account_payment_id" in vals or "account_move_id" in vals:
+            self._sync_native_links()
         for rec in self:
             self._notify('transferBalance', 'update', rec)
         return res

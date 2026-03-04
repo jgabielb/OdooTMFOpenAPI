@@ -92,9 +92,41 @@ class TMFEvent(models.Model):
     reporting_system = fields.Json(default=dict)
     source = fields.Json(default=dict)
     extra_json = fields.Json(default=dict)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/event/v4/topic/event"
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        refs = self.related_party
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            if partner:
+                rec.partner_id = partner.id
 
     def _build_event_href(self):
         self.ensure_one()
@@ -148,12 +180,15 @@ class TMFEvent(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_partner_link()
         for rec in recs:
             self._notify("event", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "related_party" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         for rec in self:
             self._notify("event", "update", rec)
         return res

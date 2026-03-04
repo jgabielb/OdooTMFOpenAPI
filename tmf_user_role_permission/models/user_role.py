@@ -16,6 +16,8 @@ class TMF672UserRole(models.Model):
 
     involvement_role = fields.Char(string="involvementRole")
     entitlement_json = fields.Text(string="entitlement")  # Entitlement[*]
+    user_id = fields.Many2one("res.users", string="User", ondelete="set null")
+    group_id = fields.Many2one("res.groups", string="Group", ondelete="set null")
 
     _sql_constraints = [
         ("tmf672_user_role_tmf_id_uniq", "unique(tmf_id)", "TMF672 UserRole id must be unique."),
@@ -42,6 +44,19 @@ class TMF672UserRole(models.Model):
     def _compute_href(self):
         for r in self:
             r.href = f"/tmf-api/userRolePermissionManagement/v4/userRole/{r.tmf_id}"
+
+    def _resolve_group_from_role(self):
+        self.ensure_one()
+        role = (self.involvement_role or "").strip()
+        if not role:
+            return False
+        return self.env["res.groups"].sudo().search([("name", "=", role)], limit=1)
+
+    def _sync_native_links(self):
+        for rec in self:
+            group = rec._resolve_group_from_role()
+            if group:
+                rec.group_id = group.id
 
     def tmf_to_payload(self, api_base_path="/tmf-api/userRolePermissionManagement/v4"):
         self.ensure_one()
@@ -76,11 +91,14 @@ class TMF672UserRole(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "involvement_role" in vals or "group_id" in vals or "user_id" in vals:
+            self._sync_native_links()
         self._notify("update")
         return res
 

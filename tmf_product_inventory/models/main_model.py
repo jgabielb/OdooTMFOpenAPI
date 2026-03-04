@@ -22,18 +22,29 @@ class TMFProduct(models.Model):
     realizing_service_json = fields.Json(default=list)        # TMF: realizingService[]
     product_specification_json = fields.Json(default=dict)    # TMF: productSpecification (ref)
 
-    def _notify(self, action, payloads=None):
+    def _notify(self, api_name_or_action, action=None, record=None, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
+        # Backward compatible signature:
+        # - _notify("create", payloads=...)
+        # - _notify("product", "create", record)
+        if action is None:
+            action_name = api_name_or_action
+        else:
+            action_name = action
+
         event_map = {
             "create": "ProductCreateEvent",
             "update": "ProductAttributeValueChangeEvent",
             "delete": "ProductDeleteEvent",
         }
-        event_name = event_map.get(action)
+        event_name = event_map.get(action_name)
         if not event_name:
             return
         if payloads is None:
-            payloads = [rec.to_tmf_json() for rec in self]
+            if record is not None:
+                payloads = [record.to_tmf_json()]
+            else:
+                payloads = [rec.to_tmf_json() for rec in self]
         for payload in payloads:
             try:
                 hub._notify_subscribers("product", event_name, payload)

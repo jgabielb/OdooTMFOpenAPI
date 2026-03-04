@@ -118,9 +118,23 @@ class TMFUsageSpecification(models.Model):
     last_update = fields.Datetime(string="lastUpdate")
     lifecycle_status = fields.Char(string="lifecycleStatus")
     version = fields.Char()
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/tmf-api/usageManagement/v4/usageSpecification"
+
+    def _sync_product_link(self):
+        env_pt = self.env["product.template"].sudo()
+        for rec in self:
+            pt = False
+            if rec.tmf_id:
+                pt = env_pt.search([("tmf_id", "=", rec.tmf_id)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.search([("name", "=", rec.name)], limit=1)
+            if not pt and rec.name:
+                pt = env_pt.create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -138,6 +152,18 @@ class TMFUsageSpecification(models.Model):
             "@type": "UsageSpecification",
         }
         return {k: v for k, v in out.items() if v is not None}
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        recs._sync_product_link()
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_link()
+        return res
 
 
 # -------------------------
@@ -168,6 +194,43 @@ class TMFUsage(models.Model):
     usage_characteristic_ids = fields.One2many(
         "tmf.usage.characteristic", "usage_id", string="usageCharacteristic"
     )
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Sale Order", ondelete="set null")
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        env_partner = self.env["res.partner"].sudo()
+        for rp in self.related_party_ids:
+            rid = rp.party_id
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            if rp.name:
+                partner = env_partner.search([("name", "=", rp.name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _resolve_sale_order(self):
+        self.ensure_one()
+        env_so = self.env["sale.order"].sudo()
+        if self.partner_id:
+            so = env_so.search([("partner_id", "=", self.partner_id.id)], limit=1, order="id desc")
+            if so:
+                return so
+        return False
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner:
+                rec.partner_id = partner.id
+            so = rec._resolve_sale_order()
+            if so:
+                rec.sale_order_id = so.id
 
     def _get_tmf_api_path(self):
         return "/tmf-api/usageManagement/v4/usage"
@@ -215,12 +278,15 @@ class TMFUsage(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for r in recs:
             r._notify("usageManagement", "UsageCreateEvent", r)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "partner_id" in vals or "sale_order_id" in vals:
+            self._sync_native_links()
         for r in self:
             r._notify("usageManagement", "UsageAttributeValueChangeEvent", r)
         return res

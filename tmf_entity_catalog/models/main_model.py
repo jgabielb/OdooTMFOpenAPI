@@ -44,6 +44,7 @@ class TMFEntitySpecification(models.Model):
     spec_characteristic_json = fields.Text(string="specCharacteristic")
     target_entity_schema_json = fields.Text(string="targetEntitySchema")
     entity_spec_relationship_json = fields.Text(string="entitySpecRelationship")
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         return "/entityCatalogManagement/v4/entitySpecification"
@@ -109,11 +110,40 @@ class TMFEntitySpecification(models.Model):
 
         return vals
 
+    def _resolve_product_template(self):
+        self.ensure_one()
+        env = self.env["product.template"].sudo()
+        if self.tmf_id:
+            pt = env.search([("tmf_id", "=", self.tmf_id)], limit=1)
+            if pt:
+                return pt
+        if self.name:
+            pt = env.search([("name", "=", self.name)], limit=1)
+            if pt:
+                return pt
+        return False
+
+    def _sync_product_template(self):
+        for rec in self:
+            pt = rec._resolve_product_template()
+            if not pt and rec.name:
+                pt = self.env["product.template"].sudo().create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             vals.setdefault("tmf_id", str(uuid.uuid4()))
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._sync_product_template()
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_template()
+        return res
 
 class TMFEntityCatalog(models.Model):
     _name = "tmf.entity.catalog"
@@ -132,6 +162,7 @@ class TMFEntityCatalog(models.Model):
     category_json = fields.Text(string="category")          # JSON list
     related_party_json = fields.Text(string="relatedParty") # JSON list
     valid_for_json = fields.Text(string="validFor")         # JSON dict
+    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
     def _get_tmf_api_path(self):
         # TMF662 path uses /entityCatalog (lower camel) :contentReference[oaicite:11]{index=11}
@@ -198,6 +229,27 @@ class TMFEntityCatalog(models.Model):
 
         return vals
 
+    def _resolve_product_template(self):
+        self.ensure_one()
+        env = self.env["product.template"].sudo()
+        if self.tmf_id:
+            pt = env.search([("tmf_id", "=", self.tmf_id)], limit=1)
+            if pt:
+                return pt
+        if self.name:
+            pt = env.search([("name", "=", self.name)], limit=1)
+            if pt:
+                return pt
+        return False
+
+    def _sync_product_template(self):
+        for rec in self:
+            pt = rec._resolve_product_template()
+            if not pt and rec.name:
+                pt = self.env["product.template"].sudo().create({"name": rec.name})
+            if pt:
+                rec.product_tmpl_id = pt.id
+
     # --------
     # ID generation (if your mixin doesn't do it)
     # --------
@@ -207,12 +259,15 @@ class TMFEntityCatalog(models.Model):
         for vals in vals_list:
             vals.setdefault("tmf_id", str(uuid.uuid4()))
         recs = super().create(vals_list)
+        recs._sync_product_template()
         for rec in recs:
             rec._notify("entityCatalog", "create", rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+            self._sync_product_template()
         for rec in self:
             rec._notify("entityCatalog", "update", rec)
         return res

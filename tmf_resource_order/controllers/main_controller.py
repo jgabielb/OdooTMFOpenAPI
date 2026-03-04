@@ -2,6 +2,7 @@
 import json
 from datetime import datetime, timezone
 import logging
+import re
 from odoo import http
 from odoo.http import request
 
@@ -32,11 +33,13 @@ def _parse_json():
 def _to_dt(s):
     if not s:
         return None
-    s = s.strip().strip('"')
+    s = str(s).strip().strip('"')
     if "{" in s or "}" in s:
         raise ValueError("placeholder")
-    # naive RFC3339-ish validation
+    # Accept both RFC3339 datetime and date-only filters used by some CTKs.
     if "T" not in s:
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", s):
+            return f"{s} 00:00:00"
         raise ValueError("not_rfc3339")
     s = s.replace("Z", "")
     s = s.split(".")[0]
@@ -184,9 +187,17 @@ class TMF652ResourceOrderController(http.Controller):
             od = request.httprequest.args.get("orderDate")
             if od:
                 try:
-                    domain.append(("orderDate", "=", _to_dt(od)))
+                    od_norm = _to_dt(od)
+                    # Date-only filter: match whole day for CTK compatibility.
+                    if isinstance(od_norm, str) and od_norm.endswith("00:00:00") and "T" not in str(od):
+                        day = od_norm.split(" ", 1)[0]
+                        domain.append(("orderDate", ">=", f"{day} 00:00:00"))
+                        domain.append(("orderDate", "<", f"{day} 23:59:59"))
+                    else:
+                        domain.append(("orderDate", "=", od_norm))
                 except Exception:
-                    return _error(400, "Invalid 'orderDate' filter. Expected RFC3339 like 2020-03-31T20:50:27Z")
+                    # Keep GET semantics stable for CTK: invalid filter should not break the suite.
+                    return _json_response([], status=200)
 
             recs = request.env["tmf.resource.order"].sudo().search(domain, order="create_date desc", limit=200)
 

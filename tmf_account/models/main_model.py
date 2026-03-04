@@ -66,6 +66,38 @@ class TMFAccount(models.Model):
     bill_structure_json = fields.Text(string="billStructure")        # object
     default_payment_method_json = fields.Text(string="defaultPaymentMethod")  # ref object
     payment_plan_json = fields.Text(string="paymentPlan")            # array
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+
+    def _resolve_partner_from_related_party(self):
+        self.ensure_one()
+        related = _json_loads(self.related_party_json, [])
+        if not isinstance(related, list):
+            related = [related] if related else []
+        env = self.env["res.partner"].sudo()
+        for party in related:
+            if not isinstance(party, dict):
+                continue
+            rid = party.get("id")
+            if rid:
+                partner = env.search([("tmf_id", "=", str(rid))], limit=1)
+                if partner:
+                    return partner
+                if str(rid).isdigit():
+                    partner = env.browse(int(rid))
+                    if partner.exists():
+                        return partner
+            name = (party.get("name") or "").strip()
+            if name:
+                partner = env.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _sync_partner_link(self):
+        for rec in self:
+            partner = rec._resolve_partner_from_related_party()
+            if partner:
+                rec.partner_id = partner.id
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()
@@ -132,6 +164,7 @@ class TMFAccount(models.Model):
             new_vals["last_update"] = now
             patched.append(new_vals)
         recs = super().create(patched)
+        recs._sync_partner_link()
         recs._notify("create")
         return recs
 
@@ -139,6 +172,8 @@ class TMFAccount(models.Model):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
         res = super().write(vals)
+        if "related_party_json" in vals or "partner_id" in vals:
+            self._sync_partner_link()
         self._notify("update")
         return res
 

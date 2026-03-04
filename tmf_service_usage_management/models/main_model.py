@@ -29,6 +29,8 @@ class TMFServiceUsage(models.Model):
     usage_date = fields.Char(string="usageDate")
     usage_type = fields.Char(string="usageType")
     status = fields.Char(string="status", required=True)
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Sale Order", ondelete="set null")
 
     related_party_json = fields.Text(string="relatedParty")
     service_json = fields.Text(string="service")
@@ -45,6 +47,54 @@ class TMFServiceUsage(models.Model):
     @staticmethod
     def _now_iso():
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def _resolve_partner_ref(self):
+        self.ensure_one()
+        refs = _loads(self.related_party_json)
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _resolve_sale_order_ref(self):
+        self.ensure_one()
+        service = _loads(self.service_json)
+        if not isinstance(service, dict):
+            return False
+        rid = service.get("id")
+        if not rid:
+            return False
+        env_so = self.env["sale.order"].sudo()
+        so = env_so.search([("client_order_ref", "=", str(rid))], limit=1)
+        if so:
+            return so
+        return False
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner_ref()
+            if partner:
+                rec.partner_id = partner.id
+            so = rec._resolve_sale_order_ref()
+            if so:
+                rec.sale_order_id = so.id
 
     def to_tmf_json(self):
         self.ensure_one()
@@ -104,6 +154,7 @@ class TMFServiceUsage(models.Model):
             vals.setdefault("status", vals.get("status") or "received")
             vals.setdefault("usage_date", vals.get("usage_date") or self._now_iso())
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -111,6 +162,13 @@ class TMFServiceUsage(models.Model):
     def write(self, vals):
         status_changed = "status" in vals
         res = super().write(vals)
+        if (
+            "related_party_json" in vals
+            or "service_json" in vals
+            or "partner_id" in vals
+            or "sale_order_id" in vals
+        ):
+            self._sync_native_links()
         if status_changed:
             for rec in self:
                 self._notify("state_change", rec)

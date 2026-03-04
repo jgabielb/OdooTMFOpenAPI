@@ -16,7 +16,10 @@ class TMFController(http.Controller):
         return text.replace("T", " ")
 
     # 1. LIST
-    @http.route('/tmf-api/appointmentManagement/v4/appointment', type='http', auth='public', methods=['GET'], csrf=False)
+    @http.route(
+        ['/tmf-api/appointmentManagement/v4/appointment', '/tmf-api/appointment/v4/appointment'],
+        type='http', auth='public', methods=['GET'], csrf=False
+    )
     def get_resources(self, **params):
         records = request.env['tmf.appointment'].sudo().search([])
         return request.make_response(
@@ -25,7 +28,10 @@ class TMFController(http.Controller):
         )
 
     # 2. RETRIEVE ONE
-    @http.route('/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    @http.route(
+        ['/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', '/tmf-api/appointment/v4/appointment/<string:tmf_id>'],
+        type='http', auth='public', methods=['GET'], csrf=False
+    )
     def get_resource(self, tmf_id, **params):
         # Search by TMF ID (UUID)
         record = request.env['tmf.appointment'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
@@ -38,7 +44,10 @@ class TMFController(http.Controller):
         )
 
     # 3. CREATE
-    @http.route('/tmf-api/appointmentManagement/v4/appointment', type='http', auth='public', methods=['POST'], csrf=False)
+    @http.route(
+        ['/tmf-api/appointmentManagement/v4/appointment', '/tmf-api/appointment/v4/appointment'],
+        type='http', auth='public', methods=['POST'], csrf=False
+    )
     def create_resource(self, **params):
         try:
             data = json.loads(request.httprequest.data)
@@ -77,7 +86,10 @@ class TMFController(http.Controller):
             return request.make_response(json.dumps({'error': str(e)}), status=400)
 
     # 4. PATCH
-    @http.route('/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', type='http', auth='public', methods=['PATCH'], csrf=False)
+    @http.route(
+        ['/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', '/tmf-api/appointment/v4/appointment/<string:tmf_id>'],
+        type='http', auth='public', methods=['PATCH'], csrf=False
+    )
     def update_resource(self, tmf_id, **params):
         try:
             record = request.env['tmf.appointment'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
@@ -114,7 +126,10 @@ class TMFController(http.Controller):
             return request.make_response(json.dumps({'error': str(e)}), status=400)
 
     # 5. DELETE
-    @http.route('/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', type='http', auth='public', methods=['DELETE'], csrf=False)
+    @http.route(
+        ['/tmf-api/appointmentManagement/v4/appointment/<string:tmf_id>', '/tmf-api/appointment/v4/appointment/<string:tmf_id>'],
+        type='http', auth='public', methods=['DELETE'], csrf=False
+    )
     def delete_resource(self, tmf_id, **params):
         record = request.env['tmf.appointment'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
         if record:

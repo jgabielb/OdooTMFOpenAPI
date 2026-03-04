@@ -70,6 +70,8 @@ class TMF672Permission(models.Model):
     # collections
     asset_user_role_json = fields.Text(string="assetUserRole")  # AssetUserRole[*]
     privilege_json = fields.Text(string="privilege")            # Privilege[*]
+    user_partner_id = fields.Many2one("res.partner", string="User Partner", ondelete="set null")
+    user_id = fields.Many2one("res.users", string="User", ondelete="set null")
 
     _sql_constraints = [("tmf672_permission_tmf_id_uniq", "unique(tmf_id)", "TMF672 Permission id must be unique.")]
 
@@ -100,6 +102,41 @@ class TMF672Permission(models.Model):
             # we enforce start as minimal non-null)
             if not rec.valid_for_start:
                 raise ValidationError(_("TMF672: 'validFor.startDateTime' is mandatory."))
+
+    def _resolve_user_links(self):
+        self.ensure_one()
+        data = {}
+        try:
+            data = json.loads(self.user_json or "{}")
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            return False, False
+        partner = False
+        rid = data.get("id")
+        env_partner = self.env["res.partner"].sudo()
+        if rid:
+            partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+            if not partner and str(rid).isdigit():
+                p = env_partner.browse(int(rid))
+                if p.exists():
+                    partner = p
+        if not partner:
+            name = (data.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+        user = False
+        if partner:
+            user = self.env["res.users"].sudo().search([("partner_id", "=", partner.id)], limit=1)
+        return partner, user
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner, user = rec._resolve_user_links()
+            if partner:
+                rec.user_partner_id = partner.id
+            if user:
+                rec.user_id = user.id
 
     # ---------- TMF payload mapping ----------
     def tmf_to_payload(self, api_base_path="/tmf-api/userRolePermissionManagement/v4"):
@@ -178,11 +215,14 @@ class TMF672Permission(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         recs._notify("create")
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if "user_json" in vals or "user_partner_id" in vals or "user_id" in vals:
+            self._sync_native_links()
         self._notify("update")
         return res
 

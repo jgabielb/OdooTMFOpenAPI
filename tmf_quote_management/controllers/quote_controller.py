@@ -3,7 +3,7 @@ from odoo import http, fields
 from odoo.http import request
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 API_BASE = "/tmf-api/quoteManagement/v4"
@@ -57,6 +57,10 @@ def _parse_dt(value):
         return False
 
 
+def _start_of_day(dt_obj):
+    return dt_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def _apply_filters(domain):
     # CTK filters commonly used: id, quoteDate, state (+ keep externalId)
     state = request.params.get("state")
@@ -75,7 +79,12 @@ def _apply_filters(domain):
     if qd:
         dt = _parse_dt(qd)
         if dt:
-            domain.append(("quote_date", "=", dt))
+            # CTK often sends quoteDate values where exact datetime equality is unstable.
+            # Filter by day window to keep deterministic matches.
+            sod = _start_of_day(dt)
+            eod = sod + timedelta(days=1)
+            domain.append(("quote_date", ">=", sod))
+            domain.append(("quote_date", "<", eod))
 
     return domain
 

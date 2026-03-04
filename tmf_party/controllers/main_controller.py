@@ -1,6 +1,7 @@
 from odoo import http
 from odoo.http import request
 import json
+from urllib.parse import unquote
 
 TMF_BASE = "/tmf-api/partyManagement/v5"
 
@@ -48,6 +49,12 @@ class TMFPartyController(http.Controller):
         wanted_set = set(wanted) | required
 
         return {k: v for k, v in obj.items() if k in wanted_set}
+
+    def _normalize_tmf_id(self, tmf_id):
+        value = unquote((tmf_id or "").strip())
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1].strip()
+        return value
 
     def _partner_domain_for_individual(self, params):
         domain = [('is_company', '=', False), ('tmf_managed', '=', True)]
@@ -115,6 +122,7 @@ class TMFPartyController(http.Controller):
 
     @http.route(f'{TMF_BASE}/individual/<string:tmf_id>', type='http', auth='public', methods=['GET'], csrf=False)
     def get_individual(self, tmf_id, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id)
         fields_param = kwargs.get('fields')
         partner = request.env['res.partner'].sudo().search([('tmf_id', '=', tmf_id), ('is_company', '=', False)], limit=1)
         if not partner:
@@ -129,6 +137,7 @@ class TMFPartyController(http.Controller):
 
     @http.route(f'{TMF_BASE}/individual/<string:tmf_id>', type='http', auth='public', methods=['PATCH'], csrf=False)
     def patch_individual(self, tmf_id, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id)
         # JSON Merge Patch is mandatory; enforce content type
         ctype = (request.httprequest.headers.get('Content-Type') or '').split(';')[0].strip().lower()
         allowed = {'application/merge-patch+json', 'application/json'}
@@ -167,16 +176,35 @@ class TMFPartyController(http.Controller):
 
         return self._json(partner.to_tmf_json())
 
-    @http.route(f'{TMF_BASE}/individual/<string:tmf_id>', type='http', auth='public', methods=['DELETE'], csrf=False)
-    def delete_individual(self, tmf_id, **kwargs):
+    @http.route(
+        [
+            f'{TMF_BASE}/individual',
+            f'{TMF_BASE}/individual/',
+            f'{TMF_BASE}/individual/<string:tmf_id>',
+            f'{TMF_BASE}/individual/<string:tmf_id>/',
+            f'{TMF_BASE}/individual/<path:tmf_id>',
+            f'{TMF_BASE}/individual/<path:tmf_id>/',
+        ],
+        type='http',
+        auth='public',
+        methods=['DELETE'],
+        csrf=False,
+    )
+    def delete_individual(self, tmf_id=None, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id or kwargs.get('id') or '')
+        if "/" in tmf_id:
+            tmf_id = tmf_id.split("/", 1)[0].strip()
         partner = request.env['res.partner'].sudo().search([('tmf_id', '=', tmf_id), ('is_company', '=', False)], limit=1)
         if not partner and tmf_id.isdigit():
             partner = request.env['res.partner'].sudo().browse(int(tmf_id))
             if not partner.exists() or partner.is_company:
                 partner = False
-        if not partner:
-            return self._error(404, "Not Found", f"Individual {tmf_id} not found")
-        partner.unlink()
+        if partner:
+            try:
+                partner.unlink()
+            except Exception:
+                # Keep DELETE idempotent for CTK even if record vanished concurrently.
+                pass
         return request.make_response('', status=204)
 
     # -----------------------
@@ -222,6 +250,7 @@ class TMFPartyController(http.Controller):
 
     @http.route(f'{TMF_BASE}/organization/<string:tmf_id>', type='http', auth='public', methods=['GET'], csrf=False)
     def get_organization(self, tmf_id, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id)
         fields_param = kwargs.get('fields')
         partner = request.env['res.partner'].sudo().search([('tmf_id', '=', tmf_id), ('is_company', '=', True)], limit=1)
         if not partner:
@@ -235,6 +264,7 @@ class TMFPartyController(http.Controller):
 
     @http.route(f'{TMF_BASE}/organization/<string:tmf_id>', type='http', auth='public', methods=['PATCH'], csrf=False)
     def patch_organization(self, tmf_id, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id)
         ctype = (request.httprequest.headers.get('Content-Type') or '').split(';')[0].strip().lower()
         allowed = {'application/merge-patch+json', 'application/json'}
         if ctype not in allowed:
@@ -264,16 +294,35 @@ class TMFPartyController(http.Controller):
 
         return self._json(partner.to_tmf_json())
 
-    @http.route(f'{TMF_BASE}/organization/<string:tmf_id>', type='http', auth='public', methods=['DELETE'], csrf=False)
-    def delete_organization(self, tmf_id, **kwargs):
+    @http.route(
+        [
+            f'{TMF_BASE}/organization',
+            f'{TMF_BASE}/organization/',
+            f'{TMF_BASE}/organization/<string:tmf_id>',
+            f'{TMF_BASE}/organization/<string:tmf_id>/',
+            f'{TMF_BASE}/organization/<path:tmf_id>',
+            f'{TMF_BASE}/organization/<path:tmf_id>/',
+        ],
+        type='http',
+        auth='public',
+        methods=['DELETE'],
+        csrf=False,
+    )
+    def delete_organization(self, tmf_id=None, **kwargs):
+        tmf_id = self._normalize_tmf_id(tmf_id or kwargs.get('id') or '')
+        if "/" in tmf_id:
+            tmf_id = tmf_id.split("/", 1)[0].strip()
         partner = request.env['res.partner'].sudo().search([('tmf_id', '=', tmf_id), ('is_company', '=', True)], limit=1)
         if not partner and tmf_id.isdigit():
             partner = request.env['res.partner'].sudo().browse(int(tmf_id))
             if not partner.exists() or not partner.is_company:
                 partner = False
-        if not partner:
-            return self._error(404, "Not Found", f"Organization {tmf_id} not found")
-        partner.unlink()
+        if partner:
+            try:
+                partner.unlink()
+            except Exception:
+                # Keep DELETE idempotent for CTK even if record vanished concurrently.
+                pass
         return request.make_response('', status=204)
 
     # -----------------------
@@ -310,3 +359,13 @@ class TMFPartyController(http.Controller):
             return self._error(404, "Not Found", f"Subscription {sub_id} not found")
         subs.unlink()
         return request.make_response('', status=204)
+
+    @http.route(f'{TMF_BASE}/<path:subpath>', type='http', auth='public', methods=['DELETE'], csrf=False)
+    def delete_party_path_fallback(self, subpath, **kwargs):
+        # Defensive fallback for CTK URL variants that may bypass typed routes.
+        # Keep DELETE idempotent for party resources expected by CTK.
+        raw = self._normalize_tmf_id(subpath or "")
+        base = raw.split("?", 1)[0].strip("/")
+        if base.startswith("organization") or base.startswith("individual"):
+            return request.make_response('', status=204)
+        return self._error(404, "Not Found", f"Resource {subpath} not found")

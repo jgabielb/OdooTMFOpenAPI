@@ -2,7 +2,7 @@
 from odoo import http
 from odoo.http import request
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dateutil import parser
 
 API_BASE = "/tmf-api/entityCatalogManagement/v4"
@@ -91,8 +91,16 @@ class TMF662EntitySpecificationController(http.Controller):
             domain.append(("name", "=", params["name"]))
         if params.get("lastUpdate"):
             try:
-                dt = parser.isoparse(params["lastUpdate"].strip('"'))
-                domain.append(("last_update", "=", dt))
+                raw = params["lastUpdate"].strip('"')
+                dt = parser.isoparse(raw)
+                if "T" in raw:
+                    start = dt.replace(tzinfo=None, microsecond=0)
+                    end = start + timedelta(seconds=1)
+                else:
+                    start = dt.replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0)
+                    end = start + timedelta(days=1)
+                domain.append(("last_update", ">=", start))
+                domain.append(("last_update", "<", end))
             except Exception:
                 # If parse fails, return empty rather than 500
                 domain.append(("id", "=", 0))

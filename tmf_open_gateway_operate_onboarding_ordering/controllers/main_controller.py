@@ -6,6 +6,7 @@ from odoo.http import request
 
 # TMF931 CTK uses "...OnboardingandOrdering..." (lowercase "and"), and Odoo routes are case-sensitive.
 API_BASE = "/tmf-api/openGatewayOperateAPIOnboardingandOrdering/v5"
+API_BASE_ALT = "/tmf-api/openGatewayOperateAPIOnboardingAndOrdering/v5"
 NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
@@ -111,6 +112,17 @@ def _normalize_payload(api_name, payload):
         payload.setdefault("creationDate", _now_iso())
         payload.setdefault("completionDate", _now_iso())
         payload.setdefault("state", "acknowledged")
+        items = payload.get("productOrderItem")
+        if isinstance(items, list):
+            normalized = []
+            for item in items:
+                if isinstance(item, dict):
+                    obj = dict(item)
+                    obj.setdefault("@type", "ApiProductOrderItem")
+                    normalized.append(obj)
+                else:
+                    normalized.append({"@type": "ApiProductOrderItem"})
+            payload["productOrderItem"] = normalized
     elif api_name == "application":
         payload.setdefault("approvalStatus", "approved")
         operational = payload.get("operationalState")
@@ -129,6 +141,12 @@ def _guess_api_name(query):
         if key.lower() in query:
             return key
     return "apiProductOrder"
+
+
+def _alias(path):
+    if path.startswith(API_BASE):
+        return [path, path.replace(API_BASE, API_BASE_ALT, 1)]
+    return [path]
 
 
 class TMF931Controller(http.Controller):
@@ -268,67 +286,67 @@ class TMF931Controller(http.Controller):
         rec.write(vals)
         return _json_response(_normalize_payload(api_name, rec.to_tmf_json()), status=200)
 
-    @http.route(RESOURCES["apiProduct"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["apiProduct"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_api_product(self, **params):
         return self._list("apiProduct", **params)
 
-    @http.route(f"{RESOURCES['apiProduct']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['apiProduct']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_api_product(self, rid, **params):
         return self._get("apiProduct", rid, **params)
 
-    @http.route(RESOURCES["apiProductOrder"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["apiProductOrder"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_api_product_order(self, **params):
         return self._list("apiProductOrder", **params)
 
-    @http.route(RESOURCES["apiProductOrder"]["path"], type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route(_alias(RESOURCES["apiProductOrder"]["path"]), type="http", auth="public", methods=["POST"], csrf=False)
     def create_api_product_order(self, **_params):
         return self._create("apiProductOrder")
 
-    @http.route(f"{RESOURCES['apiProductOrder']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['apiProductOrder']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_api_product_order(self, rid, **params):
         return self._get("apiProductOrder", rid, **params)
 
-    @http.route(RESOURCES["application"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["application"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_application(self, **params):
         return self._list("application", **params)
 
-    @http.route(RESOURCES["application"]["path"], type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route(_alias(RESOURCES["application"]["path"]), type="http", auth="public", methods=["POST"], csrf=False)
     def create_application(self, **_params):
         return self._create("application")
 
-    @http.route(f"{RESOURCES['application']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['application']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_application(self, rid, **params):
         return self._get("application", rid, **params)
 
-    @http.route(f"{RESOURCES['application']['path']}/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['application']['path']}/<string:rid>"), type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_application(self, rid, **_params):
         return self._patch("application", rid)
 
-    @http.route(RESOURCES["applicationOwner"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["applicationOwner"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_application_owner(self, **params):
         return self._list("applicationOwner", **params)
 
-    @http.route(RESOURCES["applicationOwner"]["path"], type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route(_alias(RESOURCES["applicationOwner"]["path"]), type="http", auth="public", methods=["POST"], csrf=False)
     def create_application_owner(self, **_params):
         return self._create("applicationOwner")
 
-    @http.route(f"{RESOURCES['applicationOwner']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['applicationOwner']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_application_owner(self, rid, **params):
         return self._get("applicationOwner", rid, **params)
 
-    @http.route(f"{RESOURCES['applicationOwner']['path']}/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['applicationOwner']['path']}/<string:rid>"), type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_application_owner(self, rid, **_params):
         return self._patch("applicationOwner", rid)
 
-    @http.route(RESOURCES["monitor"]["path"], type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(RESOURCES["monitor"]["path"]), type="http", auth="public", methods=["GET"], csrf=False)
     def list_monitor(self, **params):
         return self._list("monitor", **params)
 
-    @http.route(f"{RESOURCES['monitor']['path']}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route(_alias(f"{RESOURCES['monitor']['path']}/<string:rid>"), type="http", auth="public", methods=["GET"], csrf=False)
     def get_monitor(self, rid, **params):
         return self._get("monitor", rid, **params)
 
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/hub", f"{API_BASE_ALT}/hub"], type="http", auth="public", methods=["POST"], csrf=False)
     def register_listener(self, **_params):
         data = _parse_json()
         if not isinstance(data, dict):
@@ -350,7 +368,7 @@ class TMF931Controller(http.Controller):
         )
         return _json_response(_subscription_json(rec), status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    @http.route([f"{API_BASE}/hub/<string:sid>", f"{API_BASE_ALT}/hub/<string:sid>"], type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_listener(self, sid, **_params):
         rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
         if not rec or not rec.exists() or rec.api_name not in RESOURCES:

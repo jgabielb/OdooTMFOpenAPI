@@ -200,6 +200,12 @@ class TMFPaymentMethod(models.Model):
                 if k not in d and k not in ("validFor", "account", "relatedParty", "relatedPlace"):
                     d[k] = v
 
+        # TMF670 CTK validates card-like attributes on broad list queries.
+        # Keep them always present as strings to avoid undefined-field failures.
+        for key in ("cardNumber", "brand", "expirationDate", "nameOnCard"):
+            if d.get(key) is None:
+                d[key] = ""
+
         # remove Nones
         out = {}
         for k, v in d.items():

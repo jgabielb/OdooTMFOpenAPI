@@ -49,6 +49,71 @@ class TMFModel(models.Model):
     related_party = fields.Char(string="relatedParty", help="")
     resource_relationship = fields.Char(string="resourceRelationship", help="")
     rule = fields.Char(string="rule", help="")
+    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
+    product_id = fields.Many2one("product.product", string="Product", ondelete="set null")
+    stock_lot_id = fields.Many2one("stock.lot", string="Stock Lot", ondelete="set null")
+
+    def _safe_json(self, value, default):
+        if not value:
+            return default
+        if isinstance(value, (dict, list)):
+            return value
+        try:
+            return json.loads(value)
+        except Exception:
+            return default
+
+    def _resolve_partner(self):
+        self.ensure_one()
+        refs = self._safe_json(self.related_party, [])
+        if isinstance(refs, dict):
+            refs = [refs]
+        if not isinstance(refs, list):
+            refs = []
+        env_partner = self.env["res.partner"].sudo()
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rid = ref.get("id")
+            if rid:
+                partner = env_partner.search([("tmf_id", "=", str(rid))], limit=1)
+                if not partner and str(rid).isdigit():
+                    partner = env_partner.browse(int(rid))
+                if partner and partner.exists():
+                    return partner
+            name = (ref.get("name") or "").strip()
+            if name:
+                partner = env_partner.search([("name", "=", name)], limit=1)
+                if partner:
+                    return partner
+        return False
+
+    def _resolve_product_and_lot(self):
+        self.ensure_one()
+        env_product = self.env["product.product"].sudo()
+        env_lot = self.env["stock.lot"].sudo()
+        product = False
+        lot = False
+        if self.name:
+            product = env_product.search([("name", "=", self.name)], limit=1)
+        if not product and self.tmf_id:
+            product = env_product.search([("tmf_id", "=", self.tmf_id)], limit=1)
+        if self.serial_number:
+            lot = env_lot.search([("name", "=", self.serial_number)], limit=1)
+        if not lot and product and self.serial_number:
+            lot = env_lot.search([("name", "=", self.serial_number), ("product_id", "=", product.id)], limit=1)
+        return product, lot
+
+    def _sync_native_links(self):
+        for rec in self:
+            partner = rec._resolve_partner()
+            if partner:
+                rec.partner_id = partner.id
+            product, lot = rec._resolve_product_and_lot()
+            if product:
+                rec.product_id = product.id
+            if lot:
+                rec.stock_lot_id = lot.id
 
     def _get_tmf_api_path(self):
         return "/deviceManagement/v4/Device"
@@ -108,12 +173,22 @@ class TMFModel(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
+        recs._sync_native_links()
         for rec in recs:
             self._notify('device', 'create', rec)
         return recs
 
     def write(self, vals):
         res = super().write(vals)
+        if (
+            "related_party" in vals
+            or "name" in vals
+            or "serial_number" in vals
+            or "partner_id" in vals
+            or "product_id" in vals
+            or "stock_lot_id" in vals
+        ):
+            self._sync_native_links()
         for rec in self:
             self._notify('device', 'update', rec)
         return res

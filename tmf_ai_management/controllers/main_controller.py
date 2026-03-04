@@ -1,4 +1,6 @@
 import json
+from datetime import datetime, timezone
+from urllib.parse import unquote
 from odoo import http
 from odoo.http import request
 
@@ -40,6 +42,31 @@ def _fields_filter(payload, fields_csv):
     return {key: value for key, value in payload.items() if key in wanted}
 
 
+def _normalize_for_match(key, value):
+    if value is None:
+        return ""
+    text = unquote(str(value).strip())
+    # CTK may pass quoted values in query params, e.g. %22...%22
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
+        text = text[1:-1].strip()
+    if not text:
+        return ""
+    key_l = str(key or "").lower()
+    if any(token in key_l for token in ("date", "time")):
+        parsed = text
+        if parsed.endswith("Z"):
+            parsed = parsed[:-1] + "+00:00"
+        try:
+            dt = datetime.fromisoformat(parsed)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            # Compare on second precision to avoid formatting mismatches.
+            return dt.replace(microsecond=0).isoformat().lower()
+        except Exception:
+            return text.lower()
+    return text.lower()
+
+
 def _find_record(resource, rid):
     model = request.env[RESOURCE_MODEL].sudo()
     rec = model.search([("resource_type", "=", resource), ("tmf_id", "=", rid)], limit=1)
@@ -67,12 +94,41 @@ class TMFController(http.Controller):
             domain.append(("tmf_id", "=", params["id"]))
         if params.get("name"):
             domain.append(("name", "=", params["name"]))
+        if params.get("state"):
+            domain.append(("state", "=", params["state"]))
+        if params.get("status"):
+            domain.append(("status", "=", params["status"]))
+        if params.get("lifecycleStatus"):
+            domain.append(("lifecycle_status", "=", params["lifecycleStatus"]))
+
+        reserved = {"offset", "limit", "fields", "sort", "id", "name", "state", "status", "lifecycleStatus"}
+        extra_filters = {
+            key: value
+            for key, value in params.items()
+            if key not in reserved and value not in (None, "")
+        }
+
         offset = int(params.get("offset", 0) or 0)
         limit = params.get("limit")
         limit = int(limit) if limit not in (None, "") else None
-        total = model.search_count(domain)
-        recs = model.search(domain, offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
+
+        recs = model.search(domain)
+        filtered = []
+        for rec in recs:
+            payload = rec.to_tmf_json()
+            payload_lower = {str(k).lower(): v for k, v in payload.items()}
+            matches = True
+            for key, expected in extra_filters.items():
+                actual = payload.get(key, payload_lower.get(str(key).lower(), ""))
+                if _normalize_for_match(key, actual) != _normalize_for_match(key, expected):
+                    matches = False
+                    break
+            if matches:
+                filtered.append(payload)
+
+        total = len(filtered)
+        sliced = filtered[offset:] if limit is None else filtered[offset:offset + limit]
+        payload = [_fields_filter(item, params.get("fields")) for item in sliced]
         headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
         return _json_response(payload, status=200, headers=headers)
 

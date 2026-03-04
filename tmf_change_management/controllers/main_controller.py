@@ -6,8 +6,10 @@ import uuid
 from datetime import datetime
 
 API_BASE = "/tmf-api/changeManagement/v4"
+API_BASE_ALT = "/tmf-api/ChangeManagement/v4"
 RESOURCE = "changeRequest"
 BASE_PATH = f"{API_BASE}/{RESOURCE}"
+BASE_PATH_ALT = f"{API_BASE_ALT}/{RESOURCE}"
 
 MANDATORY_ON_CREATE = {
     "priority", "targetEntity", "specification",
@@ -117,7 +119,7 @@ def _to_tmf_payload(r):
 
 class TMF655Controller(http.Controller):
 
-    @http.route(BASE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([BASE_PATH, BASE_PATH_ALT], type="http", auth="public", methods=["GET"], csrf=False)
     def list_change_requests(self, **params):
         dom = []
 
@@ -156,14 +158,14 @@ class TMF655Controller(http.Controller):
 
         return _json_response([_to_tmf_payload(r) for r in recs], status=200)
 
-    @http.route(f"{BASE_PATH}/<string:cr_id>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([f"{BASE_PATH}/<string:cr_id>", f"{BASE_PATH_ALT}/<string:cr_id>"], type="http", auth="public", methods=["GET"], csrf=False)
     def get_change_request(self, cr_id, **params):
         r = request.env["tmf.change.request"].sudo().search([("tmf_id", "=", cr_id)], limit=1)
         if not r:
             return _error(404, "Not Found")
         return _json_response(_to_tmf_payload(r), status=200)
 
-    @http.route(BASE_PATH, type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([BASE_PATH, BASE_PATH_ALT], type="http", auth="public", methods=["POST"], csrf=False)
     def create_change_request(self, **params):
         body = _parse_json_body()
         if body is None:
@@ -214,11 +216,11 @@ class TMF655Controller(http.Controller):
         r = request.env["tmf.change.request"].sudo().create(vals)
         return _json_response(_to_tmf_payload(r), status=201)
 
-    @http.route(f"{BASE_PATH}/<string:cr_id>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route([f"{BASE_PATH}/<string:cr_id>", f"{BASE_PATH_ALT}/<string:cr_id>"], type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_change_request(self, cr_id, **params):
         return _error(501, "Not Implemented")
 
-    @http.route(f"{BASE_PATH}/<string:cr_id>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    @http.route([f"{BASE_PATH}/<string:cr_id>", f"{BASE_PATH_ALT}/<string:cr_id>"], type="http", auth="public", methods=["DELETE"], csrf=False)
     def delete_change_request(self, cr_id, **params):
         r = request.env["tmf.change.request"].sudo().search([("tmf_id", "=", cr_id)], limit=1)
         if not r:

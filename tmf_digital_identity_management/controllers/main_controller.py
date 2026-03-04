@@ -68,7 +68,12 @@ class TMF720Controller(http.Controller):
         if params.get("nickname"):
             domain.append(("nickname", "=", params["nickname"]))
         if params.get("creationDate"):
-            domain.append(("creation_date", "=", params["creationDate"]))
+            creation_date = str(params["creationDate"]).strip()
+            # CTK may send date-only filter (YYYY-MM-DD) while records store full ISO timestamps.
+            if len(creation_date) == 10:
+                domain.append(("creation_date", "ilike", f"{creation_date}%"))
+            else:
+                domain.append(("creation_date", "=", creation_date))
         offset = int(params.get("offset", 0) or 0)
         limit = params.get("limit")
         limit = int(limit) if limit not in (None, "") else None
