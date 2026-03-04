@@ -49,13 +49,13 @@
     </record>
 
     <record id="action_tmf_service_level_objective" model="ir.actions.act_window">
-        <field name="name">ServiceLevelObjective</field>
+        <field name="name">Service Level Objective</field>
         <field name="res_model">tmf.service.level.objective</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_service_level_objective"
-              name="ServiceLevelObjective"
+              name="Service Level Objective"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_service_level_objective"/>
 </odoo>

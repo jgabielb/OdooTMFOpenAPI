@@ -39,7 +39,7 @@
   </record>
 
   <record id="action_tmf_resource_pool_specification" model="ir.actions.act_window">
-    <field name="name">ResourcePoolSpecification</field>
+    <field name="name">Resource Pool Specification</field>
     <field name="res_model">tmf.resource.pool.specification</field>
     <field name="view_mode">list,form</field>
   </record>

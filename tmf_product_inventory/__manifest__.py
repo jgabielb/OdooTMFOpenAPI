@@ -1,5 +1,5 @@
 {
-    "name": "TMF637 Product Inventory (v5) - Odoo Extension",
+    "name": "TMF637 Product Inventory Management",
     "summary": "Expose Product Inventory Management API (TMF637) over tmf.product",
     "description": "Implements TMF637 Product Inventory Management v5 endpoints for Product CRUD.",
     "author": "Joao Gabriel",

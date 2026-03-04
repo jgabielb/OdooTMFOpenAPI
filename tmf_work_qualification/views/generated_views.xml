@@ -3,7 +3,7 @@
         <field name="name">tmf.check.work.qualification.tree</field>
         <field name="model">tmf.check.work.qualification</field>
         <field name="arch" type="xml">
-            <list string="CheckWorkQualification">
+            <list string="Check Work Qualification">
                 <field name="tmf_id"/>
                 <field name="description"/>
                 <field name="external_id"/>
@@ -17,7 +17,7 @@
         <field name="name">tmf.check.work.qualification.form</field>
         <field name="model">tmf.check.work.qualification</field>
         <field name="arch" type="xml">
-            <form string="CheckWorkQualification">
+            <form string="Check Work Qualification">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -44,18 +44,18 @@
     </record>
 
     <record id="action_tmf_check_work_qualification" model="ir.actions.act_window">
-        <field name="name">CheckWorkQualification</field>
+        <field name="name">Check Work Qualification</field>
         <field name="res_model">tmf.check.work.qualification</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_check_work_qualification" name="CheckWorkQualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_check_work_qualification"/>
+    <menuitem id="menu_tmf_check_work_qualification" name="Check Work Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_check_work_qualification"/>
 
     <record id="view_tmf_query_work_qualification_tree" model="ir.ui.view">
         <field name="name">tmf.query.work.qualification.tree</field>
         <field name="model">tmf.query.work.qualification</field>
         <field name="arch" type="xml">
-            <list string="QueryWorkQualification">
+            <list string="Query Work Qualification">
                 <field name="tmf_id"/>
                 <field name="description"/>
                 <field name="external_id"/>
@@ -68,7 +68,7 @@
         <field name="name">tmf.query.work.qualification.form</field>
         <field name="model">tmf.query.work.qualification</field>
         <field name="arch" type="xml">
-            <form string="QueryWorkQualification">
+            <form string="Query Work Qualification">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -93,10 +93,10 @@
     </record>
 
     <record id="action_tmf_query_work_qualification" model="ir.actions.act_window">
-        <field name="name">QueryWorkQualification</field>
+        <field name="name">Query Work Qualification</field>
         <field name="res_model">tmf.query.work.qualification</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_query_work_qualification" name="QueryWorkQualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_query_work_qualification"/>
+    <menuitem id="menu_tmf_query_work_qualification" name="Query Work Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_query_work_qualification"/>
 </odoo>

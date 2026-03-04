@@ -68,13 +68,13 @@
     </record>
 
     <record id="action_tmf_transfer_balance" model="ir.actions.act_window">
-        <field name="name">TransferBalance</field>
+        <field name="name">Transfer Balance</field>
         <field name="res_model">tmf.transfer.balance</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_transfer_balance"
-              name="TransferBalance"
+              name="Transfer Balance"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_transfer_balance"/>
 </odoo>

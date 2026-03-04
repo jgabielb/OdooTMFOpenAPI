@@ -38,13 +38,13 @@
     </record>
 
     <record id="action_tmf_test_data_instance_definition" model="ir.actions.act_window">
-        <field name="name">TestDataInstanceDefinition</field>
+        <field name="name">Test Data Instance Definition</field>
         <field name="res_model">tmf.test.data.instance.definition</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_test_data_instance_definition"
-              name="TestDataInstanceDefinition"
+              name="Test Data Instance Definition"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_test_data_instance_definition"/>
 </odoo>

@@ -54,13 +54,13 @@
     </record>
 
     <record id="action_tmf_managed_entity" model="ir.actions.act_window">
-        <field name="name">ManagedEntity</field>
+        <field name="name">Managed Entity</field>
         <field name="res_model">tmf.managed.entity</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_managed_entity"
-              name="ManagedEntity"
+              name="Managed Entity"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_managed_entity"/>
 </odoo>

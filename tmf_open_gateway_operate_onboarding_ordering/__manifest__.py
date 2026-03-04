@@ -1,7 +1,7 @@
 {
-    "name": "TMF931 Open Gateway Operate Onboarding and Ordering",
-    "summary": "TMF931 Open Gateway Operate API - Onboarding and Ordering",
-    "description": "Implements TMF931 Open Gateway Operate API - Onboarding and Ordering.",
+    "name": "TMF931 Open Gateway Onboarding and Ordering Component Suite",
+    "summary": "TMF931 Open Gateway Onboarding and Ordering Component Suite API",
+    "description": "Implements TMF931 Open Gateway Onboarding and Ordering Component Suite API.",
     "author": "Joao Gabriel",
     "category": "TMF",
     "version": "0.1",

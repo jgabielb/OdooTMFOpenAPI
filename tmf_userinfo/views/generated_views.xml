@@ -64,13 +64,13 @@
     </record>
 
     <record id="action_tmf_userinfo" model="ir.actions.act_window">
-        <field name="name">Userinfo</field>
+        <field name="name">User Info</field>
         <field name="res_model">tmf.userinfo</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_userinfo"
-              name="Userinfo"
+              name="User Info"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_userinfo"/>
 </odoo>

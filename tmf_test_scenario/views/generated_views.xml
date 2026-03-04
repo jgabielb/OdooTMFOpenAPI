@@ -34,13 +34,13 @@
     </record>
 
     <record id="action_tmf_test_scenario" model="ir.actions.act_window">
-        <field name="name">TestScenario</field>
+        <field name="name">Test Scenario</field>
         <field name="res_model">tmf.test.scenario</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_test_scenario"
-              name="TestScenario"
+              name="Test Scenario"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_test_scenario"/>
 </odoo>

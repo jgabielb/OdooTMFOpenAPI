@@ -35,13 +35,13 @@
     </record>
 
     <record id="action_tmf_process_flow" model="ir.actions.act_window">
-        <field name="name">ProcessFlow</field>
+        <field name="name">Process Flow</field>
         <field name="res_model">tmf.process.flow</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_process_flow"
-              name="ProcessFlow"
+              name="Process Flow"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_process_flow"/>
 </odoo>

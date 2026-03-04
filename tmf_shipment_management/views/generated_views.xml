@@ -52,7 +52,7 @@
         <field name="name">tmf.shipment.specification.tree</field>
         <field name="model">tmf.shipment.specification</field>
         <field name="arch" type="xml">
-            <list string="ShipmentSpecification">
+            <list string="Shipment Specification">
                 <field name="tmf_id"/>
                 <field name="name"/>
                 <field name="description"/>
@@ -66,7 +66,7 @@
         <field name="name">tmf.shipment.specification.form</field>
         <field name="model">tmf.shipment.specification</field>
         <field name="arch" type="xml">
-            <form string="ShipmentSpecification">
+            <form string="Shipment Specification">
                 <sheet>
                     <group>
                         <field name="name"/>
@@ -87,10 +87,10 @@
     </record>
 
     <record id="action_tmf_shipment_specification" model="ir.actions.act_window">
-        <field name="name">ShipmentSpecification</field>
+        <field name="name">Shipment Specification</field>
         <field name="res_model">tmf.shipment.specification</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_shipment_specification" name="ShipmentSpecification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_shipment_specification"/>
+    <menuitem id="menu_tmf_shipment_specification" name="Shipment Specification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_shipment_specification"/>
 </odoo>

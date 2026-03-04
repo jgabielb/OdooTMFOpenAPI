@@ -1,5 +1,5 @@
 {
-    "name": "TMF702 Resource Activation",
+    "name": "TMF702 Resource Activation Management",
     "summary": "TMF702 Resource Activation and Configuration API",
     "description": "Implements TMF702 Resource Activation and Configuration API with hub notifications.",
     "author": "Joao Gabriel",

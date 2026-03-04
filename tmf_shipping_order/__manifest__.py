@@ -1,5 +1,5 @@
 {
-    "name": "TMF Shipping Order",
+    "name": "TMF700 Shipping Order Management",
     "summary": "TMF700 Shipping Order Management API v4.0 implementation",
     "description": "Implements ShippingOrder resource, hub subscription and listener endpoints for TMF700.",
     "author": "Joao Gabriel",

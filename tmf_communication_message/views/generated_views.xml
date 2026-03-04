@@ -65,14 +65,14 @@
 
     <!-- ACTION -->
     <record id="action_tmf_communication_message" model="ir.actions.act_window">
-        <field name="name">CommunicationMessage</field>
+        <field name="name">Communication Message</field>
         <field name="res_model">tmf.communication.message</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENU -->
     <menuitem id="menu_tmf_communication_message"
-              name="CommunicationMessage"
+              name="Communication Message"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_communication_message"/>
 </odoo>

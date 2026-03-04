@@ -3,7 +3,7 @@
         <field name="name">tmf.resource.reservation.tree</field>
         <field name="model">tmf.resource.reservation</field>
         <field name="arch" type="xml">
-            <list string="ResourceReservation">
+            <list string="Resource Reservation">
                 <field name="tmf_id"/>
                 <field name="description"/>
                 <field name="state"/>
@@ -17,7 +17,7 @@
         <field name="name">tmf.resource.reservation.form</field>
         <field name="model">tmf.resource.reservation</field>
         <field name="arch" type="xml">
-            <form string="ResourceReservation">
+            <form string="Resource Reservation">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -40,18 +40,18 @@
     </record>
 
     <record id="action_tmf_resource_reservation" model="ir.actions.act_window">
-        <field name="name">ResourceReservation</field>
+        <field name="name">Resource Reservation</field>
         <field name="res_model">tmf.resource.reservation</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_reservation" name="ResourceReservation" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_reservation"/>
+    <menuitem id="menu_tmf_resource_reservation" name="Resource Reservation" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_reservation"/>
 
     <record id="view_tmf_cancel_resource_reservation_tree" model="ir.ui.view">
         <field name="name">tmf.cancel.resource.reservation.tree</field>
         <field name="model">tmf.cancel.resource.reservation</field>
         <field name="arch" type="xml">
-            <list string="CancelResourceReservation">
+            <list string="Cancel Resource Reservation">
                 <field name="tmf_id"/>
                 <field name="state"/>
                 <field name="cancellation_reason"/>
@@ -64,7 +64,7 @@
         <field name="name">tmf.cancel.resource.reservation.form</field>
         <field name="model">tmf.cancel.resource.reservation</field>
         <field name="arch" type="xml">
-            <form string="CancelResourceReservation">
+            <form string="Cancel Resource Reservation">
                 <sheet>
                     <group>
                         <field name="state"/>
@@ -81,10 +81,10 @@
     </record>
 
     <record id="action_tmf_cancel_resource_reservation" model="ir.actions.act_window">
-        <field name="name">CancelResourceReservation</field>
+        <field name="name">Cancel Resource Reservation</field>
         <field name="res_model">tmf.cancel.resource.reservation</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_cancel_resource_reservation" name="CancelResourceReservation" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_cancel_resource_reservation"/>
+    <menuitem id="menu_tmf_cancel_resource_reservation" name="Cancel Resource Reservation" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_cancel_resource_reservation"/>
 </odoo>

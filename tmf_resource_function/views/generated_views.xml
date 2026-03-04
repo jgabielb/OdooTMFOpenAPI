@@ -3,7 +3,7 @@
         <field name="name">tmf.resource.function.form</field>
         <field name="model">tmf.resource.function</field>
         <field name="arch" type="xml">
-            <form string="ResourceFunction">
+            <form string="Resource Function">
                 <sheet>
                     <notebook>
 
@@ -72,7 +72,7 @@
         <field name="name">tmf.resource.function.tree</field>
         <field name="model">tmf.resource.function</field>
         <field name="arch" type="xml">
-            <list string="ResourceFunction">
+            <list string="Resource Function">
                 <field name="name"/>
                 <field name="category"/>
                 <field name="function_type"/>
@@ -85,10 +85,10 @@
     </record>
 
     <record id="action_tmf_resource_function" model="ir.actions.act_window">
-        <field name="name">ResourceFunction</field>
+        <field name="name">Resource Function</field>
         <field name="res_model">tmf.resource.function</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_function" name="ResourceFunction" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_function"/>
+    <menuitem id="menu_tmf_resource_function" name="Resource Function" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_function"/>
 </odoo>

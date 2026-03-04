@@ -33,7 +33,7 @@
   </record>
 
   <record id="action_tmf_capacity_specification" model="ir.actions.act_window">
-    <field name="name">CapacitySpecification</field>
+    <field name="name">Capacity Specification</field>
     <field name="res_model">tmf.capacity.specification</field>
     <field name="view_mode">list,form</field>
   </record>

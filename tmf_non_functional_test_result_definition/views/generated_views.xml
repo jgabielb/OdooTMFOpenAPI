@@ -38,13 +38,13 @@
     </record>
 
     <record id="action_tmf_non_functional_test_result_definition" model="ir.actions.act_window">
-        <field name="name">NonFunctionalTestResultDefinition</field>
+        <field name="name">Non Functional Test Result Definition</field>
         <field name="res_model">tmf.non.functional.test.result.definition</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_non_functional_test_result_definition"
-              name="NonFunctionalTestResultDefinition"
+              name="Non Functional Test Result Definition"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_non_functional_test_result_definition"/>
 </odoo>

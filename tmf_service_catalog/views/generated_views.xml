@@ -60,14 +60,14 @@
 
     <!-- ACTION -->
     <record id="action_tmf_service_catalog" model="ir.actions.act_window">
-        <field name="name">ServiceCatalog</field>
+        <field name="name">Service Catalog</field>
         <field name="res_model">tmf.service.catalog</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENU -->
     <menuitem id="menu_tmf_service_catalog"
-              name="ServiceCatalog"
+              name="Service Catalog"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_service_catalog"/>
 </odoo>

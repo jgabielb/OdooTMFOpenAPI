@@ -1,5 +1,5 @@
 <odoo>
-  <!-- QueryUsageConsumption -->
+  <!-- Query Usage Consumption -->
   <record id="view_tmf_query_usage_consumption_form" model="ir.ui.view">
     <field name="name">tmf.query.usage.consumption.form</field>
     <field name="model">tmf.query.usage.consumption</field>
@@ -40,12 +40,12 @@
   </record>
 
   <record id="action_tmf_query_usage_consumption" model="ir.actions.act_window">
-    <field name="name">QueryUsageConsumption</field>
+    <field name="name">Query Usage Consumption</field>
     <field name="res_model">tmf.query.usage.consumption</field>
     <field name="view_mode">list,form</field>
   </record>
 
-  <!-- UsageConsumptionReport -->
+  <!-- Usage Consumption Report -->
   <record id="view_tmf_usage_consumption_report_form" model="ir.ui.view">
     <field name="name">tmf.usage.consumption.report.form</field>
     <field name="model">tmf.usage.consumption.report</field>
@@ -78,7 +78,7 @@
   </record>
 
   <record id="action_tmf_usage_consumption_report" model="ir.actions.act_window">
-    <field name="name">UsageConsumptionReport</field>
+    <field name="name">Usage Consumption Report</field>
     <field name="res_model">tmf.usage.consumption.report</field>
     <field name="view_mode">list,form</field>
   </record>
@@ -90,12 +90,12 @@
             sequence="50"/>
 
   <menuitem id="menu_tmf_query_usage_consumption"
-            name="QueryUsageConsumption"
+            name="Query Usage Consumption"
             parent="menu_tmf_usage_consumption_root"
             action="action_tmf_query_usage_consumption"/>
 
   <menuitem id="menu_tmf_usage_consumption_report"
-            name="UsageConsumptionReport"
+            name="Usage Consumption Report"
             parent="menu_tmf_usage_consumption_root"
             action="action_tmf_usage_consumption_report"/>
 </odoo>

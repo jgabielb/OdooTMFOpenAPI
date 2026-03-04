@@ -1,5 +1,5 @@
 {
-    "name": "TMF Sales",
+    "name": "TMF699 Sales Management",
     "summary": "TMF699 Sales Management API v4 implementation",
     "description": "Implements SalesLead, Hub subscription and listener endpoints for TMF699.",
     "author": "Joao Gabriel",

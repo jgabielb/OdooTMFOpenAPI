@@ -1,7 +1,7 @@
 <odoo>
     <!-- 1. TMF Root Menu (Appears on the main dashboard) -->
     <menuitem id="menu_tmf_root" 
-              name="TMF OpenApis" 
+              name="TMF Open APIs"
               web_icon="tmf_base,static/description/icon.png" 
               sequence="1"/>
 

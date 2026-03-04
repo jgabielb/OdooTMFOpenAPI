@@ -28,20 +28,17 @@ Typical validation commands:
 - `python OdooBSS/tools/tmf_api_smoke.py --config OdooBSS/tools/tmf_api_smoke.sample.json --workers 8`
 - `python OdooBSS/tools/run_ctk_batch.py`
 
-## CTK Compliance Matrix (Snapshot)
+## API Compliance Status
 
-Snapshot source: provided project matrix (latest shared in session).  
-Status values:
-- `100%`: CTK currently passing
-- `NO CTK`: no CTK package/run available in this project snapshot
+Snapshot source: provided project matrix (latest shared in session).
 
-| TMF ID | Result | Name |
+### APIs with CTK Coverage (Current: 100%)
+
+| TMF ID | CTK | API Name |
 |---|---|---|
 | TMF620 | 100% | Product Catalog Management API |
 | TMF621 | 100% | Trouble Ticket Management API |
 | TMF622 | 100% | Product Ordering Management API |
-| TMF623 | NO CTK | SLA Management API |
-| TMF628 | NO CTK | Performance Management API |
 | TMF629 | 100% | Customer Management API |
 | TMF632 | 100% | Party Management API |
 | TMF633 | 100% | Service Catalog Management API |
@@ -57,15 +54,13 @@ Status values:
 | TMF645 | 100% | Service Qualification Management API |
 | TMF646 | 100% | Appointment Management API |
 | TMF648 | 100% | Quote Management API |
-| TMF649 | NO CTK | Performance Thresholding Management API |
 | TMF651 | 100% | Agreement Management API |
 | TMF652 | 100% | Resource Order Management API |
 | TMF653 | 100% | Service Test Management API |
 | TMF654 | 100% | Prepay Balance Management API |
 | TMF655 | 100% | Change Management API |
 | TMF656 | 100% | Service Problem Management API |
-| TMF657 | 100% | Service Quality Management Management API |
-| TMF658 | NO CTK | Loyalty Management API |
+| TMF657 | 100% | Service Quality Management API |
 | TMF662 | 100% | Entity Catalog Management API |
 | TMF663 | 100% | Shopping Cart Management API |
 | TMF664 | 100% | Resource Function Activation Management API |
@@ -78,7 +73,6 @@ Status values:
 | TMF672 | 100% | User Role Permission Management API |
 | TMF673 | 100% | Geographic Address Management API |
 | TMF674 | 100% | Geographic Site Management API |
-| TMF675 | NO CTK | Geographic Location Management API |
 | TMF676 | 100% | Payment Management API |
 | TMF677 | 100% | Usage Consumption Management API |
 | TMF678 | 100% | Customer Bill Management API |
@@ -86,18 +80,10 @@ Status values:
 | TMF680 | 100% | Recommendation Management API |
 | TMF681 | 100% | Communication Management API |
 | TMF683 | 100% | Party Interaction Management API |
-| TMF684 | NO CTK | Shipment Tracking Management API |
-| TMF685 | NO CTK | Resource Pool Management API |
-| TMF686 | NO CTK | Topology Management API |
 | TMF687 | 100% | Stock Management API |
-| TMF688 | NO CTK | Event Management API |
-| TMF691 | NO CTK | Federated ID Management API |
 | TMF696 | 100% | Risk Management API |
 | TMF699 | 100% | Sales Management API |
-| TMF700 | NO CTK | Shipping Order Management API |
-| TMF701 | NO CTK | Process Flow Management API |
 | TMF702 | 100% | Resource Activation Management API |
-| TMF703 | NO CTK | Entity Inventory Management API |
 | TMF704 | 100% | Test Case Management API |
 | TMF705 | 100% | Test Environment Management API |
 | TMF706 | 100% | Test Data Management API |
@@ -105,38 +91,26 @@ Status values:
 | TMF708 | 100% | Test Execution Management API |
 | TMF709 | 100% | Test Scenario Management API |
 | TMF710 | 100% | General Test Artifact Management API |
-| TMF711 | NO CTK | Shipment Management Management API |
-| TMF713 | NO CTK | Work Management |
-| TMF714 | NO CTK | Work Qualification Management |
-| TMF715 | NO CTK | Warranty Management |
-| TMF716 | 100% | Resource Reservation |
-| TMF717 | NO CTK | Customer360 Management |
+| TMF716 | 100% | Resource Reservation API |
 | TMF720 | 100% | Digital Identity Management API |
 | TMF724 | 100% | Incident Management API |
-| TMF725 | NO CTK | Metadata Catalog Management API |
-| TMF727 | NO CTK | Service Usage Management API |
-| TMF728 | NO CTK | Dunning Case Management |
-| TMF730 | 100% | Software And Compute Management API |
+| TMF730 | 100% | Software and Compute Management API |
 | TMF735 | 100% | CDR Transaction Management API |
 | TMF736 | 100% | Revenue Sharing Algorithm Management API |
 | TMF737 | 100% | Revenue Sharing Report Management API |
-| TMF738 | 100% | Revenue Sharing Model Management |
-| TMF759 | NO CTK | Private Optimized Binding |
+| TMF738 | 100% | Revenue Sharing Model Management API |
 | TMF760 | 100% | Product Configuration Management API |
-| TMF764 | NO CTK | Cost Management API |
-| TMF767 | NO CTK | Product Usage Catalog Management API |
-| TMF768 | NO CTK | Resource Role API |
-| TMF771 | 100% | Resource Usage API |
-| TMF777 | NO CTK | Outage Management API |
-| TMF908 | NO CTK | IoT Agent and Device Management API |
-| TMF909 | NO CTK | Network as a Service Management API |
-| TMF910 | NO CTK | Self Care Management API |
-| TMF914 | NO CTK | IoT Service Management API |
+| TMF771 | 100% | Resource Usage Management API |
 | TMF915 | 100% | AI Management API |
 | TMF921 | 100% | Intent Management API |
-| TMF924 | NO CTK | DCS 5GSlice Service Activation API |
-| TMF931 | 100% | Open Gateway Onboarding and Ordering Component Suite |
+| TMF931 | 100% | Open Gateway Onboarding and Ordering Component Suite API |
 | TMF936 | 100% | Open Gateway Product Catalog API |
+
+### APIs without CTK Availability (`NO CTK` in current matrix)
+
+These APIs may still be implemented and wired in Odoo, but currently have no CTK package/run in this project snapshot.
+
+TMF623, TMF628, TMF649, TMF658, TMF675, TMF684, TMF685, TMF686, TMF688, TMF691, TMF700, TMF701, TMF703, TMF711, TMF713, TMF714, TMF715, TMF717, TMF725, TMF727, TMF728, TMF759, TMF764, TMF767, TMF768, TMF777, TMF908, TMF909, TMF910, TMF914, TMF924.
 
 ## Notes
 

@@ -69,14 +69,14 @@
 
     <!-- ACTION -->
     <record id="action_tmf_party_interaction" model="ir.actions.act_window">
-        <field name="name">PartyInteraction</field>
+        <field name="name">Party Interaction</field>
         <field name="res_model">tmf.party.interaction</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENU -->
     <menuitem id="menu_tmf_party_interaction"
-              name="PartyInteraction"
+              name="Party Interaction"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_party_interaction"/>
 </odoo>

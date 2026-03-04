@@ -1,7 +1,7 @@
 {
-    'name': "TMF UsageConsumption",
-    'summary': "Auto-generated implementation of API UsageConsumption",
-    'description': "Implements UsageConsumption API with Hub Notifications.",
+    'name': "TMF Usage Consumption",
+    'summary': "Auto-generated implementation of API Usage Consumption",
+    'description': "Implements Usage Consumption API with Hub Notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

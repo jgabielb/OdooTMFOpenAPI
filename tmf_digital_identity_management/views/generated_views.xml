@@ -3,7 +3,7 @@
         <field name="name">tmf.digital.identity.tree</field>
         <field name="model">tmf.digital.identity</field>
         <field name="arch" type="xml">
-            <list string="DigitalIdentity">
+            <list string="Digital Identity">
                 <field name="tmf_id"/>
                 <field name="nickname"/>
                 <field name="status"/>
@@ -17,7 +17,7 @@
         <field name="name">tmf.digital.identity.form</field>
         <field name="model">tmf.digital.identity</field>
         <field name="arch" type="xml">
-            <form string="DigitalIdentity">
+            <form string="Digital Identity">
                 <sheet>
                     <group>
                         <field name="nickname"/>
@@ -37,10 +37,10 @@
     </record>
 
     <record id="action_tmf_digital_identity" model="ir.actions.act_window">
-        <field name="name">DigitalIdentity</field>
+        <field name="name">Digital Identity</field>
         <field name="res_model">tmf.digital.identity</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_digital_identity" name="DigitalIdentity" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_digital_identity"/>
+    <menuitem id="menu_tmf_digital_identity" name="Digital Identity" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_digital_identity"/>
 </odoo>

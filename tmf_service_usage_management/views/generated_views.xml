@@ -3,7 +3,7 @@
         <field name="name">tmf.service.usage.tree</field>
         <field name="model">tmf.service.usage</field>
         <field name="arch" type="xml">
-            <list string="ServiceUsage">
+            <list string="Service Usage">
                 <field name="tmf_id"/>
                 <field name="status"/>
                 <field name="usage_type"/>
@@ -17,7 +17,7 @@
         <field name="name">tmf.service.usage.form</field>
         <field name="model">tmf.service.usage</field>
         <field name="arch" type="xml">
-            <form string="ServiceUsage">
+            <form string="Service Usage">
                 <sheet>
                     <group>
                         <field name="status"/>
@@ -37,10 +37,10 @@
     </record>
 
     <record id="action_tmf_service_usage" model="ir.actions.act_window">
-        <field name="name">ServiceUsage</field>
+        <field name="name">Service Usage</field>
         <field name="res_model">tmf.service.usage</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_service_usage" name="ServiceUsage" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_service_usage"/>
+    <menuitem id="menu_tmf_service_usage" name="Service Usage" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_service_usage"/>
 </odoo>

@@ -3,7 +3,7 @@
         <field name="name">tmf.test.environment.provisioning.execution.tree</field>
         <field name="model">tmf.test.environment.provisioning.execution</field>
         <field name="arch" type="xml">
-            <list string="TestEnvironmentProvisioningExecution">
+            <list string="Test Environment Provisioning Execution">
                 <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
                 <field name="state"/>
@@ -15,7 +15,7 @@
         <field name="name">tmf.test.environment.provisioning.execution.form</field>
         <field name="model">tmf.test.environment.provisioning.execution</field>
         <field name="arch" type="xml">
-            <form string="TestEnvironmentProvisioningExecution">
+            <form string="Test Environment Provisioning Execution">
                 <sheet>
                     <group>
                         <field name="data_correlation_id"/>
@@ -29,18 +29,18 @@
     </record>
 
     <record id="action_tmf_test_environment_provisioning_execution" model="ir.actions.act_window">
-        <field name="name">TestEnvironmentProvisioningExecution</field>
+        <field name="name">Test Environment Provisioning Execution</field>
         <field name="res_model">tmf.test.environment.provisioning.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_environment_provisioning_execution" name="TestEnvironmentProvisioningExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_provisioning_execution"/>
+    <menuitem id="menu_tmf_test_environment_provisioning_execution" name="Test Environment Provisioning Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_provisioning_execution"/>
 
     <record id="view_tmf_test_environment_allocation_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.environment.allocation.execution.tree</field>
         <field name="model">tmf.test.environment.allocation.execution</field>
         <field name="arch" type="xml">
-            <list string="TestEnvironmentAllocationExecution">
+            <list string="Test Environment Allocation Execution">
                 <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
                 <field name="state"/>
@@ -53,7 +53,7 @@
         <field name="name">tmf.test.environment.allocation.execution.form</field>
         <field name="model">tmf.test.environment.allocation.execution</field>
         <field name="arch" type="xml">
-            <form string="TestEnvironmentAllocationExecution">
+            <form string="Test Environment Allocation Execution">
                 <sheet>
                     <group>
                         <field name="data_correlation_id"/>
@@ -68,18 +68,18 @@
     </record>
 
     <record id="action_tmf_test_environment_allocation_execution" model="ir.actions.act_window">
-        <field name="name">TestEnvironmentAllocationExecution</field>
+        <field name="name">Test Environment Allocation Execution</field>
         <field name="res_model">tmf.test.environment.allocation.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_environment_allocation_execution" name="TestEnvironmentAllocationExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_allocation_execution"/>
+    <menuitem id="menu_tmf_test_environment_allocation_execution" name="Test Environment Allocation Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_allocation_execution"/>
 
     <record id="view_tmf_test_suite_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.suite.execution.tree</field>
         <field name="model">tmf.test.suite.execution</field>
         <field name="arch" type="xml">
-            <list string="TestSuiteExecution">
+            <list string="Test Suite Execution">
                 <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
                 <field name="state"/>
@@ -91,7 +91,7 @@
         <field name="name">tmf.test.suite.execution.form</field>
         <field name="model">tmf.test.suite.execution</field>
         <field name="arch" type="xml">
-            <form string="TestSuiteExecution">
+            <form string="Test Suite Execution">
                 <sheet>
                     <group>
                         <field name="data_correlation_id"/>
@@ -104,18 +104,18 @@
     </record>
 
     <record id="action_tmf_test_suite_execution" model="ir.actions.act_window">
-        <field name="name">TestSuiteExecution</field>
+        <field name="name">Test Suite Execution</field>
         <field name="res_model">tmf.test.suite.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_suite_execution" name="TestSuiteExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite_execution"/>
+    <menuitem id="menu_tmf_test_suite_execution" name="Test Suite Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite_execution"/>
 
     <record id="view_tmf_test_case_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.case.execution.tree</field>
         <field name="model">tmf.test.case.execution</field>
         <field name="arch" type="xml">
-            <list string="TestCaseExecution">
+            <list string="Test Case Execution">
                 <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
                 <field name="state"/>
@@ -127,7 +127,7 @@
         <field name="name">tmf.test.case.execution.form</field>
         <field name="model">tmf.test.case.execution</field>
         <field name="arch" type="xml">
-            <form string="TestCaseExecution">
+            <form string="Test Case Execution">
                 <sheet>
                     <group>
                         <field name="data_correlation_id"/>
@@ -140,18 +140,18 @@
     </record>
 
     <record id="action_tmf_test_case_execution" model="ir.actions.act_window">
-        <field name="name">TestCaseExecution</field>
+        <field name="name">Test Case Execution</field>
         <field name="res_model">tmf.test.case.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_case_execution" name="TestCaseExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case_execution"/>
+    <menuitem id="menu_tmf_test_case_execution" name="Test Case Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case_execution"/>
 
     <record id="view_tmf_non_functional_test_execution_tree" model="ir.ui.view">
         <field name="name">tmf.non.functional.test.execution.tree</field>
         <field name="model">tmf.non.functional.test.execution</field>
         <field name="arch" type="xml">
-            <list string="NonFunctionalTestExecution">
+            <list string="Non-Functional Test Execution">
                 <field name="tmf_id"/>
                 <field name="data_correlation_id"/>
                 <field name="state"/>
@@ -163,7 +163,7 @@
         <field name="name">tmf.non.functional.test.execution.form</field>
         <field name="model">tmf.non.functional.test.execution</field>
         <field name="arch" type="xml">
-            <form string="NonFunctionalTestExecution">
+            <form string="Non-Functional Test Execution">
                 <sheet>
                     <group>
                         <field name="data_correlation_id"/>
@@ -176,10 +176,10 @@
     </record>
 
     <record id="action_tmf_non_functional_test_execution" model="ir.actions.act_window">
-        <field name="name">NonFunctionalTestExecution</field>
+        <field name="name">Non-Functional Test Execution</field>
         <field name="res_model">tmf.non.functional.test.execution</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_non_functional_test_execution" name="NonFunctionalTestExecution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_execution"/>
+    <menuitem id="menu_tmf_non_functional_test_execution" name="Non-Functional Test Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_execution"/>
 </odoo>

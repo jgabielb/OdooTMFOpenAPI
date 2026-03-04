@@ -1,7 +1,7 @@
 {
-    "name": "TMF936 Open Gateway Operate Product Catalog",
-    "summary": "TMF936 Open Gateway Operate API - Product Catalog",
-    "description": "Implements TMF936 Open Gateway Operate API - Product Catalog.",
+    "name": "TMF936 Open Gateway Product Catalog",
+    "summary": "TMF936 Open Gateway Product Catalog API",
+    "description": "Implements TMF936 Open Gateway Product Catalog API.",
     "author": "Joao Gabriel",
     "category": "TMF",
     "version": "0.1",

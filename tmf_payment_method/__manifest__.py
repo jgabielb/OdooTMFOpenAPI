@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "TMF670 Payment Method Management (TMF670)",
+    "name": "TMF670 Payment Method Management",
     "version": "19.0.1.0.0",
     "category": "TM Forum / ODA",
     "summary": "TMF670 Payment Method API v4.0.0 implementation",

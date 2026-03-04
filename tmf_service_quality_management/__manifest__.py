@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "TMF657 Service Quality Management v4",
+    "name": "TMF657 Service Quality Management",
     "summary": "TMF657 Service Quality Management API (ServiceLevelObjective, ServiceLevelSpecification, Hub)",
     "version": "19.0.1.0.0",
     "category": "TMF Open APIs",

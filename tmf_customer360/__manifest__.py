@@ -1,7 +1,7 @@
 {
-    "name": "TMF717 Customer360",
-    "summary": "TMF717 Customer360 Management API",
-    "description": "Implements TMF717 Customer360 Management API.",
+    "name": "TMF717 Customer 360 Management",
+    "summary": "TMF717 Customer 360 Management API",
+    "description": "Implements TMF717 Customer 360 Management API.",
     "author": "Joao Gabriel",
     "category": "TMF",
     "version": "0.1",

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "TMF678 Customer Bill Management (v5)",
+    "name": "TMF678 Customer Bill Management",
     "version": "19.0.1.0.0",
     "category": "TMF",
     "summary": "TMF678 CustomerBill API (Conformance v5) - CustomerBill, OnDemand, BillCycle, AppliedCustomerBillingRate",

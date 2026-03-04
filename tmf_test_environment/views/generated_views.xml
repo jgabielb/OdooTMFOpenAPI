@@ -3,7 +3,7 @@
         <field name="name">tmf.abstract.environment.tree</field>
         <field name="model">tmf.abstract.environment</field>
         <field name="arch" type="xml">
-            <list string="AbstractEnvironment">
+            <list string="Abstract Environment">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -15,7 +15,7 @@
         <field name="name">tmf.abstract.environment.form</field>
         <field name="model">tmf.abstract.environment</field>
         <field name="arch" type="xml">
-            <form string="AbstractEnvironment">
+            <form string="Abstract Environment">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -29,18 +29,18 @@
     </record>
 
     <record id="action_tmf_abstract_environment" model="ir.actions.act_window">
-        <field name="name">AbstractEnvironment</field>
+        <field name="name">Abstract Environment</field>
         <field name="res_model">tmf.abstract.environment</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_abstract_environment" name="AbstractEnvironment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_abstract_environment"/>
+    <menuitem id="menu_tmf_abstract_environment" name="Abstract Environment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_abstract_environment"/>
 
     <record id="view_tmf_concrete_environment_meta_model_tree" model="ir.ui.view">
         <field name="name">tmf.concrete.environment.meta.model.tree</field>
         <field name="model">tmf.concrete.environment.meta.model</field>
         <field name="arch" type="xml">
-            <list string="ConcreteEnvironmentMetaModel">
+            <list string="Concrete Environment Meta Model">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -52,7 +52,7 @@
         <field name="name">tmf.concrete.environment.meta.model.form</field>
         <field name="model">tmf.concrete.environment.meta.model</field>
         <field name="arch" type="xml">
-            <form string="ConcreteEnvironmentMetaModel">
+            <form string="Concrete Environment Meta Model">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -66,18 +66,18 @@
     </record>
 
     <record id="action_tmf_concrete_environment_meta_model" model="ir.actions.act_window">
-        <field name="name">ConcreteEnvironmentMetaModel</field>
+        <field name="name">Concrete Environment Meta Model</field>
         <field name="res_model">tmf.concrete.environment.meta.model</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_concrete_environment_meta_model" name="ConcreteEnvironmentMetaModel" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_concrete_environment_meta_model"/>
+    <menuitem id="menu_tmf_concrete_environment_meta_model" name="Concrete Environment Meta Model" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_concrete_environment_meta_model"/>
 
     <record id="view_tmf_test_resource_api_tree" model="ir.ui.view">
         <field name="name">tmf.test.resource.api.tree</field>
         <field name="model">tmf.test.resource.api</field>
         <field name="arch" type="xml">
-            <list string="TestResourceAPI">
+            <list string="Test Resource API">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -89,7 +89,7 @@
         <field name="name">tmf.test.resource.api.form</field>
         <field name="model">tmf.test.resource.api</field>
         <field name="arch" type="xml">
-            <form string="TestResourceAPI">
+            <form string="Test Resource API">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -103,18 +103,18 @@
     </record>
 
     <record id="action_tmf_test_resource_api" model="ir.actions.act_window">
-        <field name="name">TestResourceAPI</field>
+        <field name="name">Test Resource API</field>
         <field name="res_model">tmf.test.resource.api</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_resource_api" name="TestResourceAPI" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_resource_api"/>
+    <menuitem id="menu_tmf_test_resource_api" name="Test Resource API" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_resource_api"/>
 
     <record id="view_tmf_provisioning_artifact_tree" model="ir.ui.view">
         <field name="name">tmf.provisioning.artifact.tree</field>
         <field name="model">tmf.provisioning.artifact</field>
         <field name="arch" type="xml">
-            <list string="ProvisioningArtifact">
+            <list string="Provisioning Artifact">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -126,7 +126,7 @@
         <field name="name">tmf.provisioning.artifact.form</field>
         <field name="model">tmf.provisioning.artifact</field>
         <field name="arch" type="xml">
-            <form string="ProvisioningArtifact">
+            <form string="Provisioning Artifact">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -140,10 +140,10 @@
     </record>
 
     <record id="action_tmf_provisioning_artifact" model="ir.actions.act_window">
-        <field name="name">ProvisioningArtifact</field>
+        <field name="name">Provisioning Artifact</field>
         <field name="res_model">tmf.provisioning.artifact</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_provisioning_artifact" name="ProvisioningArtifact" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_provisioning_artifact"/>
+    <menuitem id="menu_tmf_provisioning_artifact" name="Provisioning Artifact" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_provisioning_artifact"/>
 </odoo>

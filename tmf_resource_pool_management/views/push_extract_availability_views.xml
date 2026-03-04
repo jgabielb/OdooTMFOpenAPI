@@ -119,7 +119,7 @@
   </record>
 
   <record id="action_tmf_resource_pool_availability_check" model="ir.actions.act_window">
-    <field name="name">AvailabilityCheck</field>
+    <field name="name">Availability Check</field>
     <field name="res_model">tmf.resource.pool.availability.check</field>
     <field name="view_mode">list,form</field>
   </record>

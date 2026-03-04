@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "TMF672 User Role & Permission Management",
+    "name": "TMF672 User Role Permission Management",
     "version": "19.0.1.0.0",
     "category": "TMF Open API",
     "summary": "Implements TMF672 v4 Permission and UserRole resources",

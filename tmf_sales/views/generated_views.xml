@@ -37,13 +37,13 @@
     </record>
 
     <record id="action_tmf_sales_lead" model="ir.actions.act_window">
-        <field name="name">SalesLead</field>
+        <field name="name">Sales Lead</field>
         <field name="res_model">tmf.sales.lead</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_sales_lead"
-              name="SalesLead"
+              name="Sales Lead"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_sales_lead"/>
 </odoo>

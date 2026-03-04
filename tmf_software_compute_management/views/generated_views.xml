@@ -38,7 +38,7 @@
         <field name="name">tmf.software.compute.resource.specification.tree</field>
         <field name="model">tmf.software.compute.resource.specification</field>
         <field name="arch" type="xml">
-            <list string="ResourceSpecification">
+            <list string="Resource Specification">
                 <field name="tmf_id"/>
                 <field name="name"/>
                 <field name="category"/>
@@ -52,7 +52,7 @@
         <field name="name">tmf.software.compute.resource.specification.form</field>
         <field name="model">tmf.software.compute.resource.specification</field>
         <field name="arch" type="xml">
-            <form string="ResourceSpecification">
+            <form string="Resource Specification">
                 <sheet>
                     <group>
                         <field name="name"/>
@@ -69,18 +69,18 @@
     </record>
 
     <record id="action_tmf_software_compute_resource" model="ir.actions.act_window">
-        <field name="name">SoftwareCompute Resource</field>
+        <field name="name">Software and Compute Resource</field>
         <field name="res_model">tmf.software.compute.resource</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <record id="action_tmf_software_compute_resource_specification" model="ir.actions.act_window">
-        <field name="name">SoftwareCompute ResourceSpecification</field>
+        <field name="name">Software and Compute Resource Specification</field>
         <field name="res_model">tmf.software.compute.resource.specification</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_software_compute_root" name="TMF730 SoftwareCompute" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_software_compute_root" name="TMF730 Software and Compute" parent="tmf_product_catalog.menu_tmf_root"/>
     <menuitem id="menu_tmf_software_compute_resource" name="Resource" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource"/>
-    <menuitem id="menu_tmf_software_compute_resource_specification" name="ResourceSpecification" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource_specification"/>
+    <menuitem id="menu_tmf_software_compute_resource_specification" name="Resource Specification" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource_specification"/>
 </odoo>

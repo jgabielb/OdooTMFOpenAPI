@@ -66,13 +66,13 @@
     </record>
 
     <record id="action_tmf_physical_resource" model="ir.actions.act_window">
-        <field name="name">PhysicalResource</field>
+        <field name="name">Physical Resource</field>
         <field name="res_model">tmf.physical.resource</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_physical_resource"
-              name="PhysicalResource"
+              name="Physical Resource"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_physical_resource"/>
 </odoo>

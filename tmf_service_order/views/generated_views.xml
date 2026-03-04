@@ -66,13 +66,13 @@
     </record>
 
     <record id="action_tmf_service_order" model="ir.actions.act_window">
-        <field name="name">ServiceOrder</field>
+        <field name="name">Service Order</field>
         <field name="res_model">tmf.service.order</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_service_order"
-              name="ServiceOrder"
+              name="Service Order"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_service_order"/>
 </odoo>

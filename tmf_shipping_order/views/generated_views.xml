@@ -34,13 +34,13 @@
     </record>
 
     <record id="action_tmf_shipping_order" model="ir.actions.act_window">
-        <field name="name">ShippingOrder</field>
+        <field name="name">Shipping Order</field>
         <field name="res_model">tmf.shipping.order</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_shipping_order"
-              name="ShippingOrder"
+              name="Shipping Order"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_shipping_order"/>
 </odoo>

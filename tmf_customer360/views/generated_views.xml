@@ -3,7 +3,7 @@
         <field name="name">tmf.customer360.tree</field>
         <field name="model">tmf.customer360</field>
         <field name="arch" type="xml">
-            <list string="Customer360">
+            <list string="Customer 360">
                 <field name="tmf_id"/>
                 <field name="customer_id"/>
                 <field name="name"/>
@@ -16,7 +16,7 @@
         <field name="name">tmf.customer360.form</field>
         <field name="model">tmf.customer360</field>
         <field name="arch" type="xml">
-            <form string="Customer360">
+            <form string="Customer 360">
                 <sheet>
                     <group>
                         <field name="customer_id"/>
@@ -35,10 +35,10 @@
     </record>
 
     <record id="action_tmf_customer360" model="ir.actions.act_window">
-        <field name="name">Customer360</field>
+        <field name="name">Customer 360</field>
         <field name="res_model">tmf.customer360</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_customer360" name="Customer360" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_customer360"/>
+    <menuitem id="menu_tmf_customer360" name="Customer 360" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_customer360"/>
 </odoo>

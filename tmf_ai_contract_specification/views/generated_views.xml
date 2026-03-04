@@ -48,13 +48,13 @@
     </record>
 
     <record id="action_tmf_ai_contract_specification" model="ir.actions.act_window">
-        <field name="name">AiContractSpecification</field>
+        <field name="name">Ai Contract Specification</field>
         <field name="res_model">tmf.ai.contract.specification</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_ai_contract_specification"
-              name="AiContractSpecification"
+              name="Ai Contract Specification"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_ai_contract_specification"/>
 </odoo>

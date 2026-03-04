@@ -3,7 +3,7 @@
         <field name="name">tmf.test.case.form</field>
         <field name="model">tmf.test.case</field>
         <field name="arch" type="xml">
-            <form string="TestCase">
+            <form string="Test Case">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -21,7 +21,7 @@
         <field name="name">tmf.test.case.tree</field>
         <field name="model">tmf.test.case</field>
         <field name="arch" type="xml">
-            <list string="TestCase">
+            <list string="Test Case">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -30,18 +30,18 @@
     </record>
 
     <record id="action_tmf_test_case" model="ir.actions.act_window">
-        <field name="name">TestCase</field>
+        <field name="name">Test Case</field>
         <field name="res_model">tmf.test.case</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_case" name="TestCase" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case"/>
+    <menuitem id="menu_tmf_test_case" name="Test Case" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case"/>
 
     <record id="view_tmf_test_suite_form" model="ir.ui.view">
         <field name="name">tmf.test.suite.form</field>
         <field name="model">tmf.test.suite</field>
         <field name="arch" type="xml">
-            <form string="TestSuite">
+            <form string="Test Suite">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -59,7 +59,7 @@
         <field name="name">tmf.test.suite.tree</field>
         <field name="model">tmf.test.suite</field>
         <field name="arch" type="xml">
-            <list string="TestSuite">
+            <list string="Test Suite">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -68,18 +68,18 @@
     </record>
 
     <record id="action_tmf_test_suite" model="ir.actions.act_window">
-        <field name="name">TestSuite</field>
+        <field name="name">Test Suite</field>
         <field name="res_model">tmf.test.suite</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_suite" name="TestSuite" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite"/>
+    <menuitem id="menu_tmf_test_suite" name="Test Suite" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite"/>
 
     <record id="view_tmf_non_functional_test_model_form" model="ir.ui.view">
         <field name="name">tmf.non.functional.test.model.form</field>
         <field name="model">tmf.non.functional.test.model</field>
         <field name="arch" type="xml">
-            <form string="NonFunctionalTestModel">
+            <form string="Non-Functional Test Model">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -97,7 +97,7 @@
         <field name="name">tmf.non.functional.test.model.tree</field>
         <field name="model">tmf.non.functional.test.model</field>
         <field name="arch" type="xml">
-            <list string="NonFunctionalTestModel">
+            <list string="Non-Functional Test Model">
                 <field name="description"/>
                 <field name="version"/>
                 <field name="state"/>
@@ -106,10 +106,10 @@
     </record>
 
     <record id="action_tmf_non_functional_test_model" model="ir.actions.act_window">
-        <field name="name">NonFunctionalTestModel</field>
+        <field name="name">Non-Functional Test Model</field>
         <field name="res_model">tmf.non.functional.test.model</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_non_functional_test_model" name="NonFunctionalTestModel" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_model"/>
+    <menuitem id="menu_tmf_non_functional_test_model" name="Non-Functional Test Model" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_model"/>
 </odoo>

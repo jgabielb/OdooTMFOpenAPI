@@ -1,7 +1,7 @@
 {
-    'name': "TMF Userinfo",
+    'name': "TMF User Info",
     'summary': "Auto-generated implementation of Federated ID",
-    'description': "Implements Userinfo API with Hub Notifications.",
+    'description': "Implements User Info API with Hub Notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
     'version': '0.1',

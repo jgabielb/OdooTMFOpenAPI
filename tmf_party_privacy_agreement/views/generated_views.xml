@@ -58,13 +58,13 @@
     </record>
 
     <record id="action_tmf_party_privacy_agreement" model="ir.actions.act_window">
-        <field name="name">PartyPrivacyAgreement</field>
+        <field name="name">Party Privacy Agreement</field>
         <field name="res_model">tmf.party.privacy.agreement</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_party_privacy_agreement"
-              name="PartyPrivacyAgreement"
+              name="Party Privacy Agreement"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_party_privacy_agreement"/>
 </odoo>
