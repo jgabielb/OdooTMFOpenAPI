@@ -1,25 +1,33 @@
 # OdooTMFOpenAPI
 
-OdooTMFOpenAPI is an Odoo-based implementation of TM Forum Open APIs, with one addon per TMF domain, plus shared base tooling for payload mapping, controllers, and conformance validation workflows.
+OdooTMFOpenAPI is a modular Odoo implementation of TM Forum Open APIs.
 
-## Project Scope
+This repository contains:
+- TMF API addons (`tmf_*`) that expose REST endpoints and persist TMF resources in Odoo models.
+- Odoo business wiring so API resources can connect to native apps (CRM, Sales, Inventory, Billing, etc.).
+- Shared tooling for smoke tests, CTK batch execution, and integration validation.
 
-- TMF API implementation as Odoo modules (`tmf_*`)
-- Odoo wiring for CRM, Sales, Product, Project, Inventory, and related core apps where applicable
-- Automated API smoke testing
-- Batch CTK execution/reporting utilities
+## How to read this project
+
+Modules are not strictly "one addon per TMF domain". In practice, there are:
+1. Domain-level addons (for example `tmf_customer`, `tmf_service_order`, `tmf_product_catalog`).
+2. Sub-resource/support addons (for example `tmf_transfer_balance`, `tmf_permission`, `tmf_test_data_instance_definition`).
+3. Shared foundation (`tmf_base`) used by all TMF addons.
+
+This structure is intentional and helps keep each resource/API contract isolated while still sharing common TMF behavior.
 
 ## Repository Structure
 
-- `tmf_*`: TMF API modules (models, controllers, views, security)
-- `tmf_base`: shared TMF helpers/mixins
-- `tools/tmf_api_smoke.py`: end-to-end API smoke runner
-- `tools/run_ctk_batch.py`: CTK batch runner/report generator
-- `TMF_ODOO_WIRING_MATRIX.md`: wiring status matrix
+- `tmf_*`: TMF API addons (models, controllers, views, security).
+- `tmf_base`: shared TMF mixins/helpers (IDs, href, hooks, common logic).
+- `tools/tmf_api_smoke.py`: API smoke test runner (config-driven).
+- `tools/run_ctk_batch.py`: CTK discovery/execution/reporting runner.
+- `tools/odoo_e2e_business.py`: business E2E flow runner (subscriber, sales, inventory, cancellation).
+- `TMF_ODOO_WIRING_MATRIX.md`: detailed Odoo wiring matrix by TMF API/resource.
 
-## Local Run
+## Quick Start
 
-Use your existing PowerShell bootstrap script:
+Use your existing bootstrap script:
 
 - `Set.ps1`
 
@@ -27,10 +35,17 @@ Typical validation commands:
 
 - `python OdooTMFOpenAPI/tools/tmf_api_smoke.py --config OdooTMFOpenAPI/tools/tmf_api_smoke.sample.json --workers 8`
 - `python OdooTMFOpenAPI/tools/run_ctk_batch.py`
+- `python OdooTMFOpenAPI/tools/odoo_e2e_business.py --config OdooTMFOpenAPI/tools/odoo_e2e_business.sample.json`
 
 ## API Compliance Status
 
-Snapshot source: provided project matrix (latest shared in session).
+This section is a repository snapshot to help correlate:
+- TMF ID
+- CTK status
+- API name
+- local module name
+
+For day-to-day implementation details and wiring depth, use `TMF_ODOO_WIRING_MATRIX.md`.
 
 ### APIs with CTK Coverage (Current: 100%)
 
