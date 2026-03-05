@@ -71,7 +71,10 @@ class TMFUiNormalizer(models.AbstractModel):
         normalized = " ".join(words)
 
         # Common phrase fixups.
+        normalized = normalized.replace("AP Is", "APIs")
+        normalized = normalized.replace("Io T", "IoT")
         normalized = normalized.replace("Open Apis", "Open APIs")
+        normalized = normalized.replace("Open AP Is", "Open APIs")
 
         return normalized or label
 
@@ -254,11 +257,13 @@ class TMFUiNormalizer(models.AbstractModel):
     @api.model
     def _guess_menu_domain_key(self, menu_name):
         name = (menu_name or "").lower()
+        compact = re.sub(r"[^a-z0-9]", "", name)
+
         if any(k in name for k in ["catalog", "specification", "offering", "product usage"]):
             return "catalog"
         if any(k in name for k in ["customer", "party", "agreement", "role", "interaction", "privacy"]):
             return "customer_party"
-        if any(k in name for k in ["order", "quote", "sales", "shopping cart", "promotion"]):
+        if any(k in name for k in ["order", "quote", "sales", "shopping cart", "promotion", "appointment"]):
             return "orders_sales"
         if any(
             k in name
@@ -276,16 +281,46 @@ class TMFUiNormalizer(models.AbstractModel):
             ]
         ):
             return "inventory_resource"
-        if any(k in name for k in ["alarm", "incident", "trouble", "problem", "outage", "risk", "qualification"]):
+        if any(
+            k in name
+            for k in [
+                "alarm",
+                "incident",
+                "trouble",
+                "problem",
+                "outage",
+                "risk",
+                "qualification",
+                "performance",
+                "monitor",
+            ]
+        ):
             return "assurance"
         if any(k in name for k in ["payment", "bill", "billing", "cost", "revenue", "dunning", "balance", "cdr"]):
             return "billing_revenue"
         if any(
             k in name
-            for k in ["test", "scenario", "execution", "environment", "artifact", "quality", "service level", "monitor"]
+            for k in ["test", "scenario", "execution", "environment", "artifact", "quality", "service level"]
         ):
             return "testing_quality"
-        if any(k in name for k in ["identity", "permission", "userinfo", "open gateway", "intent", "ai", "process flow"]):
+        if any(
+            k in name
+            for k in [
+                "identity",
+                "permission",
+                "userinfo",
+                "open gateway",
+                "intent",
+                "ai",
+                "process flow",
+                "communication",
+                "self care",
+                "network as a service",
+                "installed services",
+            ]
+        ):
+            return "platform_identity"
+        if any(k in compact for k in ["iot", "opengateway", "5g", "dcs5g"]):
             return "platform_identity"
         return "other"
 
@@ -316,10 +351,11 @@ class TMFUiNormalizer(models.AbstractModel):
         }
         bucket_ids = {m.id for m in buckets.values()}
 
-        # Re-parent only first-level TMF menus directly under TMF root.
+        # Re-parent TMF menus directly under TMF root OR any domain bucket.
         moved = 0
-        root_children = menu_model.search([("parent_id", "=", root.id)])
-        for menu in root_children:
+        reclass_parents = [root.id] + list(bucket_ids)
+        candidate_menus = menu_model.search([("parent_id", "in", reclass_parents)])
+        for menu in candidate_menus:
             if menu.id in bucket_ids:
                 continue
             if menu.id not in tmf_menu_ids:

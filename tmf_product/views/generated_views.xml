@@ -5,16 +5,37 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-
                     <div class="oe_button_box" name="button_box">
                         <button name="action_create_or_sync_odoo_product"
                                 type="object"
                                 class="oe_stat_button"
                                 icon="fa-refresh"
-                                string="Re-sync Odoo Product"/>
+                                string="Sync Odoo Product"/>
                     </div>
 
-                    <group string="Sales Mapping" col="2">
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. 5G Mobile Premium Plan"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Business">
+                            <field name="status"/>
+                            <field name="is_bundle"/>
+                            <field name="is_customer_visible"/>
+                            <field name="product_serial_number"/>
+                        </group>
+                        <group string="Dates">
+                            <field name="order_date"/>
+                            <field name="start_date"/>
+                            <field name="termination_date"/>
+                            <field name="random_att"/>
+                        </group>
+                    </group>
+
+                    <group string="Odoo Sales Mapping" col="2">
                         <field name="odoo_product_id"
                                string="Odoo Sale Product"
                                domain="[
@@ -30,19 +51,35 @@
                         <field name="odoo_product_tmpl_id" readonly="1"/>
                     </group>
 
-                    <group string="TMF Product" col="4">
-                        <field name="name"/>
-                        <field name="description"/>
-                        <field name="status"/>
-                        <field name="is_bundle"/>
-                        <field name="is_customer_visible"/>
-                        <field name="order_date"/>
-                        <field name="start_date"/>
-                        <field name="termination_date"/>
-                        <field name="product_serial_number"/>
-                        <field name="random_att"/>
-                    </group>
-
+                    <notebook>
+                        <page string="Description">
+                            <field name="description" placeholder="Customer-facing description"/>
+                        </page>
+                        <page string="TMF Payload">
+                            <group col="2">
+                                <field name="agreement" widget="json"/>
+                                <field name="billing_account" widget="json"/>
+                                <field name="place" widget="json"/>
+                                <field name="product" widget="json"/>
+                                <field name="product_characteristic" widget="json"/>
+                                <field name="product_offering" widget="json"/>
+                                <field name="product_order_item" widget="json"/>
+                                <field name="product_price" widget="json"/>
+                                <field name="product_relationship" widget="json"/>
+                                <field name="product_specification" widget="json"/>
+                                <field name="product_term" widget="json"/>
+                                <field name="realizing_resource" widget="json"/>
+                                <field name="realizing_service" widget="json"/>
+                                <field name="related_party" widget="json"/>
+                            </group>
+                        </page>
+                        <page string="Technical">
+                            <group>
+                                <field name="tmf_id" readonly="1"/>
+                                <field name="href" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -63,13 +100,13 @@
     </record>
 
     <record id="action_tmf_product" model="ir.actions.act_window">
-        <field name="name">Product</field>
+        <field name="name">Products</field>
         <field name="res_model">tmf.product</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_product"
-              name="Product"
+              name="Products"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_product"/>
 </odoo>

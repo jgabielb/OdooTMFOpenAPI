@@ -1,0 +1,27 @@
+{
+  "odoo": {
+    "url": "http://localhost:8069",
+    "db": "TMF_Odoo_DB",
+    "username": "admin",
+    "password": "admin"
+  },
+  "tmf_base_url": "http://localhost:8069",
+  "http_timeout_sec": 20,
+  "scenario": {
+    "customer_name_prefix": "E2E Subscriber",
+    "customer_street": "Suecia 415",
+    "customer_city": "Providencia",
+    "customer_state_name": "Region Metropolitana",
+    "customer_country_name": "Chile",
+    "prices": {
+      "voice": 29.9,
+      "internet": 59.9,
+      "tv": 39.9,
+      "voice_hw": 79.0,
+      "internet_hw": 120.0,
+      "internet_hw_v2": 135.0,
+      "tv_hw": 99.0
+    }
+  }
+}
+
