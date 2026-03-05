@@ -80,7 +80,7 @@ Snapshot source: provided project matrix (latest shared in session).
 | TMF680 | 100% | Recommendation Management API | `tmf_recommendation_management` |
 | TMF681 | 100% | Communication Management API | `tmf_communication_message` |
 | TMF683 | 100% | Party Interaction Management API | `tmf_party_interaction` |
-| TMF687 | 100% | Stock Management API | `tmf_stock_management` |
+| TMF687 | 100% | Stock Management API | `tmf_product_stock_relationship` |
 | TMF696 | 100% | Risk Management API | `tmf_party_role_product_offering_risk_assessment` |
 | TMF699 | 100% | Sales Management API | `tmf_sales` |
 | TMF702 | 100% | Resource Activation Management API | `tmf_resource_activation` |
@@ -143,6 +143,22 @@ These APIs may still be implemented and wired in Odoo, but currently have no CTK
 | TMF910 | NO CTK | Self Care Management API | `tmf_self_care_management` |
 | TMF914 | NO CTK | IoT Service Management API | `tmf_iot_service_management` |
 | TMF924 | NO CTK | DCS 5G Slice Service Activation API | `tmf_5gslice_service_activation` |
+
+### Modules not currently listed in the two TMF ID tables
+
+These modules exist in the repository but are not represented as standalone rows in the CTK/NO-CTK API tables above. Most are sub-resources or supporting components within already listed TMF domains.
+
+| Module | Purpose |
+|---|---|
+| `tmf_ai_contract_specification` | AI contract specification sub-resource used under AI Management domain. |
+| `tmf_device` | IoT device resource support for IoT Agent/Device and related domains. |
+| `tmf_managed_entity` | Managed entity sub-resource used by Entity/Inventory-related APIs. |
+| `tmf_non_functional_test_result_definition` | Non-functional test result definition sub-resource for TMF test result domain. |
+| `tmf_party_privacy_agreement` | Party privacy agreement sub-resource used with privacy/party APIs. |
+| `tmf_permission` | Permission sub-resource used with user role/permission APIs. |
+| `tmf_physical_resource` | Physical resource sub-resource used by resource activation/inventory domains. |
+| `tmf_test_data_instance_definition` | Test data instance definition sub-resource in TMF test data domain. |
+| `tmf_transfer_balance` | Transfer balance sub-resource for prepay balance management flows. |
 
 ## Notes
 
