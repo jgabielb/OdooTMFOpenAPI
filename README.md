@@ -164,5 +164,4 @@ These modules exist in the repository but are not represented as standalone rows
 
 - Some CTKs run inside Docker and need `host.docker.internal`.
 - Some CTKs run locally (non-Docker) and must use `127.0.0.1`.
-- Final pass/fail should always be taken from generated per-run summaries under `DOCUMENTATION/ctk_batch_reports/`.
 
