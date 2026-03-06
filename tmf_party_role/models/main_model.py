@@ -119,11 +119,14 @@ class TMFPartyRole(models.Model):
         return recs
 
     def write(self, vals):
+        status_before = {rec.id: rec.status for rec in self}
         res = super().write(vals)
         if "engaged_party_json" in vals or "partner_id" in vals:
             self._sync_partner_link()
         for rec in self:
             self._notify("partyRole", "update", rec)
+            if "status" in vals and status_before.get(rec.id) != rec.status:
+                self._notify("partyRole", "state_change", rec)
         return res
 
     def unlink(self):

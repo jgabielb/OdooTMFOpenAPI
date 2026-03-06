@@ -111,6 +111,11 @@ def _resolve_partner_from_related_party(env, related_party):
 
 
 class TMF648QuoteController(http.Controller):
+    def _listener_ok(self):
+        body = _parse_json_body()
+        if not isinstance(body, dict):
+            return _error(400, "Invalid JSON")
+        return _empty(status=201)
 
     # -------------------------
     # Quote CRUD
@@ -304,17 +309,17 @@ class TMF648QuoteController(http.Controller):
             body = _parse_json_body()
             if body is None or not body.get("callback"):
                 return _error(400, "callback is mandatory")
-
             hub = request.env["tmf.hub.subscription"].sudo().create({
-                "tmf_id": str(uuid.uuid4()),
+                "name": f"tmf648-quote-{body.get('callback')}",
+                "api_name": "quote",
                 "callback": body.get("callback"),
-                "query": body.get("query"),
-                "topic": "TMF648Quote",
-                "api_base": API_BASE,
+                "query": body.get("query") or "",
+                "event_type": "any",
+                "content_type": "application/json",
             })
 
-            headers = [("Location", f"{HUB_PATH}/{hub.tmf_id}")]
-            return _json_response({"id": hub.tmf_id, "callback": hub.callback, "query": hub.query}, status=201, headers=headers)
+            headers = [("Location", f"{HUB_PATH}/{hub.id}")]
+            return _json_response({"id": str(hub.id), "callback": hub.callback, "query": hub.query}, status=201, headers=headers)
 
         except Exception as e:
             try:
@@ -326,7 +331,7 @@ class TMF648QuoteController(http.Controller):
     @http.route(f"{HUB_PATH}/<string:hub_id>", methods=["DELETE"], type="http", auth="public", csrf=False)
     def unregister_hub(self, hub_id, **kwargs):
         try:
-            hub = request.env["tmf.hub.subscription"].sudo().search([("tmf_id", "=", hub_id)], limit=1)
+            hub = request.env["tmf.hub.subscription"].sudo().browse(int(hub_id)) if str(hub_id).isdigit() else False
             if not hub:
                 return _error(404, "Hub not found")
             hub.unlink()
@@ -337,3 +342,23 @@ class TMF648QuoteController(http.Controller):
             except Exception:
                 pass
             return _error(500, "Internal error unregistering hub", details=str(e))
+
+    @http.route(f"{API_BASE}/listener/quoteCreateEvent", methods=["POST"], type="http", auth="public", csrf=False)
+    def listen_quote_create(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/quoteAttributeValueChangeEvent", methods=["POST"], type="http", auth="public", csrf=False)
+    def listen_quote_attr(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/quoteStateChangeEvent", methods=["POST"], type="http", auth="public", csrf=False)
+    def listen_quote_state(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/quoteInformationRequiredEvent", methods=["POST"], type="http", auth="public", csrf=False)
+    def listen_quote_info(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/quoteDeleteEvent", methods=["POST"], type="http", auth="public", csrf=False)
+    def listen_quote_delete(self, **kwargs):
+        return self._listener_ok()

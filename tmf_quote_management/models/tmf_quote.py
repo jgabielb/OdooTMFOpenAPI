@@ -56,6 +56,8 @@ class TMFQuote(models.Model):
         event_map = {
             "create": "QuoteCreateEvent",
             "update": "QuoteAttributeValueChangeEvent",
+            "state_change": "QuoteStateChangeEvent",
+            "information_required": "QuoteInformationRequiredEvent",
             "delete": "QuoteDeleteEvent",
         }
         event_name = event_map.get(action)
@@ -134,8 +136,16 @@ class TMFQuote(models.Model):
         return recs
 
     def write(self, vals):
+        state_before = {rec.id: rec.state for rec in self}
         res = super().write(vals)
         self._notify("update")
+        if "state" in vals:
+            changed = self.filtered(lambda r: state_before.get(r.id) != r.state)
+            if changed:
+                changed._notify("state_change")
+                pending = changed.filtered(lambda r: r.state == "pending")
+                if pending:
+                    pending._notify("information_required")
         return res
 
     def unlink(self):

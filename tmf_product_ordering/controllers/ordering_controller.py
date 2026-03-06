@@ -185,6 +185,15 @@ class TMFOrderingController(http.Controller):
             return f"{base}/tmf-api/productOrderingManagement/v5/productOrder/{fallback_id}"
         return base
 
+    def _listener_ok(self):
+        try:
+            payload = json.loads(request.httprequest.data or b"{}")
+        except Exception:
+            payload = None
+        if not isinstance(payload, dict):
+            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        return request.make_response("", status=201)
+
     # =======================================================
     # GET: List Orders
     # =======================================================
@@ -383,3 +392,50 @@ class TMFOrderingController(http.Controller):
             return self._response(cancel_rec.to_tmf_json())
         recs = CancelModel.search([], limit=int(params.get('limit', 20)))
         return self._response([r.to_tmf_json() for r in recs])
+
+    @http.route('/tmf-api/productOrderingManagement/v5/hub', type='http', auth='public', methods=['POST'], csrf=False)
+    def register_listener(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+        except Exception:
+            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        callback = data.get("callback")
+        if not callback:
+            return self._error(400, "BAD_REQUEST", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf622-product-order-{callback}",
+            "api_name": "productOrder",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": "any",
+            "content_type": "application/json",
+        })
+        return self._response({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
+
+    @http.route('/tmf-api/productOrderingManagement/v5/hub/<string:sid>', type='http', auth='public', methods=['DELETE'], csrf=False)
+    def unregister_listener(self, sid, **params):
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
+        if not rec or not rec.exists() or rec.api_name != "productOrder":
+            return self._error(404, "NOT_FOUND", f"Hub subscription {sid} not found")
+        rec.unlink()
+        return request.make_response("", status=204)
+
+    @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_order_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_order_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_order_state(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_order_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderInformationRequiredEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_order_info_required(self, **params):
+        return self._listener_ok()

@@ -329,6 +329,12 @@ class TMFPartyController(http.Controller):
     # Hub
     # -----------------------
 
+    def _listener_ok(self):
+        payload = self._parse_json_body()
+        if not isinstance(payload, dict):
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        return request.make_response("", status=201)
+
     @http.route(f'{TMF_BASE}/hub', type='http', auth='public', methods=['POST'], csrf=False)
     def subscribe_party_events(self, **kwargs):
         payload = self._parse_json_body()
@@ -340,8 +346,12 @@ class TMFPartyController(http.Controller):
             return self._error(400, "Bad Request", "Missing mandatory field: callback")
 
         subs = request.env['tmf.hub.subscription'].sudo().create({
+            'name': f"tmf632-party-{callback}",
+            'api_name': 'party',
             'callback': callback,
             'query': query or '',
+            'event_type': 'any',
+            'content_type': 'application/json',
         })
 
         body = {
@@ -369,3 +379,35 @@ class TMFPartyController(http.Controller):
         if base.startswith("organization") or base.startswith("individual"):
             return request.make_response('', status=204)
         return self._error(404, "Not Found", f"Resource {subpath} not found")
+
+    @http.route(f'{TMF_BASE}/listener/individualCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_individual_create(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/individualAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_individual_attr(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/individualStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_individual_state(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/individualDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_individual_delete(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/organizationCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_org_create(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/organizationAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_org_attr(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/organizationStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_org_state(self, **kwargs):
+        return self._listener_ok()
+
+    @http.route(f'{TMF_BASE}/listener/organizationDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_org_delete(self, **kwargs):
+        return self._listener_ok()

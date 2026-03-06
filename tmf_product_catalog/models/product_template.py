@@ -60,7 +60,7 @@ class ProductTemplate(models.Model):
         rec = super().create(vals)
         try:
             rec.env['tmf.hub.subscription']._notify_subscribers(
-                api_name='productCatalog',
+                api_name='productOffering',
                 event_type='ProductOfferingCreateEvent',
                 resource_json=rec.to_tmf_json(),
             )
@@ -70,14 +70,21 @@ class ProductTemplate(models.Model):
         return rec
 
     def write(self, vals):
+        state_changed = "lifecycle_status" in vals
         res = super().write(vals)
         for rec in self:
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='productCatalog',
+                    api_name='productOffering',
                     event_type='ProductOfferingAttributeValueChangeEvent',
                     resource_json=rec.to_tmf_json(),
                 )
+                if state_changed:
+                    rec.env['tmf.hub.subscription']._notify_subscribers(
+                        api_name='productOffering',
+                        event_type='ProductOfferingStateChangeEvent',
+                        resource_json=rec.to_tmf_json(),
+                    )
             except Exception:
                 continue
         return res
@@ -89,7 +96,7 @@ class ProductTemplate(models.Model):
         for resource in payloads:
             try:
                 self.env['tmf.hub.subscription']._notify_subscribers(
-                    api_name='productCatalog',
+                    api_name='productOffering',
                     event_type='ProductOfferingDeleteEvent',
                     resource_json=resource,
                 )

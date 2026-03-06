@@ -78,6 +78,11 @@ AGRSPEC_TMF_TO_ODOO = {
 }
 
 class TMF651Controller(http.Controller):
+    def _listener_ok(self):
+        data = _parse_json_body()
+        if not isinstance(data, dict):
+            return _error(400, "Invalid JSON")
+        return request.make_response("", status=201)
 
     # --------------------------
     # Agreement (TMF651)
@@ -247,11 +252,25 @@ class TMF651Controller(http.Controller):
             return _error(400, "Missing callback")
 
         # Assuming you already have tmf.hub.subscription model (you call it in your model code)
-        sub = request.env["tmf.hub.subscription"].sudo().create({
-            "callback": callback,
-            "query": data.get("query"),
-            "api_name": "agreementManagement",  # adapt to your hub model schema
-        })
+        subs = request.env["tmf.hub.subscription"].sudo().create([
+            {
+                "name": f"tmf651-agreement-{callback}",
+                "callback": callback,
+                "query": data.get("query") or "",
+                "api_name": "agreement",
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf651-agreement-specification-{callback}",
+                "callback": callback,
+                "query": data.get("query") or "",
+                "api_name": "agreementSpecification",
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+        ])
+        sub = subs[:1]
 
         # spec sample returns 201 + Location + body with id/callback/query :contentReference[oaicite:10]{index=10}
         headers = [("Content-Type", "application/json"), ("Location", f"{API_BASE}/hub/{sub.id}")]
@@ -260,8 +279,44 @@ class TMF651Controller(http.Controller):
 
     @http.route(f"{API_BASE}/hub/<string:hub_id>", type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_listener(self, hub_id, **params):
-        sub = request.env["tmf.hub.subscription"].sudo().browse(int(hub_id))
+        sub = request.env["tmf.hub.subscription"].sudo().browse(int(hub_id)) if str(hub_id).isdigit() else request.env["tmf.hub.subscription"]
         if not sub.exists():
             return _error(404, "Not found")
-        sub.unlink()
+        siblings = request.env["tmf.hub.subscription"].sudo().search([
+            ("callback", "=", sub.callback),
+            ("api_name", "in", ["agreement", "agreementSpecification"]),
+        ])
+        (siblings or sub).unlink()
         return request.make_response("", status=204)
+
+    @http.route(f"{API_BASE}/listener/agreementCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_create(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_state(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementSpecificationCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_spec_create(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementSpecificationAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_spec_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementSpecificationStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_spec_state(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/agreementSpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_agreement_spec_delete(self, **params):
+        return self._listener_ok()

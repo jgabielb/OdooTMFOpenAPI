@@ -74,6 +74,11 @@ def _require(data, path):
 
 
 class TMFPartyRoleController(http.Controller):
+    def _listener_ok(self):
+        data = _parse_json_body()
+        if not isinstance(data, dict):
+            return _error(400, "Invalid JSON body")
+        return request.make_response("", status=201)
 
     # List or find PartyRole objects: GET /partyRole?fields=...
     @http.route(BASE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
@@ -210,3 +215,45 @@ class TMFPartyRoleController(http.Controller):
 
         rec.unlink()
         return request.make_response("", status=204)
+
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
+    def register_listener(self, **params):
+        data = _parse_json_body()
+        if not isinstance(data, dict):
+            return _error(400, "Invalid JSON body")
+        callback = data.get("callback")
+        if not callback:
+            return _error(400, "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf669-party-role-{callback}",
+            "api_name": "partyRole",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": "any",
+            "content_type": "application/json",
+        })
+        return _json_response({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
+
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    def unregister_listener(self, sid, **params):
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
+        if not rec or not rec.exists() or rec.api_name != "partyRole":
+            return _error(404, f"Hub subscription {sid} not found")
+        rec.unlink()
+        return request.make_response("", status=204)
+
+    @http.route(f"{API_BASE}/listener/partyRoleCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_party_role_create(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/partyRoleAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_party_role_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/partyRoleStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_party_role_state(self, **params):
+        return self._listener_ok()
+
+    @http.route(f"{API_BASE}/listener/partyRoleDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listen_party_role_delete(self, **params):
+        return self._listener_ok()

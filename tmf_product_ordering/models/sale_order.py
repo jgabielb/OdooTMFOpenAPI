@@ -173,6 +173,7 @@ class SaleOrder(models.Model):
         return orders
 
     def write(self, vals):
+        old_state = {order.id: order.tmf_status for order in self}
         res = super().write(vals)
         for order in self:
             try:
@@ -182,6 +183,12 @@ class SaleOrder(models.Model):
                     event_type=event_type,
                     resource_json=order.to_tmf_json(),
                 )
+                if 'state' in vals and old_state.get(order.id) != order.tmf_status and order.tmf_status == 'pending':
+                    order.env['tmf.hub.subscription']._notify_subscribers(
+                        api_name='productOrder',
+                        event_type='ProductOrderInformationRequiredEvent',
+                        resource_json=order.to_tmf_json(),
+                    )
             except Exception:
                 continue
         return res

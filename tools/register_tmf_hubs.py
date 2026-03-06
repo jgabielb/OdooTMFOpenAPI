@@ -3,7 +3,7 @@
 Register/update TMF Hub subscriptions in Odoo so callbacks are visible in UI.
 
 Example:
-  python OdooBSS/tools/register_tmf_hubs.py ^
+  python OdooTMFOpenAPI/tools/register_tmf_hubs.py ^
     --url http://localhost:8069 ^
     --db TMF_Odoo_DB ^
     --user admin ^
@@ -23,7 +23,7 @@ import xmlrpc.client
 from typing import Any
 
 
-def parse_api_names_from_map(repo_root: Path) -> list[str]:
+def parse_event_map(repo_root: Path) -> dict[str, dict[str, str]]:
     src = repo_root / "tmf_base" / "models" / "tmf_hub_subscription.py"
     text = src.read_text(encoding="utf-8")
     marker = "TMF_EVENT_NAME_MAP = "
@@ -50,8 +50,11 @@ def parse_api_names_from_map(repo_root: Path) -> list[str]:
 
     mapping_literal = text[start:end]
     mapping = ast.literal_eval(mapping_literal)
-    names = sorted(str(k) for k in mapping.keys())
-    return names
+    normalized: dict[str, dict[str, str]] = {}
+    for api_name, actions in mapping.items():
+        if isinstance(api_name, str) and isinstance(actions, dict):
+            normalized[api_name] = {str(k): str(v) for k, v in actions.items()}
+    return normalized
 
 
 def odoo_login(url: str, db: str, user: str, password: str) -> tuple[int, xmlrpc.client.ServerProxy]:
@@ -120,13 +123,24 @@ def main() -> int:
     parser.add_argument("--user", required=True, help="Login user")
     parser.add_argument("--password", required=True, help="Login password")
     parser.add_argument("--callback", required=True, help="Webhook callback URL")
-    parser.add_argument("--event-type", default="any", choices=["any", "create", "update", "delete"], help="Subscription event_type")
+    parser.add_argument(
+        "--event-type",
+        default="any",
+        choices=["any", "create", "update", "state_change", "information_required", "delete"],
+        help="Subscription event_type",
+    )
+    parser.add_argument(
+        "--all-actions",
+        action="store_true",
+        help="Create one subscription per action present in TMF_EVENT_NAME_MAP for each api_name",
+    )
     parser.add_argument("--only-existing", action="store_true", help="Only update existing subscriptions callback")
     parser.add_argument("--workers", type=int, default=max(4, min(32, (os.cpu_count() or 4) * 5)), help="Number of concurrent worker threads")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[1]
-    api_names = [] if args.only_existing else parse_api_names_from_map(repo_root)
+    event_map = parse_event_map(repo_root)
+    api_names = [] if args.only_existing else sorted(event_map.keys())
 
     uid, models = odoo_login(args.url, args.db, args.user, args.password)
 
@@ -167,8 +181,17 @@ def main() -> int:
     created = 0
     updated = len(existing_ids)
 
-    # 2) Ensure one subscription per api_name using chosen event_type (parallel).
+    # 2) Ensure subscriptions using chosen event_type or all actions (parallel).
     if api_names:
+        targets: list[tuple[str, str]] = []
+        if args.all_actions:
+            for api_name in api_names:
+                actions = sorted(event_map.get(api_name, {}).keys()) or [args.event_type]
+                for action in actions:
+                    targets.append((api_name, action))
+        else:
+            targets = [(api_name, args.event_type) for api_name in api_names]
+
         workers = max(1, int(args.workers))
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
@@ -179,13 +202,13 @@ def main() -> int:
                     args.user,
                     args.password,
                     api_name,
-                    args.event_type,
+                    event_type,
                     args.callback,
-                ): api_name
-                for api_name in api_names
+                ): (api_name, event_type)
+                for api_name, event_type in targets
             }
             for fut in as_completed(futures):
-                api_name = futures[fut]
+                api_name, event_type = futures[fut]
                 try:
                     result = fut.result()
                     if result == "updated":
@@ -193,7 +216,7 @@ def main() -> int:
                     else:
                         created += 1
                 except Exception as exc:
-                    print(f"[WARN] failed api_name={api_name}: {exc}")
+                    print(f"[WARN] failed api_name={api_name} event_type={event_type}: {exc}")
 
     total = execute(
         models,
@@ -216,3 +239,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

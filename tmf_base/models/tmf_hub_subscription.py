@@ -25,6 +25,18 @@ TMF_EVENT_NAME_MAP = {
         'update': 'PartyAttributeValueChangeEvent',
         'delete': 'PartyDeleteEvent',
     },
+    'individual': {
+        'create': 'IndividualCreateEvent',
+        'update': 'IndividualAttributeValueChangeEvent',
+        'state_change': 'IndividualStateChangeEvent',
+        'delete': 'IndividualDeleteEvent',
+    },
+    'organization': {
+        'create': 'OrganizationCreateEvent',
+        'update': 'OrganizationAttributeValueChangeEvent',
+        'state_change': 'OrganizationStateChangeEvent',
+        'delete': 'OrganizationDeleteEvent',
+    },
 
     # TMF703 - Entity Inventory
     'entity': {
@@ -563,6 +575,8 @@ TMF_EVENT_NAME_MAP = {
     'quote': {
         'create': 'QuoteCreateEvent',
         'update': 'QuoteAttributeValueChangeEvent',
+        'state_change': 'QuoteStateChangeEvent',
+        'information_required': 'QuoteInformationRequiredEvent',
         'delete': 'QuoteDeleteEvent',
     },
 
@@ -578,6 +592,7 @@ TMF_EVENT_NAME_MAP = {
         'create': 'ProductOrderCreateEvent',
         'update': 'ProductOrderAttributeValueChangeEvent',
         'state_change': 'ProductOrderStateChangeEvent',
+        'information_required': 'ProductOrderInformationRequiredEvent',
         'delete': 'ProductOrderDeleteEvent',
     },
 
@@ -609,12 +624,20 @@ TMF_EVENT_NAME_MAP = {
     'productOffering': {
         'create': 'ProductOfferingCreateEvent',
         'update': 'ProductOfferingAttributeValueChangeEvent',
+        'state_change': 'ProductOfferingStateChangeEvent',
         'delete': 'ProductOfferingDeleteEvent',
     },
     'productSpecification': {
         'create': 'ProductSpecificationCreateEvent',
         'update': 'ProductSpecificationAttributeValueChangeEvent',
+        'state_change': 'ProductSpecificationStateChangeEvent',
         'delete': 'ProductSpecificationDeleteEvent',
+    },
+    'productOfferingPrice': {
+        'create': 'ProductOfferingPriceCreateEvent',
+        'update': 'ProductOfferingPriceAttributeValueChangeEvent',
+        'state_change': 'ProductOfferingPriceStateChangeEvent',
+        'delete': 'ProductOfferingPriceDeleteEvent',
     },
 
     # TMF638 - Service Inventory (resource: service)
@@ -1168,6 +1191,8 @@ class TMFHubSubscription(models.Model):
     event_type = fields.Selection([
         ('create', 'Create'),
         ('update', 'Update'),
+        ('state_change', 'State Change'),
+        ('information_required', 'Information Required'),
         ('delete', 'Delete'),
         ('any', 'Any'),
     ], default='any', required=True, string="Trigger Action")

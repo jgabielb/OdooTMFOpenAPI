@@ -64,6 +64,7 @@ class TMFAgreement(models.Model):
         event_map = {
             "create": "AgreementCreateEvent",
             "update": "AgreementAttributeValueChangeEvent",
+            "state_change": "AgreementStateChangeEvent",
             "delete": "AgreementDeleteEvent",
         }
         if payloads is None:
@@ -97,10 +98,15 @@ class TMFAgreement(models.Model):
         return records
 
     def write(self, vals):
+        status_before = {rec.id: rec.status for rec in self}
         res = super().write(vals)
         if "engaged_party" in vals or "partner_id" in vals:
             self._sync_partner_link()
         self._notify("update")
+        if "status" in vals:
+            changed = self.filtered(lambda r: status_before.get(r.id) != r.status)
+            if changed:
+                changed._notify("state_change")
         return res
 
     def unlink(self):
@@ -162,6 +168,7 @@ class TMFAgreementSpecification(models.Model):
         event_map = {
             "create": "AgreementSpecificationCreateEvent",
             "update": "AgreementSpecificationAttributeValueChangeEvent",
+            "state_change": "AgreementSpecificationStateChangeEvent",
             "delete": "AgreementSpecificationDeleteEvent",
         }
         if payloads is None:
@@ -207,8 +214,13 @@ class TMFAgreementSpecification(models.Model):
         return recs
 
     def write(self, vals):
+        status_before = {rec.id: rec.lifecycle_status for rec in self}
         res = super().write(vals)
         self._notify("update")
+        if "lifecycle_status" in vals:
+            changed = self.filtered(lambda r: status_before.get(r.id) != r.lifecycle_status)
+            if changed:
+                changed._notify("state_change")
         return res
 
     def unlink(self):

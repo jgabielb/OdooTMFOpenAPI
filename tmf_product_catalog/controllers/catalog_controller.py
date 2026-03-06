@@ -58,6 +58,58 @@ class TMFCatalogController(http.Controller):
     def _base_url(self):
         return request.httprequest.host_url.rstrip('/') + "/tmf-api/productCatalogManagement/v5"
 
+    def _event_descriptor(self, resource_type, action):
+        mapping = {
+            "productOffering": {
+                "api_name": "productOffering",
+                "create": "ProductOfferingCreateEvent",
+                "update": "ProductOfferingAttributeValueChangeEvent",
+                "state_change": "ProductOfferingStateChangeEvent",
+                "delete": "ProductOfferingDeleteEvent",
+            },
+            "productSpecification": {
+                "api_name": "productSpecification",
+                "create": "ProductSpecificationCreateEvent",
+                "update": "ProductSpecificationAttributeValueChangeEvent",
+                "state_change": "ProductSpecificationStateChangeEvent",
+                "delete": "ProductSpecificationDeleteEvent",
+            },
+            "productOfferingPrice": {
+                "api_name": "productOfferingPrice",
+                "create": "ProductOfferingPriceCreateEvent",
+                "update": "ProductOfferingPriceAttributeValueChangeEvent",
+                "state_change": "ProductOfferingPriceStateChangeEvent",
+                "delete": "ProductOfferingPriceDeleteEvent",
+            },
+        }
+        info = mapping.get(resource_type) or {}
+        event_name = info.get(action)
+        if not event_name:
+            return None, None
+        return info.get("api_name"), event_name
+
+    def _publish_event(self, resource_type, action, payload):
+        api_name, event_name = self._event_descriptor(resource_type, action)
+        if not api_name or not event_name:
+            return
+        try:
+            request.env["tmf.hub.subscription"].sudo()._notify_subscribers(
+                api_name=api_name,
+                event_type=event_name,
+                resource_json=payload,
+            )
+        except Exception:
+            pass
+
+    def _listener_ok(self):
+        try:
+            payload = json.loads(request.httprequest.data or b"{}")
+        except Exception:
+            payload = None
+        if not isinstance(payload, dict):
+            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        return request.make_response("", status=201)
+
     # -------------------------------------------------------------------------
     # Generic Mock Storage Handlers
     # -------------------------------------------------------------------------
@@ -75,6 +127,7 @@ class TMFCatalogController(http.Controller):
             data['@type'] = resource_type[0].upper() + resource_type[1:]
 
         _MOCK_STORAGE[resource_type][new_id] = data
+        self._publish_event(resource_type, "create", data)
         return data
 
     def _mock_get(self, resource_type, res_id):
@@ -83,14 +136,20 @@ class TMFCatalogController(http.Controller):
     def _mock_patch(self, resource_type, res_id, patch_data):
         if res_id in _MOCK_STORAGE[resource_type]:
             resource = _MOCK_STORAGE[resource_type][res_id]
+            previous_state = resource.get("lifecycleStatus")
             resource.update(patch_data)
             resource['lastUpdate'] = self._get_now()
+            self._publish_event(resource_type, "update", resource)
+            if "lifecycleStatus" in patch_data and previous_state != resource.get("lifecycleStatus"):
+                self._publish_event(resource_type, "state_change", resource)
             return resource
         return None
 
     def _mock_delete(self, resource_type, res_id):
         if res_id in _MOCK_STORAGE[resource_type]:
+            resource = _MOCK_STORAGE[resource_type][res_id]
             del _MOCK_STORAGE[resource_type][res_id]
+            self._publish_event(resource_type, "delete", resource)
             return True
         return False
 
@@ -319,6 +378,108 @@ class TMFCatalogController(http.Controller):
             if res: return self._response(self._filter_fields(res, params.get('fields')))
 
         return self._error(404, "NOT_FOUND", "Price not found")
+
+    # =======================================================
+    # TMF620 Hub + listeners
+    # =======================================================
+    @http.route('/tmf-api/productCatalogManagement/v5/hub', type='http', auth='public', methods=['POST'], csrf=False)
+    def register_listener(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+        except Exception:
+            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        callback = data.get("callback")
+        if not callback:
+            return self._error(400, "BAD_REQUEST", "Missing mandatory attribute: callback")
+        subs = request.env["tmf.hub.subscription"].sudo().create([
+            {
+                "name": f"tmf620-product-offering-{callback}",
+                "api_name": "productOffering",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf620-product-specification-{callback}",
+                "api_name": "productSpecification",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf620-product-offering-price-{callback}",
+                "api_name": "productOfferingPrice",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+        ])
+        sub = subs[:1]
+        body = {"id": str(sub.id), "callback": sub.callback, "query": sub.query or ""}
+        return self._response(body, status=201)
+
+    @http.route('/tmf-api/productCatalogManagement/v5/hub/<string:sid>', type='http', auth='public', methods=['DELETE'], csrf=False)
+    def unregister_listener(self, sid, **params):
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
+        if not rec or not rec.exists():
+            return self._error(404, "NOT_FOUND", f"Hub subscription {sid} not found")
+        siblings = request.env["tmf.hub.subscription"].sudo().search([
+            ("callback", "=", rec.callback),
+            ("api_name", "in", ["productOffering", "productSpecification", "productOfferingPrice"]),
+        ])
+        (siblings or rec).unlink()
+        return Response(status=204)
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_offering_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_offering_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_offering_state(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_offering_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productSpecificationCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_spec_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productSpecificationAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_spec_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productSpecificationStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_spec_state(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productSpecificationDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_product_spec_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingPriceCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_pop_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingPriceAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_pop_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingPriceStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_pop_state(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingPriceDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_pop_delete(self, **params):
+        return self._listener_ok()
 
     # =======================================================
     # Common

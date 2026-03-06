@@ -26,18 +26,24 @@ class ResPartner(models.Model):
         if not managed and payloads is None:
             return
         hub = self.env["tmf.hub.subscription"].sudo()
-        event_map = {
-            "create": "PartyCreateEvent",
-            "update": "PartyAttributeValueChangeEvent",
-            "delete": "PartyDeleteEvent",
+        kind_map = {
+            ("individual", "create"): "IndividualCreateEvent",
+            ("individual", "update"): "IndividualAttributeValueChangeEvent",
+            ("individual", "state_change"): "IndividualStateChangeEvent",
+            ("individual", "delete"): "IndividualDeleteEvent",
+            ("organization", "create"): "OrganizationCreateEvent",
+            ("organization", "update"): "OrganizationAttributeValueChangeEvent",
+            ("organization", "state_change"): "OrganizationStateChangeEvent",
+            ("organization", "delete"): "OrganizationDeleteEvent",
         }
-        event_name = event_map.get(action)
-        if not event_name:
-            return
         if payloads is None:
-            payloads = [rec.to_tmf_json() for rec in managed]
-        for payload in payloads:
+            payloads = [(rec._tmf_party_kind(), rec.to_tmf_json()) for rec in managed]
+        for kind, payload in payloads:
+            event_name = kind_map.get((kind, action))
+            if not event_name:
+                continue
             try:
+                hub._notify_subscribers(kind, event_name, payload)
                 hub._notify_subscribers("party", event_name, payload)
             except Exception:
                 continue
@@ -97,8 +103,13 @@ class ResPartner(models.Model):
         return recs
 
     def write(self, vals):
+        old_status = {rec.id: rec.tmf_status for rec in self}
         res = super().write(vals)
         self._notify_tmf_party("update")
+        if "tmf_status" in vals:
+            changed = self.filtered(lambda r: old_status.get(r.id) != r.tmf_status)
+            if changed:
+                changed._notify_tmf_party("state_change")
         return res
 
     def unlink(self):
@@ -106,7 +117,7 @@ class ResPartner(models.Model):
         if not existing:
             return True
         managed = existing.filtered(lambda r: r.tmf_managed)
-        payloads = [rec.to_tmf_json() for rec in managed]
+        payloads = [(rec._tmf_party_kind(), rec.to_tmf_json()) for rec in managed]
         res = super(ResPartner, existing).unlink()
         if payloads:
             self._notify_tmf_party("delete", payloads=payloads)
