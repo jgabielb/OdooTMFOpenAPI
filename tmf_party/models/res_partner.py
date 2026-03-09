@@ -1,4 +1,7 @@
+import logging
 from odoo import models, fields, api
+
+_logger = logging.getLogger(__name__)
 
 TMF_BASE = "/tmf-api/partyManagement/v5"
 
@@ -46,6 +49,7 @@ class ResPartner(models.Model):
                 hub._notify_subscribers(kind, event_name, payload)
                 hub._notify_subscribers("party", event_name, payload)
             except Exception:
+                _logger.exception("TMF632 hub notification failed: event=%s kind=%s", event_name, kind)
                 continue
 
     def _tmf_public_status(self):

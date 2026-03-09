@@ -12,12 +12,33 @@ class TMFCustomerController(http.Controller):
     # -------------------------------------------------------------------------
     @http.route('/tmf-api/customerManagement/v5/customer', type='http', auth='public', methods=['GET'], csrf=False)
     def get_customers(self, **params):
-        # We can add filtering logic here later (e.g. ?name=John)
-        customers = request.env['tmf.customer'].sudo().search([])
-        
+        domain = []
+        if params.get('name'):
+            domain.append(('name', 'ilike', params['name']))
+        if params.get('status'):
+            domain.append(('status', '=', params['status']))
+
+        try:
+            limit = max(1, min(int(params.get('limit') or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get('offset') or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        env = request.env['tmf.customer'].sudo()
+        customers = env.search(domain, limit=limit, offset=offset, order='id asc')
+        total = env.search_count(domain)
+        data = [c.to_tmf_json() for c in customers]
+
         return request.make_response(
-            json.dumps([c.to_tmf_json() for c in customers]),
-            headers=[('Content-Type', 'application/json')]
+            json.dumps(data),
+            headers=[
+                ('Content-Type', 'application/json'),
+                ('X-Total-Count', str(total)),
+                ('X-Result-Count', str(len(data))),
+            ]
         )
 
     # -------------------------------------------------------------------------
@@ -28,7 +49,11 @@ class TMFCustomerController(http.Controller):
         customer = request.env['tmf.customer'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
         
         if not customer:
-            return request.make_response(json.dumps({'error': 'Not Found'}), status=404)
+            return request.make_response(
+                json.dumps({'code': '404', 'reason': 'Not Found', 'message': f'Customer {tmf_id} not found'}),
+                status=404,
+                headers=[('Content-Type', 'application/json')]
+            )
 
         return request.make_response(
             json.dumps(customer.to_tmf_json()),
@@ -94,7 +119,11 @@ class TMFCustomerController(http.Controller):
         try:
             customer = request.env['tmf.customer'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
             if not customer:
-                return request.make_response(json.dumps({'error': 'Not Found'}), status=404)
+                return request.make_response(
+                    json.dumps({'code': '404', 'reason': 'Not Found', 'message': f'Customer {tmf_id} not found'}),
+                    status=404,
+                    headers=[('Content-Type', 'application/json')]
+                )
 
             data = json.loads(request.httprequest.data)
             vals = request.env['tmf.customer'].sudo().map_tmf_to_odoo(data)
@@ -107,7 +136,12 @@ class TMFCustomerController(http.Controller):
                 headers=[('Content-Type', 'application/json')]
             )
         except Exception as e:
-            return request.make_response(json.dumps({'code': 500, 'message': str(e)}), status=500)
+            _logger.exception("TMF629 PATCH customer/%s failed", tmf_id)
+            return request.make_response(
+                json.dumps({'code': '500', 'reason': 'Internal Server Error', 'message': str(e)}),
+                status=500,
+                headers=[('Content-Type', 'application/json')]
+            )
 
     # -------------------------------------------------------------------------
     # DELETE

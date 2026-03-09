@@ -77,7 +77,18 @@ class TMF641Controller(http.Controller):
             else:
                 domain.append(("id", "=", -1))
 
-        records = request.env["tmf.service.order"].sudo().search(domain)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        env = request.env["tmf.service.order"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
 
         items = []
         for r in records:
@@ -90,8 +101,14 @@ class TMF641Controller(http.Controller):
         fields_param = params.get("fields")
         if fields_param:
             wanted = {f.strip() for f in str(fields_param).split(",") if f.strip()}
+            # Always keep TMF mandatory fields
+            wanted |= {"id", "href", "@type"}
             items = [{k: v for k, v in it.items() if k in wanted} for it in items]
-        return _json_response(items)
+
+        return _json_response(items, extra_headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(items))),
+        ])
 
     @http.route(BASE + "/<string:oid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_order(self, oid):
