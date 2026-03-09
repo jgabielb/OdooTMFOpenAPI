@@ -14,7 +14,7 @@ Scenarios covered:
 9) Optional TMF API sanity checks
 
 Usage:
-  python OdooBSS/tools/odoo_e2e_business.py --config OdooBSS/tools/odoo_e2e_business.sample.json
+  python OdooTMFOpenAPI/tools/odoo_e2e_business.py --config OdooTMFOpenAPI/tools/odoo_e2e_business.sample.json
 """
 
 from __future__ import annotations
@@ -414,3 +414,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

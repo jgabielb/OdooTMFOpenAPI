@@ -3,14 +3,15 @@
 Batch CTK runner for Windows run.bat-based TMF CTKs.
 
 Examples:
-  python OdooBSS/tools/run_ctk_batch.py
-  python OdooBSS/tools/run_ctk_batch.py --include TMF620,TMF621,TMF702
-  python OdooBSS/tools/run_ctk_batch.py --base-url http://host.docker.internal:8069
+  python OdooTMFOpenAPI/tools/run_ctk_batch.py
+  python OdooTMFOpenAPI/tools/run_ctk_batch.py --include TMF620,TMF621,TMF702
+  python OdooTMFOpenAPI/tools/run_ctk_batch.py --base-url http://host.docker.internal:8069
 """
 
 from __future__ import annotations
 
 import argparse
+import concurrent.futures as cf
 import csv
 import datetime as dt
 import json
@@ -27,7 +28,7 @@ from urllib.request import Request, urlopen
 
 TMF_RE = re.compile(r"TMF(\d+)_", re.IGNORECASE)
 LAUNCHER_NAMES = ("run.bat", "Windows-PowerShell-RUNCTK.ps1")
-LOCALHOST_CTK_IDS = {"TMF654", "TMF674", "TMF676", "TMF709", "TMF730", "TMF915"}
+LOCALHOST_CTK_IDS = {"TMF654", "TMF674", "TMF676", "TMF709", "TMF915"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -71,6 +72,12 @@ def parse_args() -> argparse.Namespace:
         "--all-versions",
         action="store_true",
         help="Run all discovered versions per TMF. Default runs only latest version per TMF.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of CTKs to run in parallel (default: 1).",
     )
     return parser.parse_args()
 
@@ -609,17 +616,60 @@ def main() -> int:
         print(f"Exclude filter: {sorted(exclude_ids)}")
     if args.base_url:
         print(f"Base URL argument: {args.base_url}")
+    print(f"Workers: {max(1, args.workers)}")
     print("")
 
     results: list[dict[str, Any]] = []
-    for r in runs:
-        launcher_name = Path(r["launcher"]).name
-        log_file = logs_dir / f"{r['tmf_id']}_{Path(r['ctk_dir']).name}_{launcher_name}.log"
-        result = run_one(r, args.base_url, log_file)
-        results.append(result)
-        if args.stop_on_fail and result["status"] == "FAIL":
-            print("Stopping on first failure (--stop-on-fail).")
-            break
+    workers = max(1, args.workers)
+    if args.stop_on_fail and workers > 1:
+        print("WARN: --stop-on-fail is not compatible with parallel mode; forcing workers=1.")
+        workers = 1
+
+    if workers == 1:
+        for r in runs:
+            launcher_name = Path(r["launcher"]).name
+            log_file = logs_dir / f"{r['tmf_id']}_{Path(r['ctk_dir']).name}_{launcher_name}.log"
+            result = run_one(r, args.base_url, log_file)
+            results.append(result)
+            if args.stop_on_fail and result["status"] == "FAIL":
+                print("Stopping on first failure (--stop-on-fail).")
+                break
+    else:
+        ordered_results: list[tuple[int, dict[str, Any]]] = []
+        future_map: dict[cf.Future[dict[str, Any]], tuple[int, dict[str, Any], Path]] = {}
+        with cf.ThreadPoolExecutor(max_workers=workers) as executor:
+            for idx, r in enumerate(runs):
+                launcher_name = Path(r["launcher"]).name
+                log_file = logs_dir / f"{r['tmf_id']}_{Path(r['ctk_dir']).name}_{launcher_name}.log"
+                fut = executor.submit(run_one, r, args.base_url, log_file)
+                future_map[fut] = (idx, r, log_file)
+
+            for fut in cf.as_completed(future_map):
+                idx, run_item, log_file = future_map[fut]
+                try:
+                    result = fut.result()
+                except Exception as exc:
+                    print(f"[{run_item['tmf_id']}] FAIL unexpected error: {exc}")
+                    result = {
+                        "tmf_id": run_item["tmf_id"],
+                        "ctk_dir": str(run_item["ctk_dir"]),
+                        "launcher": str(run_item["launcher"]),
+                        "exit_code": 1,
+                        "duration_sec": 0,
+                        "report_path": "",
+                        "status": "FAIL",
+                        "assertions_total": 0,
+                        "assertions_failed": None,
+                        "tests_total": 0,
+                        "tests_failed": None,
+                        "scripts_failed": None,
+                        "pass_rate": None,
+                        "error": str(exc),
+                        "log_file": str(log_file),
+                    }
+                ordered_results.append((idx, result))
+        ordered_results.sort(key=lambda x: x[0])
+        results = [r for _, r in ordered_results]
 
     write_outputs(run_out_dir, results)
 
@@ -629,3 +679,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

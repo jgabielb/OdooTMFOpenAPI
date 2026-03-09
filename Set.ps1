@@ -17,7 +17,7 @@ $BaseAddons  = Join-Path $OdooRoot "odoo\addons"
 
 # 3. Define User Custom Addons Path
 $UserProfile = $env:USERPROFILE
-$MyAddons    = Join-Path $UserProfile "OneDrive\work_area\OdooBSS"
+$MyAddons    = Join-Path $UserProfile "OneDrive\work_area\OdooTMFOpenAPI"
 
 # Validate paths
 if (-not (Test-Path $MyAddons)) {
@@ -58,6 +58,7 @@ Write-Host "Starting Odoo Server..." -ForegroundColor Green
     -d TMF_Odoo_DB `
     -i $ModulesToUpdate `
     -u $ModulesToUpgrade
+
 
 
 

@@ -128,8 +128,8 @@ class TMFEntitySpecification(models.Model):
             pt = rec._resolve_product_template()
             if not pt and rec.name:
                 pt = self.env["product.template"].sudo().create({"name": rec.name})
-            if pt:
-                rec.product_tmpl_id = pt.id
+            if pt and rec.product_tmpl_id.id != pt.id:
+                rec.with_context(skip_tmf_product_sync=True).write({"product_tmpl_id": pt.id})
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -141,7 +141,9 @@ class TMFEntitySpecification(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+        if self.env.context.get("skip_tmf_product_sync"):
+            return res
+        if "name" in vals or "tmf_id" in vals:
             self._sync_product_template()
         return res
 
@@ -247,8 +249,8 @@ class TMFEntityCatalog(models.Model):
             pt = rec._resolve_product_template()
             if not pt and rec.name:
                 pt = self.env["product.template"].sudo().create({"name": rec.name})
-            if pt:
-                rec.product_tmpl_id = pt.id
+            if pt and rec.product_tmpl_id.id != pt.id:
+                rec.with_context(skip_tmf_product_sync=True).write({"product_tmpl_id": pt.id})
 
     # --------
     # ID generation (if your mixin doesn't do it)
@@ -266,7 +268,9 @@ class TMFEntityCatalog(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+        if self.env.context.get("skip_tmf_product_sync"):
+            return res
+        if "name" in vals or "tmf_id" in vals:
             self._sync_product_template()
         for rec in self:
             rec._notify("entityCatalog", "update", rec)

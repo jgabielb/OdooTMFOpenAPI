@@ -72,11 +72,11 @@ class TMFPartnership(models.Model):
     def _sync_native_links(self):
         for rec in self:
             partner = rec._resolve_partner_from_payload()
-            if partner:
-                rec.partner_id = partner.id
+            if partner and rec.partner_id.id != partner.id:
+                rec.with_context(skip_tmf_native_sync=True).write({"partner_id": partner.id})
             spec = rec._resolve_spec_from_payload()
-            if spec:
-                rec.specification_id = spec.id
+            if spec and rec.specification_id.id != spec.id:
+                rec.with_context(skip_tmf_native_sync=True).write({"specification_id": spec.id})
 
     def _to_tmf_json(self):
         return {
@@ -114,11 +114,11 @@ class TMFPartnership(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        if self.env.context.get("skip_tmf_native_sync"):
+            return res
         if (
             "partner_json" in vals
             or "specification_json" in vals
-            or "partner_id" in vals
-            or "specification_id" in vals
         ):
             self._sync_native_links()
         self._notify("update")

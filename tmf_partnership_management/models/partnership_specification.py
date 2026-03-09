@@ -28,8 +28,8 @@ class TMFPartnershipSpecification(models.Model):
                 pt = env_pt.search([("name", "=", rec.name)], limit=1)
             if not pt and rec.name:
                 pt = env_pt.create({"name": rec.name})
-            if pt:
-                rec.product_tmpl_id = pt.id
+            if pt and rec.product_tmpl_id.id != pt.id:
+                rec.with_context(skip_tmf_product_sync=True).write({"product_tmpl_id": pt.id})
 
     def _to_tmf_json(self):
         return {
@@ -67,7 +67,9 @@ class TMFPartnershipSpecification(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if "name" in vals or "tmf_id" in vals or "product_tmpl_id" in vals:
+        if self.env.context.get("skip_tmf_product_sync"):
+            return res
+        if "name" in vals or "tmf_id" in vals:
             self._sync_product_link()
         self._notify("update")
         return res

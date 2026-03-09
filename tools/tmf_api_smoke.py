@@ -3,7 +3,7 @@
 Config-driven TMF API smoke runner.
 
 Usage:
-  python OdooBSS/tools/tmf_api_smoke.py --config OdooBSS/tools/tmf_api_smoke.sample.json
+  python OdooTMFOpenAPI/tools/tmf_api_smoke.py --config OdooTMFOpenAPI/tools/tmf_api_smoke.sample.json
 """
 
 from __future__ import annotations
@@ -462,3 +462,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

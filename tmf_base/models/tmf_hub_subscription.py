@@ -702,11 +702,13 @@ TMF_EVENT_NAME_MAP = {
     'agreement': {
         'create': 'AgreementCreateEvent',
         'update': 'AgreementAttributeValueChangeEvent',
+        'state_change': 'AgreementStateChangeEvent',
         'delete': 'AgreementDeleteEvent',
     },
     'agreementSpecification': {
         'create': 'AgreementSpecificationCreateEvent',
         'update': 'AgreementSpecificationAttributeValueChangeEvent',
+        'state_change': 'AgreementSpecificationStateChangeEvent',
         'delete': 'AgreementSpecificationDeleteEvent',
     },
 

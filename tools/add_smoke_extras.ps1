@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$cfgPath = "OdooBSS/tools/tmf_api_smoke.sample.json"
+$cfgPath = "OdooTMFOpenAPI/tools/tmf_api_smoke.sample.json"
 $cfg = Get-Content -Raw $cfgPath | ConvertFrom-Json
 
 $requested = @(
@@ -17,7 +17,7 @@ foreach ($t in $cfg.tests) {
   if ($t.name) { $existingNames[$t.name.ToLower()] = $true }
 }
 
-$routeLines = rg -n '@http\.route\(\[?\s*f?[''"]/tmf-api/[^''"]+' OdooBSS | Out-String
+$routeLines = rg -n '@http\.route\(\[?\s*f?[''"]/tmf-api/[^''"]+' OdooTMFOpenAPI | Out-String
 $routes = @()
 foreach ($line in ($routeLines -split "`n")) {
   if ($line -match '/tmf-api/[^''"\],\)]*') {
@@ -98,3 +98,4 @@ if ($added.Count -gt 0) {
   Write-Output "ADDED_SAMPLE:"
   $added | Select-Object -First 50 | ForEach-Object { Write-Output $_ }
 }
+
