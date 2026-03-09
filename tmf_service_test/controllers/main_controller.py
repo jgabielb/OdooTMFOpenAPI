@@ -76,10 +76,21 @@ class TMF653Controller(http.Controller):
     # ================
     @http.route(SERVICE_TEST_PATH, type="http", auth="public", methods=["GET"], csrf=False)
     def list_service_test(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = _filter_records("tmf.service.test", params)
-        recs = request.env["tmf.service.test"].sudo().search(domain)
+        env = request.env["tmf.service.test"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = params.get("fields")
-        return _json_response([_apply_fields(r.to_tmf_json(), fields_param) for r in recs], status=200)
+        data = [_apply_fields(r.to_tmf_json(), fields_param) for r in recs]
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{SERVICE_TEST_PATH}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_service_test(self, rid, **params):
@@ -138,10 +149,21 @@ class TMF653Controller(http.Controller):
     # ==========================
     @http.route(SERVICE_TEST_SPEC_PATH, type="http", auth="public", methods=["GET"], csrf=False)
     def list_service_test_spec(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = _filter_records("tmf.service.test.specification", params)
-        recs = request.env["tmf.service.test.specification"].sudo().search(domain)
+        env = request.env["tmf.service.test.specification"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = params.get("fields")
-        return _json_response([_apply_fields(r.to_tmf_json(), fields_param) for r in recs], status=200)
+        data = [_apply_fields(r.to_tmf_json(), fields_param) for r in recs]
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{SERVICE_TEST_SPEC_PATH}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_service_test_spec(self, rid, **params):

@@ -6,11 +6,14 @@ import uuid
 
 API_BASE = "/tmf-api/usageConsumptionManagement/v5"
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    hdrs = [("Content-Type", "application/json")]
+    if headers:
+        hdrs.extend(headers)
     return request.make_response(
-    json.dumps(payload),
-    headers=[("Content-Type", "application/json")],
-    status=status,
+        json.dumps(payload),
+        headers=hdrs,
+        status=status,
     )
 def _parse_body():
     raw = request.httprequest.data or b"{}"
@@ -26,15 +29,24 @@ class TMFUsageConsumptionController(http.Controller):
     # -------------------------
     @http.route(f"{API_BASE}/queryUsageConsumption", type="http", auth="public", methods=["GET"], csrf=False)
     def list_query_usage_consumption(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         fields_filter = params.get("fields")
         dom = []
         if params.get("id"):
             dom.append(("tmf_id", "=", params["id"]))
 
-        recs = request.env["tmf.query.usage.consumption"].sudo().search(dom)
-
+        env = request.env["tmf.query.usage.consumption"].sudo()
+        recs = env.search(dom, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(dom)
         out = [r.to_tmf_json(fields_filter=fields_filter) for r in recs]
-        return _json_response(out, status=200)
+        return _json_response(out, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(out)))])
 
     @http.route(f"{API_BASE}/queryUsageConsumption/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_query_usage_consumption(self, rid, **params):
@@ -88,13 +100,24 @@ class TMFUsageConsumptionController(http.Controller):
     # -------------------------
     @http.route(f"{API_BASE}/usageConsumptionReport", type="http", auth="public", methods=["GET"], csrf=False)
     def list_usage_consumption_report(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         fields_filter = params.get("fields")
         dom = []
         if params.get("id"):
             dom.append(("tmf_id", "=", params["id"]))
 
-        recs = request.env["tmf.usage.consumption.report"].sudo().search(dom)
-        return _json_response([r.to_tmf_json(fields_filter=fields_filter) for r in recs], status=200)
+        env = request.env["tmf.usage.consumption.report"].sudo()
+        recs = env.search(dom, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(dom)
+        data = [r.to_tmf_json(fields_filter=fields_filter) for r in recs]
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{API_BASE}/usageConsumptionReport/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_usage_consumption_report(self, rid, **params):

@@ -121,6 +121,14 @@ class TMF655Controller(http.Controller):
 
     @http.route([BASE_PATH, BASE_PATH_ALT], type="http", auth="public", methods=["GET"], csrf=False)
     def list_change_requests(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         dom = []
 
         # Equality filters used by CTK
@@ -144,7 +152,9 @@ class TMF655Controller(http.Controller):
                 return _json_response([], status=200)
             dom.append(("planned_end_time", "=", dt))
 
-        recs = request.env["tmf.change.request"].sudo().search(dom)
+        env = request.env["tmf.change.request"].sudo()
+        recs = env.search(dom, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(dom)
 
         # fields= support (basic; CTK uses fields=id, plannedStartTime, plannedEndTime, priority, requestType)
         fields_param = params.get("fields")
@@ -154,9 +164,10 @@ class TMF655Controller(http.Controller):
             for r in recs:
                 full = _to_tmf_payload(r)
                 out.append({k: v for k, v in full.items() if k in wanted})
-            return _json_response(out, status=200)
+            return _json_response(out, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(out)))])
 
-        return _json_response([_to_tmf_payload(r) for r in recs], status=200)
+        data = [_to_tmf_payload(r) for r in recs]
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route([f"{BASE_PATH}/<string:cr_id>", f"{BASE_PATH_ALT}/<string:cr_id>"], type="http", auth="public", methods=["GET"], csrf=False)
     def get_change_request(self, cr_id, **params):

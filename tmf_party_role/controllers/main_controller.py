@@ -83,18 +83,28 @@ class TMFPartyRoleController(http.Controller):
     # List or find PartyRole objects: GET /partyRole?fields=...
     @http.route(BASE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
     def list_party_roles(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = []
         if params.get("name"):
             domain.append(("name", "=", params["name"]))
 
-        records = request.env["tmf.party.role"].sudo().search(domain)
+        env = request.env["tmf.party.role"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         payload = [r.to_tmf_json() for r in records]
 
         fields_csv = params.get("fields")
         if fields_csv:
             payload = [_select_fields(p, fields_csv) for p in payload]
 
-        return _json_response(payload, status=200)
+        return _json_response(payload, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(payload)))])
 
 
     # Retrieves a PartyRole by ID: GET /partyRole/{id}?fields=...

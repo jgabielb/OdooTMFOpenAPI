@@ -10,10 +10,11 @@ _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/resourceOrdering/v4"
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    h = list(headers or []) + [("Content-Type", "application/json")]
     return request.make_response(
         json.dumps(payload, ensure_ascii=False),
-        headers=[("Content-Type", "application/json")],
+        headers=h,
         status=status,
     )
 
@@ -199,7 +200,18 @@ class TMF652ResourceOrderController(http.Controller):
                     # Keep GET semantics stable for CTK: invalid filter should not break the suite.
                     return _json_response([], status=200)
 
-            recs = request.env["tmf.resource.order"].sudo().search(domain, order="create_date desc", limit=200)
+            try:
+                limit = max(1, min(int(kwargs.get("limit") or 50), 1000))
+            except (ValueError, TypeError):
+                limit = 50
+            try:
+                offset = max(0, int(kwargs.get("offset") or 0))
+            except (ValueError, TypeError):
+                offset = 0
+
+            env = request.env["tmf.resource.order"].sudo()
+            recs = env.search(domain, order="create_date desc", limit=limit, offset=offset)
+            total = env.search_count(domain)
 
             out = []
             for r in recs:
@@ -207,7 +219,10 @@ class TMF652ResourceOrderController(http.Controller):
                 obj = _apply_fields(obj, fields_param)
                 out.append(obj)
 
-            return _json_response(out, status=200)
+            return _json_response(out, status=200, headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(out))),
+            ])
 
         except Exception as e:
             return _error(500, "Internal error listing ResourceOrders", details=str(e))

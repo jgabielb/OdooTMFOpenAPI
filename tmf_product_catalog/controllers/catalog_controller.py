@@ -145,22 +145,30 @@ class TMFCatalogController(TMFBaseController):
         
         # GET List: Combine Mock + Odoo Records
         mock_data = list(_MOCK_STORAGE['productSpecification'].values())
-        
+
         domain = []
         if params.get('lifecycleStatus'):
             status_map = {'In Design': 'design', 'Active': 'active', 'Retired': 'retired'}
             odoo_status = status_map.get(params.get('lifecycleStatus'), 'design')
             domain.append(('lifecycle_status', '=', odoo_status))
-        
-        odoo_specs = request.env['tmf.product.specification'].sudo().search(domain, limit=50)
+
+        limit, offset = self._paginate_params(params)
+        odoo_env = request.env['tmf.product.specification'].sudo()
+        odoo_specs = odoo_env.search(domain, limit=limit, offset=offset)
+        odoo_total = odoo_env.search_count(domain)
         odoo_data = [self._spec_to_json(s) for s in odoo_specs]
-        
+
         full_list = mock_data + odoo_data
-        
+
         if params.get('name'):
             full_list = [x for x in full_list if x.get('name') == params.get('name')]
-            
-        return self._json(self._select_fields_list(full_list, params.get('fields')))
+
+        total = len(mock_data) + odoo_total
+        data = self._select_fields_list(full_list, params.get('fields'))
+        return self._json(data, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(data))),
+        ])
 
     @http.route('/tmf-api/productCatalogManagement/v5/productSpecification/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
     def product_specification_individual(self, id, **params):
@@ -244,16 +252,24 @@ class TMFCatalogController(TMFBaseController):
 
         # List
         mock_data = list(_MOCK_STORAGE['productOffering'].values())
-        
+
         domain = [('active', '=', True)]
         if params.get('name'):
             domain.append(('name', '=', params.get('name')))
-        
-        odoo_recs = request.env['product.template'].sudo().search(domain, limit=50)
+
+        limit, offset = self._paginate_params(params)
+        odoo_env = request.env['product.template'].sudo()
+        odoo_recs = odoo_env.search(domain, limit=limit, offset=offset)
+        odoo_total = odoo_env.search_count(domain)
         odoo_data = [self._offering_to_json(o) for o in odoo_recs]
-        
+
         full_list = mock_data + odoo_data
-        return self._json(self._select_fields_list(full_list, params.get('fields')))
+        total = len(mock_data) + odoo_total
+        data = self._select_fields_list(full_list, params.get('fields'))
+        return self._json(data, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(data))),
+        ])
 
     @http.route('/tmf-api/productCatalogManagement/v5/productOffering/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
     def product_offering_individual(self, id, **params):

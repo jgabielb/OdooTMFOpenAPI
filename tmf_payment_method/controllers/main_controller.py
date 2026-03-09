@@ -116,14 +116,19 @@ class TMF670PaymentMethodController(http.Controller):
             offset = int(kwargs.get("offset", 0))
 
             domain = _filter_domain_from_params(kwargs)
-            recs = request.env["tmf.payment.method"].sudo().search(domain, limit=limit, offset=offset, order="create_date desc")
+            env = request.env["tmf.payment.method"].sudo()
+            recs = env.search(domain, limit=limit, offset=offset, order="create_date desc")
+            total = env.search_count(domain)
 
             out = []
             for r in recs:
                 d = r.to_tmf_dict()
                 d = _apply_fields_selection(d, fields_param)
                 out.append(d)
-            return _json_response(out, status=200)
+            return _json_response(out, status=200, headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(out))),
+            ])
         except Exception as e:
             return _error(500, "Internal error", details=str(e))
 

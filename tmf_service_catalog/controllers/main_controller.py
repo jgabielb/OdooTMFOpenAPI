@@ -59,9 +59,14 @@ class TMFServiceCatalogController(http.Controller):
         limit = int(params.get("limit", 100) or 100)
         fields_param = params.get("fields")
 
-        recs = env.search([], offset=offset, limit=limit)
+        domain = []
+        recs = env.search(domain, offset=offset, limit=limit)
+        total = env.search_count(domain)
         out = [self._apply_fields_filter(r.to_tmf_json(), fields_param) for r in recs]
-        return self._json_response(out, status=200)
+        return self._json_response(out, status=200, extra_headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(out))),
+        ])
 
     # CREATE
     @http.route([BASE, BASE + "/"], type="http", auth="public", methods=["POST"], csrf=False)
@@ -225,8 +230,12 @@ class TMFServiceSpecificationController(http.Controller):
         fields_param = params.get("fields")
 
         recs = env.search(domain, offset=offset, limit=limit)
+        total = env.search_count(domain)
         out = [self._apply_fields_filter(r.to_tmf_json(), fields_param) for r in recs]
-        return self._json_response(out, status=200)
+        return self._json_response(out, status=200, extra_headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(out))),
+        ])
 
     # CREATE
     @http.route(BASE, type="http", auth="public", methods=["POST"], csrf=False)

@@ -6,10 +6,22 @@ class TMFController(http.Controller):
 
     @http.route('/tmf-api/managedEntityManagement/v4/ManagedEntity', type='http', auth='public', methods=['GET'], csrf=False)
     def get_resources(self, **params):
-        records = request.env['tmf.managed.entity'].sudo().search([])
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env['tmf.managed.entity'].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
+        data = [r.to_tmf_json() for r in records]
         return request.make_response(
-            json.dumps([r.to_tmf_json() for r in records]),
-            headers=[('Content-Type', 'application/json')]
+            json.dumps(data),
+            headers=[('Content-Type', 'application/json'), ('X-Total-Count', str(total)), ('X-Result-Count', str(len(data)))]
         )
 
     @http.route('/tmf-api/managedEntityManagement/v4/ManagedEntity', type='http', auth='public', methods=['POST'], csrf=False)

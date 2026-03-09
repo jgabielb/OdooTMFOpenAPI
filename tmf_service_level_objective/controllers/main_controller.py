@@ -44,8 +44,20 @@ class TMFController(http.Controller):
 
     @http.route(API_BASE, type='http', auth='public', methods=['GET'], csrf=False)
     def get_resources(self, **params):
-        records = request.env['tmf.service.level.objective'].sudo().search([])
-        return self._json_response([r.to_tmf_json() for r in records], status=200)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env['tmf.service.level.objective'].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
+        data = [r.to_tmf_json() for r in records]
+        return self._json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{API_BASE}/<string:tmf_id>", type='http', auth='public', methods=['GET'], csrf=False)
     def get_resource(self, tmf_id, **params):

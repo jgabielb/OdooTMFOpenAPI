@@ -173,12 +173,23 @@ class TMF668PartnershipController(http.Controller):
     # -------- PartnershipSpecification --------
     @http.route(f"{API_BASE}/{PS_RESOURCE}", type="http", auth="public", methods=["GET"], csrf=False)
     def list_partnership_specifications(self, **params):
-        recs = request.env["tmf.partnership.specification"].sudo().search([])
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env["tmf.partnership.specification"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         items = [_ps_to_tmf(r) for r in recs]
         fields_param = params.get("fields")
         if fields_param:
             items = [_pick_fields(it, fields_param) for it in items]
-        return _json_response(items, status=200)
+        return _json_response(items, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(items)))])
 
     @http.route(f"{API_BASE}/{PS_RESOURCE}/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_partnership_specification(self, tmf_id, **params):
@@ -282,12 +293,23 @@ class TMF668PartnershipController(http.Controller):
     # -------- Partnership --------
     @http.route(f"{API_BASE}/{P_RESOURCE}", type="http", auth="public", methods=["GET"], csrf=False)
     def list_partnerships(self, **params):
-        recs = request.env["tmf.partnership"].sudo().search([])
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env["tmf.partnership"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         items = [_p_to_tmf(r) for r in recs]
         fields_param = params.get("fields")
         if fields_param:
             items = [_pick_fields(it, fields_param) for it in items]
-        return _json_response(items, status=200)
+        return _json_response(items, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(items)))])
 
     @http.route(f"{API_BASE}/{P_RESOURCE}/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_partnership(self, tmf_id, **params):

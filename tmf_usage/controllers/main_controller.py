@@ -113,7 +113,12 @@ class TMFUsageController(http.Controller):
         fields_csv = params.get("fields")
 
         recs = Model.search(domain, offset=offset, limit=limit, order=order)
-        return _json_response([r.to_tmf_json(fields_csv=fields_csv) for r in recs])
+        total = Model.search_count(domain)
+        data = [r.to_tmf_json(fields_csv=fields_csv) for r in recs]
+        return _json_response(data, extra_headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(data))),
+        ])
 
     @http.route('/tmf-api/usageManagement/v4/usage/<string:rid>', type='http', auth='public', methods=['GET'], csrf=False)
     def usage_get(self, rid, **params):
@@ -316,8 +321,13 @@ class TMFUsageSpecificationController(http.Controller):
         limit = int(params.get("limit", 0) or 0) or None
 
         recs = Model.search(domain, offset=offset, limit=limit)
+        total = Model.search_count(domain)
         fields_csv = params.get("fields")
-        return _json_response([_only_fields(r.to_tmf_json(), fields_csv) for r in recs])
+        data = [_only_fields(r.to_tmf_json(), fields_csv) for r in recs]
+        return _json_response(data, extra_headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(data))),
+        ])
 
     @http.route('/tmf-api/usageManagement/v4/usageSpecification/<string:rid>', type='http', auth='public', methods=['GET'], csrf=False)
     def spec_get(self, rid, **params):

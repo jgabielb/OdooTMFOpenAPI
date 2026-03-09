@@ -96,10 +96,20 @@ class TMF656Controller(http.Controller):
     @http.route([f"{API_BASE_1}/serviceProblem", f"{API_BASE_2}/serviceProblem"],
                 type="http", auth="public", methods=["GET"], csrf=False)
     def list_service_problem(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = _domain_from_params(params)
-        recs = request.env["tmf.service.problem"].sudo().search(domain)
+        env = request.env["tmf.service.problem"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         payload = [_apply_fields_filter(r.to_tmf_json(), params.get("fields")) for r in recs]
-        return _json_response(payload, status=200)
+        return _json_response(payload, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(payload)))])
 
     @http.route([f"{API_BASE_1}/serviceProblem/<string:rid>", f"{API_BASE_2}/serviceProblem/<string:rid>"],
                 type="http", auth="public", methods=["GET"], csrf=False)
@@ -282,9 +292,22 @@ class TMF656Controller(http.Controller):
     # ----------------------------
     # Task resources (TMF656)
     # ----------------------------
-    def _task_list(self, model, fields_param=None):
-        recs = request.env[model].sudo().search([])
-        return _json_response([_apply_fields_filter(r.to_tmf_json(), fields_param) for r in recs], status=200)
+    def _task_list(self, model, fields_param=None, params=None):
+        params = params or {}
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env[model].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
+        payload = [_apply_fields_filter(r.to_tmf_json(), fields_param) for r in recs]
+        return _json_response(payload, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(payload)))])
 
     def _task_get(self, model, rid, fields_param=None):
         rec = request.env[model].sudo().search([("tmf_id", "=", rid)], limit=1)
@@ -296,7 +319,7 @@ class TMF656Controller(http.Controller):
     @http.route([f"{API_BASE_1}/ProblemAcknowledgement", f"{API_BASE_2}/ProblemAcknowledgement"],
                 type="http", auth="public", methods=["GET"], csrf=False)
     def list_problem_ack(self, **params):
-        return self._task_list("tmf.problem.acknowledgement", params.get("fields"))
+        return self._task_list("tmf.problem.acknowledgement", params.get("fields"), params=params)
 
     @http.route([f"{API_BASE_1}/ProblemAcknowledgement/<string:rid>", f"{API_BASE_2}/ProblemAcknowledgement/<string:rid>"],
                 type="http", auth="public", methods=["GET"], csrf=False)
@@ -329,7 +352,7 @@ class TMF656Controller(http.Controller):
     @http.route([f"{API_BASE_1}/ProblemUnacknowledgement", f"{API_BASE_2}/ProblemUnacknowledgement"],
                 type="http", auth="public", methods=["GET"], csrf=False)
     def list_problem_unack(self, **params):
-        return self._task_list("tmf.problem.unacknowledgement", params.get("fields"))
+        return self._task_list("tmf.problem.unacknowledgement", params.get("fields"), params=params)
 
     @http.route([f"{API_BASE_1}/ProblemUnacknowledgement/<string:rid>", f"{API_BASE_2}/ProblemUnacknowledgement/<string:rid>"],
                 type="http", auth="public", methods=["GET"], csrf=False)
@@ -362,7 +385,7 @@ class TMF656Controller(http.Controller):
     @http.route([f"{API_BASE_1}/problemGroup", f"{API_BASE_2}/problemGroup"],
                 type="http", auth="public", methods=["GET"], csrf=False)
     def list_problem_group(self, **params):
-        return self._task_list("tmf.problem.group", params.get("fields"))
+        return self._task_list("tmf.problem.group", params.get("fields"), params=params)
 
     @http.route([f"{API_BASE_1}/problemGroup/<string:rid>", f"{API_BASE_2}/problemGroup/<string:rid>"],
                 type="http", auth="public", methods=["GET"], csrf=False)
@@ -395,7 +418,7 @@ class TMF656Controller(http.Controller):
     @http.route([f"{API_BASE_1}/problemUngroup", f"{API_BASE_2}/problemUngroup"],
                 type="http", auth="public", methods=["GET"], csrf=False)
     def list_problem_ungroup(self, **params):
-        return self._task_list("tmf.problem.ungroup", params.get("fields"))
+        return self._task_list("tmf.problem.ungroup", params.get("fields"), params=params)
 
     @http.route([f"{API_BASE_1}/problemUngroup/<string:rid>", f"{API_BASE_2}/problemUngroup/<string:rid>"],
                 type="http", auth="public", methods=["GET"], csrf=False)

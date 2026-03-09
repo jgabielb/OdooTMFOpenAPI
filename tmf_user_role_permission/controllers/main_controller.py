@@ -84,6 +84,14 @@ class TMF672Controller(http.Controller):
         return _safe(lambda: self._list_permission_impl(**query))
 
     def _list_permission_impl(self, **query):
+        try:
+            limit = max(1, min(int(query.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(query.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = []
 
         # CTK filters you MUST support
@@ -102,7 +110,9 @@ class TMF672Controller(http.Controller):
         if user_id:
             domain.append(("user_json", "ilike", f'"id": "{user_id}"'))
 
-        recs = request.env["tmf672.permission"].sudo().search(domain)
+        env = request.env["tmf672.permission"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = query.get("fields")
 
         out = []
@@ -111,7 +121,7 @@ class TMF672Controller(http.Controller):
             payload = r.tmf_to_payload(api_base_path=API_BASE)
             out.append(_apply_fields_filter(payload, fields_param))
 
-        return _json_response(out, status=200)
+        return _json_response(out, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(out)))])
 
     @http.route(
         [f"{API_BASE}/permission/<string:rid>", f"{API_BASE}/Permission/<string:rid>"]
@@ -193,6 +203,14 @@ class TMF672Controller(http.Controller):
         return _safe(lambda: self._list_user_role_impl(**query))
 
     def _list_user_role_impl(self, **query):
+        try:
+            limit = max(1, min(int(query.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(query.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = []
 
         # CTK filters you MUST support
@@ -203,7 +221,9 @@ class TMF672Controller(http.Controller):
         if href:
             domain.append(("href", "=", href))
 
-        recs = request.env["tmf672.user.role"].sudo().search(domain)
+        env = request.env["tmf672.user.role"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = query.get("fields")
 
         out = []
@@ -212,7 +232,7 @@ class TMF672Controller(http.Controller):
             payload = r.tmf_to_payload(api_base_path=API_BASE)
             out.append(_apply_fields_filter(payload, fields_param))
 
-        return _json_response(out, status=200)
+        return _json_response(out, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(out)))])
 
     @http.route(
         [f"{API_BASE}/userRole/<string:rid>", f"{API_BASE}/UserRole/<string:rid>"]

@@ -28,6 +28,14 @@ class TMFGeographicSiteController(http.Controller):
     # -------------------------
     @http.route(f"{API_BASE}/{RESOURCE}", type="http", auth="public", methods=["GET"], csrf=False)
     def list_geographic_sites(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         env = request.env["tmf.geographic.site"].sudo()
 
         # Basic filtering (user guide examples show simple query params like code=Warehouse&state=active)
@@ -40,7 +48,8 @@ class TMFGeographicSiteController(http.Controller):
         if "state" in params:
             domain.append(("status", "=", params["state"]))
 
-        records = env.search(domain)
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
 
         # Attribute selection (first level) via fields=id,href,name...
         fields_param = params.get("fields")
@@ -58,7 +67,7 @@ class TMFGeographicSiteController(http.Controller):
             else:
                 out.append(full)
 
-        return _json_response(out, status=200)
+        return _json_response(out, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(out)))])
 
     # -------------------------
     # GET by id

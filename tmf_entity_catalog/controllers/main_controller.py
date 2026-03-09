@@ -219,13 +219,19 @@ class TMF662EntityCatalogController(http.Controller):
         limit = int(params.get("limit") or 0) or None
         offset = int(params.get("offset") or 0) or 0
 
-        records = request.env["tmf.entity.catalog"].sudo().search(domain, limit=limit, offset=offset)
+        env = request.env["tmf.entity.catalog"].sudo()
+        records = env.search(domain, limit=limit, offset=offset)
+        total = env.search_count(domain)
         result = []
         for r in records:
             payload = r.to_tmf_json()
             payload = _apply_fields_param(payload, params.get("fields"))
             result.append(payload)
-        return _json_response(result, status=200)
+        headers = [
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(result))),
+        ]
+        return _json_response(result, status=200, headers=headers)
 
     # --------
     # RETRIEVE

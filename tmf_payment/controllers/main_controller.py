@@ -5,10 +5,13 @@ import json
 
 API_BASE = "/tmf-api/paymentManagement/v4"
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    hdrs = [("Content-Type", "application/json")]
+    if headers:
+        hdrs.extend(headers)
     return request.make_response(
         json.dumps(payload, ensure_ascii=False),
-        headers=[("Content-Type", "application/json")],
+        headers=hdrs,
         status=status,
     )
 
@@ -17,6 +20,14 @@ class TMF676Controller(http.Controller):
     # LIST /payment
     @http.route(f"{API_BASE}/payment", type="http", auth="public", methods=["GET"], csrf=False)
     def list_payment(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         fields_sel = params.get("fields")  # comma-separated
         if fields_sel:
             requested = set([f.strip() for f in fields_sel.split(",") if f.strip()])
@@ -28,11 +39,13 @@ class TMF676Controller(http.Controller):
 
         # minimal filtering (optional per conformance for sub-resources)
         domain = []
-        recs = request.env["tmf.payment"].sudo().search(domain)
+        env = request.env["tmf.payment"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
 
         host_url = request.httprequest.host_url.rstrip("/")
         data = [r.to_tmf_json(host_url=host_url, fields_filter=fields_sel) for r in recs]
-        return _json_response(data, status=200)
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     # GET /payment/{id}
     @http.route(f"{API_BASE}/payment/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)

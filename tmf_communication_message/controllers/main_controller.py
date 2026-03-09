@@ -104,14 +104,24 @@ class TMF681CommunicationMessageController(http.Controller):
         fields_param = _get_fields_param()
         domain = _domain_from_query(request.httprequest.args)
 
-        recs = request.env[MODEL].sudo().search(domain)
+        try:
+            limit = max(1, min(int(request.httprequest.args.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(request.httprequest.args.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        env = request.env[MODEL].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         items = []
         for r in recs:
             payload = _record_to_payload(r)
             payload = _apply_fields_filter(payload, fields_param)
             items.append(payload)
 
-        return _json_response(items, status=200)
+        return _json_response(items, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(items)))])
 
     @http.route(
         f"{API_BASE}/{RESOURCE}/<string:tmf_id>",

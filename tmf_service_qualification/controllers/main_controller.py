@@ -64,13 +64,23 @@ class TMF645QualificationController(http.Controller):
     # -------------------------
     @http.route(f"{API_BASE}/checkServiceQualification", type="http", auth="public", methods=["GET"], csrf=False)
     def list_check(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = _domain_from_params(params)
         domain.append(("qualification_kind", "=", "check"))
 
-        records = request.env["tmf.service.qualification"].sudo().search(domain)
+        env = request.env["tmf.service.qualification"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = params.get("fields")
         data = [_apply_fields(r.to_tmf_json(), fields_param) for r in records]
-        return _json_response(data, status=200)
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{API_BASE}/checkServiceQualification/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_check(self, rid, **params):
@@ -198,12 +208,22 @@ class TMF645QualificationController(http.Controller):
     # -------------------------
     @http.route(f"{API_BASE}/queryServiceQualification", type="http", auth="public", methods=["GET"], csrf=False)
     def list_query(self, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
         domain = _domain_from_params(params)
         domain.append(("qualification_kind", "=", "query"))
-        records = request.env["tmf.service.qualification"].sudo().search(domain)
+        env = request.env["tmf.service.qualification"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         fields_param = params.get("fields")
         data = [_apply_fields(r.to_tmf_json(), fields_param) for r in records]
-        return _json_response(data, status=200)
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route(f"{API_BASE}/queryServiceQualification/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_query(self, rid, **params):

@@ -103,9 +103,26 @@ class TMFTicketController(TMFBaseController):
         if params.get('status'):
             domain.append(('status', '=', params.get('status')))
 
-        tickets = request.env['tmf.trouble.ticket'].sudo().search(domain, limit=50, order='id desc')
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        env = request.env['tmf.trouble.ticket'].sudo()
+        tickets = env.search(domain, limit=limit, offset=offset, order='id desc')
+        total = env.search_count(domain)
         data = [t.to_tmf_json() for t in tickets]
-        return self._json(self._select_fields_list(data, params.get('fields')))
+        return self._json(
+            self._select_fields_list(data, params.get('fields')),
+            headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(data))),
+            ],
+        )
 
     def _create_ticket(self):
         try:
@@ -172,9 +189,26 @@ class TMFTicketController(TMFBaseController):
         if params.get('id'):
             domain.append(('tmf_id', '=', params.get('id')))
 
-        specs = request.env['tmf.trouble.ticket.specification'].sudo().search(domain, limit=50, order='id desc')
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        env = request.env['tmf.trouble.ticket.specification'].sudo()
+        specs = env.search(domain, limit=limit, offset=offset, order='id desc')
+        total = env.search_count(domain)
         data = [s.to_tmf_json() for s in specs]
-        return self._json(self._select_fields_list(data, params.get('fields')))
+        return self._json(
+            self._select_fields_list(data, params.get('fields')),
+            headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(data))),
+            ],
+        )
 
     def _create_specification(self):
         try:

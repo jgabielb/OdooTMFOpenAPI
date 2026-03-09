@@ -9,10 +9,13 @@ RESOURCE = "shoppingCart"
 BASE_PATH = f"{API_BASE}/{RESOURCE}"
 
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    hdrs = [("Content-Type", "application/json")]
+    if headers:
+        hdrs.extend(headers)
     return request.make_response(
         json.dumps(payload, ensure_ascii=False),
-        headers=[("Content-Type", "application/json")],
+        headers=hdrs,
         status=status,
     )
 
@@ -125,14 +128,25 @@ class TMFShoppingCartController(http.Controller):
 
     @http.route(BASE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
     def list_carts(self, **params):
-        recs = request.env["tmf.shopping.cart"].sudo().search([])
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env["tmf.shopping.cart"].sudo()
+        recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
         payload = [r.to_tmf_json() for r in recs]
 
         fields_param = params.get("fields")
         if fields_param:
             payload = [_apply_fields_filter(p, fields_param) for p in payload]
 
-        return _json_response(payload, status=200)
+        return _json_response(payload, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(payload)))])
 
     @http.route(f"{BASE_PATH}/<string:cart_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_cart(self, cart_id, **params):

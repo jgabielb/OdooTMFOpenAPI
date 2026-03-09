@@ -30,10 +30,22 @@ class TMFPartyInteractionController(http.Controller):
 
     @http.route(f"{API_BASE}/{RESOURCE}", type="http", auth="public", methods=["GET"], csrf=False)
     def get_resources(self, **params):
-        records = request.env["tmf.party.interaction"].sudo().search([])
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        domain = []
+        env = request.env["tmf.party.interaction"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
+        data = [r.to_tmf_json(host_url=request.httprequest.host_url) for r in records]
         return request.make_response(
-            json.dumps([r.to_tmf_json(host_url=request.httprequest.host_url) for r in records]),
-            headers=[("Content-Type", "application/json")],
+            json.dumps(data),
+            headers=[("Content-Type", "application/json"), ("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))],
             status=200,
         )
 

@@ -8,10 +8,13 @@ def _parse_fields(params):
         return None
     return [x.strip() for x in raw.split(",") if x.strip()]
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    hdrs = [("Content-Type", "application/json")]
+    if headers:
+        hdrs.extend(headers)
     return request.make_response(
         json.dumps(payload),
-        headers=[("Content-Type", "application/json")],
+        headers=hdrs,
         status=status
     )
 
@@ -21,6 +24,14 @@ class TMF675GeographicLocationController(http.Controller):
     @http.route('/location/geographicLocation', type='http', auth='public', methods=['GET'], csrf=False)
     def list_geographic_location(self, **params):
         fields_filter = _parse_fields(params)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
 
         domain = []
         if params.get("name"):
@@ -32,8 +43,11 @@ class TMF675GeographicLocationController(http.Controller):
         if params.get("spatialRef"):
             domain.append(("spatial_ref", "=", params["spatialRef"]))
 
-        records = request.env['tmf.geographic.location'].sudo().search(domain)
-        return _json_response([r.to_tmf_json(fields_filter=fields_filter) for r in records], status=200)
+        env = request.env['tmf.geographic.location'].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
+        data = [r.to_tmf_json(fields_filter=fields_filter) for r in records]
+        return _json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
     @http.route('/location/geographicLocation/<string:location_id>', type='http', auth='public', methods=['GET'], csrf=False)
     def get_geographic_location_by_id(self, location_id, **params):

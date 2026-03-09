@@ -209,9 +209,14 @@ class TMF654Controller(http.Controller):
         if params.get("id"):
             domain.append(("tmf_id", "=", params["id"]))
 
-        recs = request.env["tmf654.bucket"].sudo().search(domain, limit=int(params.get("limit", 100)), offset=int(params.get("offset", 0)))
+        env = request.env["tmf654.bucket"].sudo()
+        recs = env.search(domain, limit=int(params.get("limit", 100)), offset=int(params.get("offset", 0)))
+        total = env.search_count(domain)
         items = [_fields_filter(_bucket_to_json(r), params.get("fields")) for r in recs]
-        return _json_response(items, 200)
+        return _json_response(items, 200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(items))),
+        ])
 
     @http.route(f"{API_BASE}/bucket/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_bucket(self, rid, **params):
@@ -286,9 +291,15 @@ class TMF654Controller(http.Controller):
     # -------- TopupBalance --------
     @http.route(f"{API_BASE}/topupBalance", type="http", auth="public", methods=["GET"], csrf=False)
     def list_topup(self, **params):
-        recs = request.env["tmf654.topup.balance"].sudo().search([], limit=int(params.get("limit", 100)), offset=int(params.get("offset", 0)))
+        domain = []
+        env = request.env["tmf654.topup.balance"].sudo()
+        recs = env.search(domain, limit=int(params.get("limit", 100)), offset=int(params.get("offset", 0)))
+        total = env.search_count(domain)
         items = [_fields_filter(_topup_to_json(r), params.get("fields")) for r in recs]
-        return _json_response(items, 200)
+        return _json_response(items, 200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(items))),
+        ])
 
     @http.route(f"{API_BASE}/topupBalance/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_topup(self, rid, **params):
@@ -402,13 +413,18 @@ class TMF654Controller(http.Controller):
         if params.get("usageType"):
             domain.append(("usage_type", "=", params["usageType"]))
 
-        recs = request.env["tmf654.adjust.balance"].sudo().search(
+        env = request.env["tmf654.adjust.balance"].sudo()
+        recs = env.search(
             domain,
             limit=int(params.get("limit", 100)),
             offset=int(params.get("offset", 0)),
         )
+        total = env.search_count(domain)
         items = [_fields_filter(_adjust_to_json(r), params.get("fields")) for r in recs]
-        return _json_response(items, 200)
+        return _json_response(items, 200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(items))),
+        ])
 
     @http.route(f"{API_BASE}/adjustBalance/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_adjust(self, rid, **params):
@@ -512,13 +528,18 @@ class TMF654Controller(http.Controller):
         if params.get("usageType"):
             domain.append(("usage_type", "=", params["usageType"]))
 
-        recs = request.env["tmf654.reserve.balance"].sudo().search(
+        env = request.env["tmf654.reserve.balance"].sudo()
+        recs = env.search(
             domain,
             limit=int(params.get("limit", 100)),
             offset=int(params.get("offset", 0)),
         )
+        total = env.search_count(domain)
         items = [_fields_filter(_reserve_to_json(r), params.get("fields")) for r in recs]
-        return _json_response(items, 200)
+        return _json_response(items, 200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(items))),
+        ])
 
     @http.route(f"{API_BASE}/reserveBalance/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_reserve(self, rid, **params):
