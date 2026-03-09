@@ -3,26 +3,15 @@ from odoo.http import request, Response
 import json
 import logging
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
 _logger = logging.getLogger(__name__)
 
-class TMFTicketController(http.Controller):
+class TMFTicketController(TMFBaseController):
 
     # -------------------------------------------------------------------------
     # Helper Methods
     # -------------------------------------------------------------------------
-    def _response(self, data, status=200):
-        if isinstance(data, dict) and '@type' not in data:
-             data['@type'] = 'TroubleTicket'
-        if isinstance(data, list):
-            for item in data:
-                if isinstance(item, dict) and '@type' not in item:
-                    item['@type'] = 'TroubleTicket'
-
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')],
-            status=status
-        )
 
     def _error(self, status, code, message):
         return request.make_response(
@@ -36,16 +25,6 @@ class TMFTicketController(http.Controller):
             headers=[('Content-Type', 'application/json')],
             status=status
         )
-
-    def _filter_fields(self, data, fields_param):
-        if not fields_param: return data
-        requested = fields_param.split(',')
-        mandatory = ['id', 'href', '@type']
-        def filter_dict(d):
-            return {k: v for k, v in d.items() if k in requested or k in mandatory}
-        if isinstance(data, list):
-            return [filter_dict(item) for item in data]
-        return filter_dict(data)
 
     def _get_base_url(self):
         return request.httprequest.host_url.rstrip('/') + "/tmf-api/troubleTicketManagement/v5/troubleTicket"
@@ -78,7 +57,7 @@ class TMFTicketController(http.Controller):
             return self._error(404, "NOT_FOUND", f"TroubleTicket {id} not found")
 
         if request.httprequest.method == 'GET':
-            return self._response(self._filter_fields(ticket.to_tmf_json(), params.get('fields')))
+            return self._json(self._select_fields(ticket.to_tmf_json(), params.get('fields')))
         elif request.httprequest.method == 'PATCH':
             return self._patch_ticket(ticket)
         elif request.httprequest.method == 'DELETE':
@@ -101,7 +80,7 @@ class TMFTicketController(http.Controller):
             return self._error(404, "NOT_FOUND", f"TroubleTicketSpecification {id} not found")
 
         if request.httprequest.method == 'GET':
-            return self._response(self._filter_fields(spec.to_tmf_json(), params.get('fields')))
+            return self._json(self._select_fields(spec.to_tmf_json(), params.get('fields')))
         elif request.httprequest.method == 'PATCH':
             return self._patch_specification(spec)
         elif request.httprequest.method == 'DELETE':
@@ -126,7 +105,7 @@ class TMFTicketController(http.Controller):
 
         tickets = request.env['tmf.trouble.ticket'].sudo().search(domain, limit=50, order='id desc')
         data = [t.to_tmf_json() for t in tickets]
-        return self._response(self._filter_fields(data, params.get('fields')))
+        return self._json(self._select_fields_list(data, params.get('fields')))
 
     def _create_ticket(self):
         try:
@@ -156,7 +135,7 @@ class TMFTicketController(http.Controller):
                             vals['partner_id'] = int(party['id'])
 
             new_ticket = request.env['tmf.trouble.ticket'].sudo().create(vals)
-            return self._response(new_ticket.to_tmf_json(), status=201)
+            return self._json(new_ticket.to_tmf_json(), status=201)
 
         except Exception as e:
             _logger.exception("TMF621 Create Error")
@@ -182,7 +161,7 @@ class TMFTicketController(http.Controller):
             if vals:
                 ticket.write(vals)
 
-            return self._response(ticket.to_tmf_json())
+            return self._json(ticket.to_tmf_json())
         except Exception as e:
             return self._error(400, "UPDATE_ERROR", str(e))
 
@@ -195,7 +174,7 @@ class TMFTicketController(http.Controller):
 
         specs = request.env['tmf.trouble.ticket.specification'].sudo().search(domain, limit=50, order='id desc')
         data = [s.to_tmf_json() for s in specs]
-        return self._response(self._filter_fields(data, params.get('fields')))
+        return self._json(self._select_fields_list(data, params.get('fields')))
 
     def _create_specification(self):
         try:
@@ -207,7 +186,7 @@ class TMFTicketController(http.Controller):
                 'version': data.get('version') or '1.0',
             }
             new_spec = request.env['tmf.trouble.ticket.specification'].sudo().create(vals)
-            return self._response(new_spec.to_tmf_json(), status=201)
+            return self._json(new_spec.to_tmf_json(), status=201)
         except Exception as e:
             _logger.exception("TMF621 TroubleTicketSpecification Create Error")
             return self._error(400, "BAD_REQUEST", f"Creation failed: {str(e)}")
@@ -228,7 +207,7 @@ class TMFTicketController(http.Controller):
             if vals:
                 specification.write(vals)
 
-            return self._response(specification.to_tmf_json())
+            return self._json(specification.to_tmf_json())
         except Exception as e:
             return self._error(400, "UPDATE_ERROR", str(e))
         

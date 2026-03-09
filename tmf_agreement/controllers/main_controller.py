@@ -89,9 +89,22 @@ class TMF651Controller(http.Controller):
     # --------------------------
     @http.route(f"{API_BASE}/agreement", type="http", auth="public", methods=["GET"], csrf=False)
     def list_agreement(self, **params):
-        # Filtering is optional depending on compliance; keep minimal: return all
-        recs = request.env["tmf.agreement"].sudo().search([])
-        return _json_response([r.to_tmf_json() for r in recs], status=200)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        env = request.env["tmf.agreement"].sudo()
+        recs = env.search([], limit=limit, offset=offset, order="id asc")
+        total = env.search_count([])
+        payload = [r.to_tmf_json() for r in recs]
+        return _json_response(payload, status=200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(payload))),
+        ])
 
     @http.route(f"{API_BASE}/agreement/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def retrieve_agreement(self, tmf_id, **params):
@@ -174,8 +187,22 @@ class TMF651Controller(http.Controller):
     # --------------------------
     @http.route(f"{API_BASE}/agreementSpecification", type="http", auth="public", methods=["GET"], csrf=False)
     def list_agreement_spec(self, **params):
-        recs = request.env["tmf.agreement.specification"].sudo().search([])
-        return _json_response([r.to_tmf_json() for r in recs], status=200)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+        env = request.env["tmf.agreement.specification"].sudo()
+        recs = env.search([], limit=limit, offset=offset, order="id asc")
+        total = env.search_count([])
+        payload = [r.to_tmf_json() for r in recs]
+        return _json_response(payload, status=200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(payload))),
+        ])
 
     @http.route(f"{API_BASE}/agreementSpecification/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def retrieve_agreement_spec(self, tmf_id, **params):

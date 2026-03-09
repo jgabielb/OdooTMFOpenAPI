@@ -203,9 +203,22 @@ class TMF642AlarmController(http.Controller):
                 if od:
                     domain.append(("alarm_raised_time", "=", od))
 
-            records = env.search(domain)
+            try:
+                limit = max(1, min(int(params.get("limit") or 50), 1000))
+            except (ValueError, TypeError):
+                limit = 50
+            try:
+                offset = max(0, int(params.get("offset") or 0))
+            except (ValueError, TypeError):
+                offset = 0
+
+            records = env.search(domain, limit=limit, offset=offset, order="id asc")
+            total = env.search_count(domain)
             payload = [_apply_fields_filter(r.to_tmf_json(), params.get("fields")) for r in records]
-            return _json_response(payload, status=200)
+            return _json_response(payload, status=200, headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(payload))),
+            ])
 
         return _safe(run)
 

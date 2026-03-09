@@ -21,10 +21,11 @@ EXTRA_RESOURCES = {
 IMMUTABLE_KEYS = {"id", "href", "@type", "@baseType", "@schemaLocation", "lastUpdate", "lastModified"}
 
 
-def _json_response(payload, status=200):
+def _json_response(payload, status=200, headers=None):
+    h = list(headers or []) + [("Content-Type", "application/json")]
     return request.make_response(
         json.dumps(payload, ensure_ascii=False),
-        headers=[("Content-Type", "application/json")],
+        headers=h,
         status=status,
     )
 
@@ -152,17 +153,38 @@ class TMF666Controller(http.Controller):
     # -------- LIST --------
     @http.route(f"{API_BASE}/<string:resource>", type="http", auth="public", methods=["GET"], csrf=False)
     def list_resource(self, resource, **params):
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
         if resource in ACCOUNT_RESOURCES:
             rtype = ACCOUNT_RESOURCES[resource]
-            recs = request.env["tmf.account"].sudo().search(
-                [("resource_type", "=", rtype)] + _domain_from_query_params(params)
-            )
-            return _json_response([_apply_fields(r.to_tmf_json(), params.get("fields")) for r in recs], status=200)
+            domain = [("resource_type", "=", rtype)] + _domain_from_query_params(params)
+            env = request.env["tmf.account"].sudo()
+            recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+            total = env.search_count(domain)
+            payload = [_apply_fields(r.to_tmf_json(), params.get("fields")) for r in recs]
+            return _json_response(payload, status=200, headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(payload))),
+            ])
 
         if resource in EXTRA_RESOURCES:
             model = EXTRA_RESOURCES[resource]["model"]
-            recs = request.env[model].sudo().search(_domain_from_query_params(params))
-            return _json_response([_apply_fields(r.to_tmf_json(), params.get("fields")) for r in recs], status=200)
+            domain = _domain_from_query_params(params)
+            env = request.env[model].sudo()
+            recs = env.search(domain, limit=limit, offset=offset, order="id asc")
+            total = env.search_count(domain)
+            payload = [_apply_fields(r.to_tmf_json(), params.get("fields")) for r in recs]
+            return _json_response(payload, status=200, headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(payload))),
+            ])
 
         return _error(404, f"Unknown resource '{resource}'")
 

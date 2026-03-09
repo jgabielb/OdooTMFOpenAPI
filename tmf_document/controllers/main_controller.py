@@ -56,11 +56,25 @@ class TMF667DocumentController(http.Controller):
         if params.get("name"):
             domain.append(("name", "=", params["name"]))
 
-        records = request.env["tmf.document"].sudo().search(domain)
+        try:
+            limit = max(1, min(int(params.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(params.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        env = request.env["tmf.document"].sudo()
+        records = env.search(domain, limit=limit, offset=offset, order="id asc")
+        total = env.search_count(domain)
 
         wanted = _fields_param(params)
         payload = [r.to_tmf_json(fields=wanted) for r in records]
-        return _json_response(payload, status=200)
+        return _json_response(payload, status=200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(payload))),
+        ])
 
     # Retrieve document: GET /document/{id}?fields=...
     @http.route(f"{BASE_PATH}/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)

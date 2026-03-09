@@ -5,6 +5,8 @@ import logging
 import uuid
 from datetime import datetime
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
 _logger = logging.getLogger(__name__)
 
 # In-memory storage for conformance test artifacts
@@ -14,40 +16,11 @@ _MOCK_STORAGE = {
     'productOfferingPrice': {}
 }
 
-class TMFCatalogController(http.Controller):
+class TMFCatalogController(TMFBaseController):
 
     # -------------------------------------------------------------------------
     # Helper Methods
     # -------------------------------------------------------------------------
-    def _response(self, data, status=200):
-        return request.make_response(
-            json.dumps(data),
-            headers=[('Content-Type', 'application/json')],
-            status=status
-        )
-
-    def _error(self, status, code, message):
-        return request.make_response(
-            json.dumps({"code": str(code), "message": message, "reason": message}),
-            headers=[('Content-Type', 'application/json')],
-            status=status
-        )
-
-    def _filter_fields(self, data, fields_param):
-        """Helper to filter dictionary keys based on ?fields=..."""
-        if not fields_param:
-            return data
-        
-        requested = fields_param.split(',')
-        # Mandatory fields for TMF compliance/linking
-        mandatory = ['id', 'href', '@type', '@referredType']
-        
-        def filter_dict(d):
-            return {k: v for k, v in d.items() if k in requested or k in mandatory}
-
-        if isinstance(data, list):
-            return [filter_dict(item) for item in data]
-        return filter_dict(data)
 
     def _generate_id(self):
         return str(uuid.uuid4())
@@ -166,7 +139,7 @@ class TMFCatalogController(http.Controller):
                 if 'lifecycleStatus' not in data: data['lifecycleStatus'] = "In Design"
                 
                 created = self._mock_create('productSpecification', data)
-                return self._response(created, status=201)
+                return self._json(created, status=201)
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
         
@@ -187,7 +160,7 @@ class TMFCatalogController(http.Controller):
         if params.get('name'):
             full_list = [x for x in full_list if x.get('name') == params.get('name')]
             
-        return self._response(self._filter_fields(full_list, params.get('fields')))
+        return self._json(self._select_fields_list(full_list, params.get('fields')))
 
     @http.route('/tmf-api/productCatalogManagement/v5/productSpecification/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
     def product_specification_individual(self, id, **params):
@@ -197,10 +170,10 @@ class TMFCatalogController(http.Controller):
                 data = json.loads(request.httprequest.data)
                 updated = self._mock_patch('productSpecification', id, data)
                 if updated:
-                    return self._response(self._filter_fields(updated, params.get('fields')))
+                    return self._json(self._select_fields(updated, params.get('fields')))
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
-        
+
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productSpecification', id):
                 return Response(status=204)
@@ -208,7 +181,7 @@ class TMFCatalogController(http.Controller):
         elif request.httprequest.method == 'GET':
             mock_res = self._mock_get('productSpecification', id)
             if mock_res:
-                return self._response(self._filter_fields(mock_res, params.get('fields')))
+                return self._json(self._select_fields(mock_res, params.get('fields')))
 
         # 2. Try Odoo
         spec = self._find_record('tmf.product.specification', id)
@@ -226,7 +199,7 @@ class TMFCatalogController(http.Controller):
                     vals['lifecycle_status'] = status_map.get(data['lifecycleStatus'], 'design')
                 if vals:
                     spec.write(vals)
-                return self._response(self._spec_to_json(spec))
+                return self._json(self._spec_to_json(spec))
             except Exception as e:
                 return self._error(400, "UPDATE_ERROR", str(e))
 
@@ -237,7 +210,7 @@ class TMFCatalogController(http.Controller):
             except:
                 return self._error(400, "DELETE_ERROR", "Could not delete")
 
-        return self._response(self._filter_fields(self._spec_to_json(spec), params.get('fields')))
+        return self._json(self._select_fields(self._spec_to_json(spec), params.get('fields')))
 
     def _spec_to_json(self, s):
         status_map_rev = {'design': 'In Design', 'active': 'Active', 'retired': 'Retired'}
@@ -265,7 +238,7 @@ class TMFCatalogController(http.Controller):
                 data = json.loads(request.httprequest.data)
                 if 'lifecycleStatus' not in data: data['lifecycleStatus'] = "Active"
                 created = self._mock_create('productOffering', data)
-                return self._response(created, status=201)
+                return self._json(created, status=201)
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
 
@@ -280,7 +253,7 @@ class TMFCatalogController(http.Controller):
         odoo_data = [self._offering_to_json(o) for o in odoo_recs]
         
         full_list = mock_data + odoo_data
-        return self._response(self._filter_fields(full_list, params.get('fields')))
+        return self._json(self._select_fields_list(full_list, params.get('fields')))
 
     @http.route('/tmf-api/productCatalogManagement/v5/productOffering/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
     def product_offering_individual(self, id, **params):
@@ -289,14 +262,14 @@ class TMFCatalogController(http.Controller):
             try:
                 data = json.loads(request.httprequest.data)
                 updated = self._mock_patch('productOffering', id, data)
-                if updated: return self._response(self._filter_fields(updated, params.get('fields')))
+                if updated: return self._json(self._select_fields(updated, params.get('fields')))
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productOffering', id): return Response(status=204)
         elif request.httprequest.method == 'GET':
             res = self._mock_get('productOffering', id)
-            if res: return self._response(self._filter_fields(res, params.get('fields')))
+            if res: return self._json(self._select_fields(res, params.get('fields')))
 
         # Odoo Handling
         offering = self._find_record('product.template', id)
@@ -309,14 +282,14 @@ class TMFCatalogController(http.Controller):
                 vals = {}
                 if 'name' in data: vals['name'] = data['name']
                 offering.write(vals)
-                return self._response(self._offering_to_json(offering))
+                return self._json(self._offering_to_json(offering))
             except Exception as e:
                 return self._error(400, "UPDATE_ERROR", str(e))
         elif request.httprequest.method == 'DELETE':
             offering.unlink()
             return Response(status=204)
 
-        return self._response(self._filter_fields(self._offering_to_json(offering), params.get('fields')))
+        return self._json(self._select_fields(self._offering_to_json(offering), params.get('fields')))
 
     def _offering_to_json(self, o):
         status_map_rev = {'design': 'In Design', 'active': 'Active', 'retired': 'Retired'}
@@ -355,12 +328,12 @@ class TMFCatalogController(http.Controller):
             try:
                 data = json.loads(request.httprequest.data)
                 created = self._mock_create('productOfferingPrice', data)
-                return self._response(created, status=201)
+                return self._json(created, status=201)
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
 
         mock_data = list(_MOCK_STORAGE['productOfferingPrice'].values())
-        return self._response(self._filter_fields(mock_data, params.get('fields')))
+        return self._json(self._select_fields_list(mock_data, params.get('fields')))
 
     @http.route('/tmf-api/productCatalogManagement/v5/productOfferingPrice/<string:id>', type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
     def price_individual(self, id, **params):
@@ -368,14 +341,14 @@ class TMFCatalogController(http.Controller):
             try:
                 data = json.loads(request.httprequest.data)
                 updated = self._mock_patch('productOfferingPrice', id, data)
-                if updated: return self._response(self._filter_fields(updated, params.get('fields')))
+                if updated: return self._json(self._select_fields(updated, params.get('fields')))
             except Exception as e:
                 return self._error(400, "BAD_REQUEST", str(e))
         elif request.httprequest.method == 'DELETE':
             if self._mock_delete('productOfferingPrice', id): return Response(status=204)
         elif request.httprequest.method == 'GET':
             res = self._mock_get('productOfferingPrice', id)
-            if res: return self._response(self._filter_fields(res, params.get('fields')))
+            if res: return self._json(self._select_fields(res, params.get('fields')))
 
         return self._error(404, "NOT_FOUND", "Price not found")
 
@@ -419,7 +392,7 @@ class TMFCatalogController(http.Controller):
         ])
         sub = subs[:1]
         body = {"id": str(sub.id), "callback": sub.callback, "query": sub.query or ""}
-        return self._response(body, status=201)
+        return self._json(body, status=201)
 
     @http.route('/tmf-api/productCatalogManagement/v5/hub/<string:sid>', type='http', auth='public', methods=['DELETE'], csrf=False)
     def unregister_listener(self, sid, **params):

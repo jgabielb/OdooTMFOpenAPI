@@ -3,10 +3,12 @@ from odoo.http import request
 import json
 import logging
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
 _logger = logging.getLogger(__name__)
 
 
-class TMFOrderingController(http.Controller):
+class TMFOrderingController(TMFBaseController):
 
     TMF_ALLOWED_STATES = {
         "acknowledged", "inProgress", "held",
@@ -16,49 +18,11 @@ class TMFOrderingController(http.Controller):
 
     # ---------- helpers ----------
 
-    def _response(self, data, status=200, extra_headers=None, default_type="ProductOrder"):
-        if isinstance(data, dict) and '@type' not in data:
-            data['@type'] = default_type
-        elif isinstance(data, list):
-            for d in data:
-                if isinstance(d, dict) and '@type' not in d:
-                    d['@type'] = default_type
-
-        headers = [('Content-Type', 'application/json')]
-        if extra_headers:
-            headers += extra_headers
-        return request.make_response(json.dumps(data), headers=headers, status=status)
-
     def _error(self, code, reason, message):
-        return self._response(
+        return self._json(
             {"code": str(code), "reason": reason, "message": message, "status": str(code), "@type": "Error"},
             status=code,
-            default_type="Error",
         )
-
-    def _filter_fields(self, data, fields_param):
-        if not fields_param:
-            return data
-
-        requested = [f.strip() for f in fields_param.split(',') if f.strip()]
-        mandatory = ['id', 'href', '@type']
-
-        def filter_one(d):
-            if not isinstance(d, dict):
-                return d
-            out = {}
-            for k in mandatory:
-                if k in d:
-                    out[k] = d[k]
-            if '@referredType' in d:
-                out['@referredType'] = d['@referredType']
-            for k in requested:
-                out[k] = d.get(k, None)
-            return out
-
-        if isinstance(data, list):
-            return [filter_one(x) for x in data]
-        return filter_one(data)
 
     def _find_order(self, id_value):
         Order = request.env['sale.order'].sudo()
@@ -209,16 +173,16 @@ class TMFOrderingController(http.Controller):
         state = params.get('state')
         if state:
             if state == "undefined" or state not in self.TMF_ALLOWED_STATES:
-                return self._response([])
+                return self._json([])
             if 'tmf_status' in request.env['sale.order']._fields:
                 domain.append(('tmf_status', '=', state))
             else:
-                return self._response([])
+                return self._json([])
 
         orders = request.env['sale.order'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
         data = [o.to_tmf_json() for o in orders]
-        data = self._filter_fields(data, params.get('fields'))
-        return self._response(data)
+        data = self._select_fields_list(data, params.get('fields'))
+        return self._json(data)
 
     # =======================================================
     # POST: Create Order
@@ -288,7 +252,7 @@ class TMFOrderingController(http.Controller):
 
             payload = order.to_tmf_json()
             location = self._absolute_location(payload.get('href'), fallback_id=order.id)
-            return self._response(payload, status=201, extra_headers=[('Location', location)])
+            return self._json(payload, status=201, headers=[('Location', location)])
 
         except Exception as e:
             _logger.exception("TMF622 POST /productOrder failed")
@@ -305,8 +269,8 @@ class TMFOrderingController(http.Controller):
         order = self._find_order(id)
         if not order:
             return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
-        data = self._filter_fields(order.to_tmf_json(), params.get('fields'))
-        return self._response(data)
+        data = self._select_fields(order.to_tmf_json(), params.get('fields'))
+        return self._json(data)
 
     # =======================================================
     # PATCH / DELETE productOrder
@@ -326,7 +290,7 @@ class TMFOrderingController(http.Controller):
                 vals['description'] = body['description']
             if vals:
                 order.write(vals)
-            return self._response(order.to_tmf_json())
+            return self._json(order.to_tmf_json())
         except Exception as e:
             return self._error(400, "BAD_REQUEST", str(e))
 
@@ -371,7 +335,7 @@ class TMFOrderingController(http.Controller):
             })
 
             payload = cancel_rec.to_tmf_json()
-            return self._response(payload, status=201, extra_headers=[('Location', self._absolute_location(payload.get('href')))])
+            return self._json(payload, status=201, headers=[('Location', self._absolute_location(payload.get('href')))])
 
         except Exception as e:
             _logger.exception("CancelProductOrder POST failed")
@@ -389,9 +353,9 @@ class TMFOrderingController(http.Controller):
             cancel_rec = CancelModel.browse(int(id)) if id.isdigit() else CancelModel.search([('tmf_id', '=', id)], limit=1)
             if not cancel_rec or not cancel_rec.exists():
                 return self._error(404, "NOT_FOUND", f"CancelProductOrder {id} not found")
-            return self._response(cancel_rec.to_tmf_json())
+            return self._json(cancel_rec.to_tmf_json())
         recs = CancelModel.search([], limit=int(params.get('limit', 20)))
-        return self._response([r.to_tmf_json() for r in recs])
+        return self._json([r.to_tmf_json() for r in recs])
 
     @http.route('/tmf-api/productOrderingManagement/v5/hub', type='http', auth='public', methods=['POST'], csrf=False)
     def register_listener(self, **params):
@@ -410,7 +374,7 @@ class TMFOrderingController(http.Controller):
             "event_type": "any",
             "content_type": "application/json",
         })
-        return self._response({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
 
     @http.route('/tmf-api/productOrderingManagement/v5/hub/<string:sid>', type='http', auth='public', methods=['DELETE'], csrf=False)
     def unregister_listener(self, sid, **params):

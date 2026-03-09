@@ -240,13 +240,26 @@ class TMF637ProductInventoryController(http.Controller):
             val = str(query["isBundle"]).lower() in ("true", "1", "yes")
             domain.append(("is_bundle", "=", val))
 
-        recs = Product.search(domain)
+        try:
+            limit = max(1, min(int(query.get("limit") or 50), 1000))
+        except (ValueError, TypeError):
+            limit = 50
+        try:
+            offset = max(0, int(query.get("offset") or 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        recs = Product.search(domain, limit=limit, offset=offset, order="id asc")
+        total = Product.search_count(domain)
         out = []
         for r in recs:
             data = _normalize_product_response(r, r.to_tmf_json())
             out.append(_apply_fields_filter(data, fields_param))
 
-        return _json_response(out, status=200)
+        return _json_response(out, status=200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(out))),
+        ])
 
     # -------------------------
     # POST /product
