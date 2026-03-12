@@ -123,8 +123,9 @@ class TMFUiNormalizer(models.AbstractModel):
 
     @api.model
     def _field_names(self, model_name):
-        model_obj = self.env[model_name]
-        return set(model_obj._fields.keys())
+        if model_name not in self.env.registry:
+            return set()
+        return set(self.env[model_name]._fields.keys())
 
     @api.model
     def _create_filter_if_missing(self, model_name, name, domain):

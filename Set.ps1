@@ -32,7 +32,7 @@ Write-Host "Database:    TMF_Odoo_DB (Port 5433)"
 Write-Host "------------------------------------------------------" -ForegroundColor Cyan
 
 # 1. Core / Manual Modules (The "Smart" Logic)
-$CoreModules = "tmf_base,tmf_party,tmf_customer,tmf_product_catalog,tmf_product_ordering,tmf_service_inventory,tmf_resource_inventory,tmf_trouble_ticket,tmf_billing_management"
+$CoreModules = "tmf_base,tmf_party,tmf_customer,tmf_product_catalog,tmf_product_ordering,tmf_service_inventory,tmf_resource_inventory,tmf_trouble_ticket,tmf_billing_management,tmfc001_wiring,tmfc027_wiring,tmfc031_wiring"
 
 # 1b. Native Odoo Apps to leverage with TMF data
 # Keep this list explicit so environments stay reproducible.

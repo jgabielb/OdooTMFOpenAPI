@@ -29,6 +29,16 @@ class TMFSalesLead(models.Model):
     sale_order_id = fields.Many2one("sale.order", string="Sales Order", index=True, ondelete="set null")
     extra_json = fields.Json(default=dict)
 
+    # TMFC036 dependent API wiring
+    product_offering_ids = fields.Many2many(
+        "product.template", "tmf_sales_lead_product_offering_rel",
+        "lead_id", "product_id", string="Product Offerings (TMF620)"
+    )
+    quote_id = fields.Many2one("tmf.quote", string="Quote (TMF648)", index=True, ondelete="set null")
+    agreement_id = fields.Many2one("tmf.agreement", string="Agreement (TMF651)", index=True, ondelete="set null")
+    party_role_id = fields.Many2one("tmf.party.role", string="Party Role (TMF669)", index=True, ondelete="set null")
+    process_flow_id = fields.Many2one("tmf.process.flow", string="Process Flow (TMF701)", index=True, ondelete="set null")
+
     @staticmethod
     def _now_iso():
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -143,6 +153,73 @@ class TMFSalesLead(models.Model):
                 return Partner.create(create_vals)
         return Partner
 
+    def _resolve_tmf_refs(self):
+        """Resolve TMF JSON reference IDs to local Odoo records (TMFC036 dependent API wiring)."""
+        ctx = {"skip_crm_sync": True, "skip_sale_sync": True}
+        for rec in self:
+            updates = {}
+
+            # TMF620 productOffering → product.template
+            if not rec.product_offering_ids and rec.product_offering:
+                items = rec.product_offering if isinstance(rec.product_offering, list) else [rec.product_offering]
+                ids = []
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    ref_id = str(item.get("id") or "").strip()
+                    if ref_id:
+                        match = self.env["product.template"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+                        if match:
+                            ids.append(match.id)
+                if ids:
+                    updates["product_offering_ids"] = [(6, 0, ids)]
+
+            # TMF648 quote → tmf.quote (look in extra_json for "quote" ref)
+            if not rec.quote_id:
+                quote_ref = (rec.extra_json or {}).get("quote") or {}
+                if isinstance(quote_ref, dict):
+                    ref_id = str(quote_ref.get("id") or "").strip()
+                    if ref_id:
+                        match = self.env["tmf.quote"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+                        if match:
+                            updates["quote_id"] = match.id
+
+            # TMF651 agreement → tmf.agreement (look in extra_json for "agreement" ref)
+            if not rec.agreement_id:
+                agr_ref = (rec.extra_json or {}).get("agreement") or {}
+                if isinstance(agr_ref, dict):
+                    ref_id = str(agr_ref.get("id") or "").strip()
+                    if ref_id:
+                        match = self.env["tmf.agreement"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+                        if match:
+                            updates["agreement_id"] = match.id
+
+            # TMF669 partyRole → tmf.party.role (from relatedParty where @type is PartyRole/PartyRoleRef)
+            if not rec.party_role_id and isinstance(rec.related_party, list):
+                for entry in rec.related_party:
+                    if not isinstance(entry, dict):
+                        continue
+                    if entry.get("@type") in ("PartyRole", "PartyRoleRef"):
+                        ref_id = str(entry.get("id") or "").strip()
+                        if ref_id:
+                            match = self.env["tmf.party.role"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+                            if match:
+                                updates["party_role_id"] = match.id
+                                break
+
+            # TMF701 processFlow → tmf.process.flow (look in extra_json for "processFlow" ref)
+            if not rec.process_flow_id:
+                pf_ref = (rec.extra_json or {}).get("processFlow") or {}
+                if isinstance(pf_ref, dict):
+                    ref_id = str(pf_ref.get("id") or "").strip()
+                    if ref_id:
+                        match = self.env["tmf.process.flow"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+                        if match:
+                            updates["process_flow_id"] = match.id
+
+            if updates:
+                rec.with_context(**ctx).write(updates)
+
     def _sync_to_crm_lead(self):
         crm_model = self.env["crm.lead"].sudo().with_context(skip_tmf_bridge=True)
         for rec in self:
@@ -205,6 +282,7 @@ class TMFSalesLead(models.Model):
             recs._sync_to_crm_lead()
         if not self.env.context.get("skip_sale_sync"):
             recs._sync_to_sale_order()
+        recs._resolve_tmf_refs()
         for rec in recs:
             self._notify("create", rec)
         return recs
@@ -219,6 +297,9 @@ class TMFSalesLead(models.Model):
             self._sync_to_crm_lead()
         if not self.env.context.get("skip_sale_sync"):
             self._sync_to_sale_order()
+        _wiring_keys = {"product_offering", "related_party", "extra_json"}
+        if _wiring_keys & set(vals.keys()):
+            self._resolve_tmf_refs()
         for rec in self:
             self._notify("update", rec)
             if "status" in vals and previous.get(rec.id) != rec.status:

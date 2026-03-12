@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_sales_lead,tmf.sales.lead,model_tmf_sales_lead,base.group_user,1,1,1,1
+access_tmf_sales_lead_public,tmf.sales.lead public,model_tmf_sales_lead,base.group_public,1,1,1,1
