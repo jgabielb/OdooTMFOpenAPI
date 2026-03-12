@@ -142,7 +142,10 @@ class TMFUsageController(http.Controller):
 
             for tmf_key in ["description", "usageDate", "usageType", "status"]:
                 if tmf_key in data:
-                    vals[m[tmf_key]] = data[tmf_key]
+                    val = data[tmf_key]
+                    if tmf_key == "usageDate" and isinstance(val, str):
+                        val = val.replace("Z", "").replace("T", " ").split(".")[0]
+                    vals[m[tmf_key]] = val
 
             # usageSpecification ref -> many2one
             if "usageSpecification" in data and isinstance(data["usageSpecification"], dict):
@@ -214,7 +217,10 @@ class TMFUsageController(http.Controller):
 
             for tmf_key in ["description", "usageDate", "usageType", "status"]:
                 if tmf_key in data:
-                    vals[m[tmf_key]] = data[tmf_key]
+                    val = data[tmf_key]
+                    if tmf_key == "usageDate" and isinstance(val, str):
+                        val = val.replace("Z", "").replace("T", " ").split(".")[0]
+                    vals[m[tmf_key]] = val
 
             # usageSpecification patch
             if "usageSpecification" in data and isinstance(data["usageSpecification"], dict):

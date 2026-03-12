@@ -1,8 +1,57 @@
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 import json
+import uuid
+
 
 class TMFBillingController(http.Controller):
+
+    # TMF666: Create Billing Account
+    @http.route('/tmf-api/accountManagement/v4/billingAccount', type='http', auth='public', methods=['POST'], csrf=False)
+    def create_account(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+            # Resolve partner from relatedParty
+            partner_id = False
+            for rp in (data.get("relatedParty") or []):
+                if not isinstance(rp, dict):
+                    continue
+                rp_id = rp.get("id")
+                if rp_id:
+                    partner = request.env["res.partner"].sudo().search([("tmf_id", "=", str(rp_id))], limit=1)
+                    if not partner and str(rp_id).isdigit():
+                        partner = request.env["res.partner"].sudo().browse(int(rp_id))
+                    if partner and partner.exists():
+                        partner_id = partner.id
+                        break
+            if not partner_id:
+                # Create a minimal partner so we always satisfy the required field
+                partner_id = request.env["res.partner"].sudo().create({"name": data.get("name") or "BillingAccountHolder"}).id
+
+            rec = request.env["tmf.billing.account"].sudo().create({
+                "name": data.get("name") or "Billing Account",
+                "partner_id": partner_id,
+                "state": data.get("state") or "active",
+            })
+            return request.make_response(
+                json.dumps(rec.to_tmf_json()),
+                headers=[("Content-Type", "application/json")],
+                status=201,
+            )
+        except Exception as e:
+            return request.make_response(
+                json.dumps({"error": str(e)}),
+                headers=[("Content-Type", "application/json")],
+                status=400,
+            )
+
+    # TMF666: Get Billing Account by ID
+    @http.route('/tmf-api/accountManagement/v4/billingAccount/<string:tmf_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_account(self, tmf_id, **params):
+        rec = request.env["tmf.billing.account"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
+        if not rec:
+            return request.make_response(json.dumps({"error": "Not Found"}), headers=[("Content-Type", "application/json")], status=404)
+        return request.make_response(json.dumps(rec.to_tmf_json()), headers=[("Content-Type", "application/json")])
 
     # TMF666: List Billing Accounts
     @http.route('/tmf-api/accountManagement/v4/billingAccount', type='http', auth='public', methods=['GET'], csrf=False)

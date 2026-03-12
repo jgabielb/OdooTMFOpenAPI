@@ -8,16 +8,17 @@
     """,
     'author': "Joao Gabriel",
     'category': 'TMF',
-    'version': '0.1',
+    'version': '0.2',
     'depends': [
         'tmf_base',
-        'tmf_party',          # ✅ REQUIRED
+        'tmf_party',
         'product',
         'sale',
     ],
     'data': [
         'security/ir.model.access.csv',
         'views/product_specification_views.xml',
+        'views/product_offering_price_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',

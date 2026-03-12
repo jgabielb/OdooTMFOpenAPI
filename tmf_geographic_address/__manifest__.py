@@ -4,7 +4,7 @@
     'description': "Implements GeographicAddress API with Hub Notifications.",
     'author': "Joao Gabriel",
     'category': 'TMF',
-    'version': '0.1',
+    'version': '0.2',
     'depends': ['tmf_base', 'tmf_product_catalog', 'tmf_geographic_location'],
     'data': [
         'security/ir.model.access.csv',

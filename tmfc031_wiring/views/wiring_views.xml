@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend CustomerBill form with TMFC031 wiring tab -->
+    <record id="view_tmf_customer_bill_tmfc031_wiring" model="ir.ui.view">
+        <field name="name">tmf.customer.bill.tmfc031.wiring</field>
+        <field name="model">tmf.customer.bill</field>
+        <field name="inherit_id" ref="tmf_customer_bill_management.view_tmf_customer_bill_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="TMFC031 Cross-API Wiring" name="tmfc031_wiring">
+                        <group string="TMF666 — Billing Account">
+                            <field name="billing_account_id" nolabel="1"/>
+                        </group>
+                        <group string="TMF632 — Related Parties">
+                            <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF637 — Products">
+                            <field name="product_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF635 — Usage Records">
+                            <field name="usage_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF669 / TMF701">
+                            <field name="party_role_id"/>
+                            <field name="process_flow_id"/>
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extend AppliedCustomerBillingRate form with TMFC031 wiring tab -->
+    <record id="view_tmf_applied_rate_tmfc031_wiring" model="ir.ui.view">
+        <field name="name">tmf.applied.billing.rate.tmfc031.wiring</field>
+        <field name="model">tmf.applied.customer.billing.rate</field>
+        <field name="arch" type="xml">
+            <form string="Applied Customer Billing Rate">
+                <sheet>
+                    <group>
+                        <field name="tmf_id" readonly="1"/>
+                        <field name="date"/>
+                        <field name="is_billed"/>
+                    </group>
+                    <notebook>
+                        <page string="TMFC031 Cross-API Wiring" name="tmfc031_wiring">
+                            <group string="TMF666 — Billing Account">
+                                <field name="billing_account_id" nolabel="1"/>
+                            </group>
+                            <group string="TMF632 — Related Parties">
+                                <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                            </group>
+                            <group string="TMF637 — Products">
+                                <field name="product_ids" widget="many2many_tags" nolabel="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

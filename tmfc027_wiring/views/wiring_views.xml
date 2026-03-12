@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend CheckProductOfferingQualification form with TMFC027 wiring tab -->
+    <record id="view_tmf_check_poq_tmfc027_wiring" model="ir.ui.view">
+        <field name="name">tmf.check.poq.tmfc027.wiring</field>
+        <field name="model">tmf.check.product.offering.qualification</field>
+        <field name="inherit_id" ref="tmf_product_offering_qualification.view_tmf_check_poq_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="TMFC027 Cross-API Wiring" name="tmfc027_wiring">
+                        <group string="TMF632 — Related Parties">
+                            <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF637 — Products">
+                            <field name="product_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF620 — Product Offerings">
+                            <field name="product_offering_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF622 — Product Orders">
+                            <field name="product_order_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF666 / TMF669">
+                            <field name="billing_account_id"/>
+                            <field name="party_role_id"/>
+                        </group>
+                        <group string="TMF673/674 — Place">
+                            <field name="geographic_address_id"/>
+                            <field name="geographic_site_id"/>
+                        </group>
+                        <group string="TMF662 / TMF921">
+                            <field name="entity_specification_id"/>
+                            <field name="intent_id"/>
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+</odoo>

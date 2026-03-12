@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend ProductOffering (product.template) form with TMFC001 wiring tab -->
+    <record id="view_product_template_tmfc001_wiring" model="ir.ui.view">
+        <field name="name">product.template.tmfc001.wiring</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="tmf_product_catalog.product_template_tmf_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="TMFC001 Cross-API Wiring" name="tmfc001_wiring">
+                    <group string="TMF632 — Related Parties">
+                        <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF669 — Party Roles">
+                        <field name="related_party_role_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF633 — Service Specifications">
+                        <field name="service_specification_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF634 — Resource Specifications">
+                        <field name="resource_specification_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF651 — Agreements">
+                        <field name="agreement_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF673/674/675 — Place">
+                        <field name="geographic_address_id"/>
+                        <field name="geographic_site_id"/>
+                        <field name="geographic_location_id"/>
+                    </group>
+                    <group string="Raw JSON (wire format)">
+                        <field name="related_party_json" widget="json" nolabel="1"/>
+                        <field name="place_json" widget="json" nolabel="1"/>
+                        <field name="agreement_json" widget="json" nolabel="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

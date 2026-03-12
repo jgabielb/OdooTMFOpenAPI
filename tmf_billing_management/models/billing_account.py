@@ -18,7 +18,10 @@ class BillingAccount(models.Model):
 
     def _compute_balance(self):
         for rec in self:
-            rec.account_balance = rec.partner_id.total_due
+            try:
+                rec.account_balance = rec.partner_id.total_due or 0.0
+            except Exception:
+                rec.account_balance = 0.0
 
     def _get_tmf_api_path(self):
         return "/accountManagement/v4/billingAccount"

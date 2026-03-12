@@ -45,6 +45,25 @@ def _header_validation_result():
 class TMFGeographicAddressController(http.Controller):
 
     # -------------------------
+    # GeographicAddress (POST)
+    # -------------------------
+    @http.route(f"{API_BASE}/geographicAddress", type="http", auth="public", methods=["POST"], csrf=False)
+    def create_geographic_address(self, **params):
+        try:
+            data = json.loads(request.httprequest.data or b"{}")
+            rec = request.env["tmf.geographic.address"].sudo().create({
+                "name": data.get("streetName") or data.get("name") or "Address",
+                "street_name": data.get("streetName") or "",
+                "city": data.get("city") or "",
+                "country": data.get("country") or "",
+                "street_nr": data.get("streetNr") or "",
+                "postcode": data.get("postcode") or "",
+            })
+            return _json_response(rec.to_tmf_json(host_url=_host_url()), status=201)
+        except Exception as e:
+            return _json_response({"error": str(e)}, status=400)
+
+    # -------------------------
     # GeographicAddress (GET)
     # -------------------------
     @http.route(f"{API_BASE}/geographicAddress", type="http", auth="public", methods=["GET"], csrf=False)
