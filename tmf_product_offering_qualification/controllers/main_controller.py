@@ -332,3 +332,128 @@ class TMFController(http.Controller):
             resp = rec.to_tmf_json()
             resp["@type"] = resp.get("@type") or "CheckProductOfferingQualification"
             return request.make_response(json.dumps(resp), headers=[("Content-Type", "application/json")], status=201)
+
+
+class TMF679V4CompatibilityController(http.Controller):
+    """Thin v4 adapter over the installed v5 qualification models."""
+
+    V4_ROUTES = [
+        "/tmf-api/productOfferingQualificationManagement/v4/productOfferingQualification",
+        "/tmf-api/productOfferingQualification/v4/productOfferingQualification",
+    ]
+
+    def _v4_payload(self, rec, fields_param=None):
+        host_url = (request.httprequest.host_url or "").rstrip("/")
+        product_offering_qualification_date = None
+        if rec.effective_qualification_date:
+            product_offering_qualification_date = rec.effective_qualification_date.replace(microsecond=0).isoformat() + "Z"
+        elif rec.create_date:
+            product_offering_qualification_date = rec.create_date.replace(microsecond=0).isoformat() + "Z"
+
+        payload = {
+            "id": rec.tmf_id,
+            "href": f"{host_url}/tmf-api/productOfferingQualificationManagement/v4/productOfferingQualification/{rec.tmf_id}",
+            "@type": "ProductOfferingQualification",
+            "productOfferingQualificationDate": product_offering_qualification_date,
+            "state": rec.state or "inProgress",
+            "productOfferingQualificationItem": [],
+        }
+
+        for item in rec.item_ids:
+            prod = item.product_json if isinstance(item.product_json, dict) else {}
+            payload["productOfferingQualificationItem"].append({
+                "id": item.tmf_id,
+                "product": prod or {},
+                "@type": "ProductOfferingQualificationItem",
+            })
+
+        if fields_param:
+            allowed = {f.strip() for f in str(fields_param).split(",") if f.strip()}
+            allowed |= {"id", "href", "@type"}
+            payload = {k: v for k, v in payload.items() if k in allowed}
+        return payload
+
+    def _error(self, status, message):
+        return request.make_response(
+            json.dumps({"code": str(status), "message": message}),
+            headers=[("Content-Type", "application/json")],
+            status=status,
+        )
+
+    @http.route(V4_ROUTES, type="http", auth="public", methods=["GET"], csrf=False)
+    def get_v4_collection(self, **kwargs):
+        Model = request.env["tmf.check.product.offering.qualification"].sudo()
+        domain = []
+
+        state = kwargs.get("state")
+        if not _ignore_undefined(state):
+            domain.append(("state", "=", state))
+
+        poq_date = _as_odoo_dt(kwargs.get("productOfferingQualificationDate"))
+        if poq_date:
+            domain.append(("effective_qualification_date", "=", poq_date))
+
+        rec_id = kwargs.get("id")
+        if not _ignore_undefined(rec_id):
+            domain.append(("tmf_id", "=", str(rec_id)))
+
+        records = Model.search(domain)
+        payload = [self._v4_payload(rec, kwargs.get("fields")) for rec in records]
+
+        href = kwargs.get("href")
+        if not _ignore_undefined(href):
+            payload = [p for p in payload if p.get("href") == href]
+
+        return request.make_response(json.dumps(payload), headers=[("Content-Type", "application/json")], status=200)
+
+    @http.route([f"{route}/<string:tmf_id>" for route in V4_ROUTES], type="http", auth="public", methods=["GET"], csrf=False)
+    def get_v4_by_id(self, tmf_id, **kwargs):
+        if _ignore_undefined(tmf_id):
+            return self._error(404, "Not Found")
+
+        rec = request.env["tmf.check.product.offering.qualification"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
+        if not rec:
+            return self._error(404, "Not Found")
+
+        payload = self._v4_payload(rec, kwargs.get("fields"))
+        return request.make_response(json.dumps(payload), headers=[("Content-Type", "application/json")], status=200)
+
+    @http.route(V4_ROUTES, type="http", auth="public", methods=["POST"], csrf=False)
+    def create_v4(self, **kwargs):
+        try:
+            data = _json_body()
+        except Exception:
+            data = {}
+
+        incoming_state = data.get("state")
+        if incoming_state not in (None, "", "inProgress", "done", "terminatedWithError"):
+            return self._error(400, "Invalid state")
+
+        items = data.get("productOfferingQualificationItem") or []
+        if not isinstance(items, list):
+            return self._error(400, "productOfferingQualificationItem must be an array")
+        if not items:
+            items = [{"id": "1", "product": {}}]
+
+        Model = request.env["tmf.check.product.offering.qualification"].sudo()
+        Item = request.env["tmf.check.poq.item"].sudo()
+        rec = Model.create({
+            "description": data.get("description") if isinstance(data.get("description"), str) else "",
+            "state": incoming_state or "inProgress",
+            "qualification_result": "qualified",
+            "related_party_json": [],
+        })
+
+        for item in items:
+            item = item or {}
+            Item.create({
+                "parent_id": rec.id,
+                "tmf_id": item.get("id") or str(uuid.uuid4()),
+                "tmf_type": item.get("@type") or "ProductOfferingQualificationItem",
+                "product_json": item.get("product") or {},
+                "qualification_item_result": "qualified",
+                "state": "done",
+            })
+
+        payload = self._v4_payload(rec, kwargs.get("fields"))
+        return request.make_response(json.dumps(payload), headers=[("Content-Type", "application/json")], status=201)

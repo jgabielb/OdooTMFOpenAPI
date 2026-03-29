@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend DigitalIdentity form with TMFC020 wiring tab -->
+    <record id="view_tmf_digital_identity_tmfc020_wiring" model="ir.ui.view">
+        <field name="name">tmf.digital.identity.tmfc020.wiring</field>
+        <field name="model">tmf.digital.identity</field>
+        <field name="inherit_id" ref="tmf_digital_identity_management.view_tmf_digital_identity_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="TMFC020 Cross-API Wiring" name="tmfc020_wiring">
+                        <group string="TMF632 — Related Parties">
+                            <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF632 — Individual Identified">
+                            <field name="individual_partner_id" nolabel="1"/>
+                        </group>
+                        <group string="TMF669 — Party Roles">
+                            <field name="party_role_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                        <group string="TMF639 — Resources Identified">
+                            <field name="resource_ids" widget="many2many_tags" nolabel="1"/>
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+</odoo>

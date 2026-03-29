@@ -1,0 +1,283 @@
+# ============================================================
+# TMF620 Product Catalog Management — Field Mapping
+# ============================================================
+# Covers: ProductOffering (product.template) serialization
+#         ProductSpecification (product.specification) serialization
+#
+# Reference: TMF Open API — TMF620 v5
+# Odoo models: product.template, product.specification
+#
+# Patterns covered:
+#   Pattern 1 — Direct field mapping
+#   Pattern 2 — Conditional inclusion (if_truthy)
+#   Pattern 3 — State/value mapping (lifecycleStatus)
+#   Pattern 5 — RelatedParty resolution (channel/partner)
+#   Pattern 6 — Many2one reference serialization
+
+schema_version: "1.0"
+spec_version: "TMF620-v5.0"
+odoo_version: ">=19.0"
+tmf_spec: "TMF620"
+tmf_version: "5.0"
+description: >
+  Declarative mapping for TMF620 ProductOffering and ProductSpecification.
+  Replaces to_tmf_json() and _sync_* methods in tmf_product_catalog module.
+
+changelog:
+  - version: "1.1"
+    date: "2026-03-29"
+    author: "architect"
+    notes: "Target Odoo >=19.0 and align headers for validation"
+  - version: "1.0"
+    date: "2026-03-29"
+    author: "architect"
+    notes: "Initial extraction from Python hardcoded mappings"
+
+mappings:
+
+  # ----------------------------------------------------------
+  # ProductOffering ↔ product.template
+  # ----------------------------------------------------------
+  - id: product_offering
+    odoo_model: product.template
+    tmf_type: ProductOffering
+    direction: bidirectional
+    fields:
+
+      # Pattern 1 + Pattern 6: ID — prefer tmf_id, fall back to str(id)
+      - type: fallback
+        tmf_key: id
+        direction: to_tmf
+        sources:
+          - odoo_field: tmf_id
+          - odoo_field: id
+            transform: str
+
+      # TMF @type constant
+      - type: literal
+        tmf_key: "@type"
+        value: ProductOffering
+        direction: to_tmf
+
+      # Pattern 1: Direct name mapping (bidirectional)
+      - type: direct
+        odoo_field: name
+        tmf_key: name
+        direction: bidirectional
+
+      # Pattern 1 + fallback: description falls back to name if empty
+      - type: fallback
+        tmf_key: description
+        direction: to_tmf
+        sources:
+          - odoo_field: description
+          - odoo_field: name
+
+      # Pattern 2: description only written back to Odoo if present
+      - type: direct
+        odoo_field: description
+        tmf_key: description
+        direction: to_odoo
+        if_truthy: true
+
+      # Pattern 3: lifecycleStatus ↔ lifecycle_status with capitalize transform
+      # NOTE: value_map handles the standard TMF values; capitalize is the
+      # lightweight transform for custom/extended status strings.
+      - type: value_map
+        odoo_field: lifecycle_status
+        tmf_key: lifecycleStatus
+        direction: bidirectional
+        map:
+          to_tmf:
+            draft: In Study
+            design: In Design
+            test: In Test
+            active: Active
+            launched: Launched
+            retired: Retired
+            obsolete: Obsolete
+            rejected: Rejected
+          to_odoo:
+            In Study: draft
+            In Design: design
+            In Test: test
+            Active: active
+            Launched: launched
+            Retired: retired
+            Obsolete: obsolete
+            Rejected: rejected
+        default:
+          to_tmf: Active
+          to_odoo: draft
+
+      # Pattern 1: isBundle flag
+      - type: direct
+        odoo_field: is_bundle
+        tmf_key: isBundle
+        direction: bidirectional
+
+      # Pattern 6: productSpecification — Many2one reference serialization
+      - type: many2one_ref
+        odoo_field: product_specification_id
+        tmf_key: productSpecification
+        direction: bidirectional
+        ref_type: ProductSpecification
+        ref_odoo_model: product.specification
+        id_field: tmf_id
+        name_field: name
+        href_template: "/tmf-api/productCatalogManagement/v5/productSpecification/{id}"
+        if_truthy: true
+
+      # Pattern 6: productOfferingPrice — Many2one reference
+      - type: many2one_ref
+        odoo_field: pricelist_id
+        tmf_key: productOfferingPrice
+        direction: to_tmf
+        ref_type: ProductOfferingPrice
+        ref_odoo_model: product.pricelist
+        id_field: tmf_id
+        name_field: name
+        href_template: "/tmf-api/productCatalogManagement/v5/productOfferingPrice/{id}"
+        if_truthy: true
+
+      # Pattern 6: category — Many2one reference to product category
+      - type: many2one_ref
+        odoo_field: categ_id
+        tmf_key: category
+        direction: bidirectional
+        ref_type: Category
+        ref_odoo_model: product.category
+        id_field: tmf_id
+        name_field: name
+        href_template: "/tmf-api/productCatalogManagement/v5/category/{id}"
+        if_truthy: true
+
+      # Pattern 5: relatedParty — channel/owner partner resolution
+      # In Odoo, product.template has a responsible_id (res.users → res.partner)
+      - type: related_party
+        tmf_key: relatedParty
+        odoo_field: responsible_partner
+        direction: bidirectional
+        if_truthy: true
+
+      # Pattern 2: validFor — only include if dates are set
+      - type: nested_object
+        tmf_key: validFor
+        if_truthy_field: sale_start_date
+        direction: to_tmf
+        fields:
+          - type: direct
+            odoo_field: sale_start_date
+            tmf_key: startDateTime
+            transform: datetime_iso
+          - type: direct
+            odoo_field: sale_end_date
+            tmf_key: endDateTime
+            transform: datetime_iso
+            if_truthy: true
+
+      # Pattern 1: lastUpdate timestamp
+      - type: direct
+        odoo_field: write_date
+        tmf_key: lastUpdate
+        transform: datetime_iso
+        direction: to_tmf
+        if_truthy: true
+
+      # Pattern 1: href — constructed from ID
+      # NOTE: href is computed at runtime using TMF_BASE_URL env var + id.
+      # This is handled by the many2one_ref's href_template when referenced
+      # from another object. For self-href, use a literal with value_from_field:
+      - type: literal
+        tmf_key: href
+        value_from_field: tmf_id
+        direction: to_tmf
+        if_truthy: true
+
+
+  # ----------------------------------------------------------
+  # ProductSpecification ↔ product.specification
+  # ----------------------------------------------------------
+  - id: product_specification
+    odoo_model: product.specification
+    tmf_type: ProductSpecification
+    direction: bidirectional
+    fields:
+
+      - type: fallback
+        tmf_key: id
+        direction: to_tmf
+        sources:
+          - odoo_field: tmf_id
+          - odoo_field: id
+            transform: str
+
+      - type: literal
+        tmf_key: "@type"
+        value: ProductSpecification
+        direction: to_tmf
+
+      - type: direct
+        odoo_field: name
+        tmf_key: name
+        direction: bidirectional
+
+      - type: fallback
+        tmf_key: description
+        direction: to_tmf
+        sources:
+          - odoo_field: description
+          - odoo_field: name
+
+      - type: direct
+        odoo_field: description
+        tmf_key: description
+        direction: to_odoo
+        if_truthy: true
+
+      - type: value_map
+        odoo_field: lifecycle_status
+        tmf_key: lifecycleStatus
+        direction: bidirectional
+        map:
+          to_tmf:
+            draft: In Study
+            design: In Design
+            test: In Test
+            active: Active
+            launched: Launched
+            retired: Retired
+          to_odoo:
+            In Study: draft
+            In Design: design
+            In Test: test
+            Active: active
+            Launched: launched
+            Retired: retired
+        default:
+          to_tmf: Active
+          to_odoo: draft
+
+      - type: direct
+        odoo_field: version
+        tmf_key: version
+        direction: bidirectional
+        if_truthy: true
+
+      # Pattern 6: brand (Many2one → BrandRef)
+      - type: many2one_ref
+        odoo_field: brand_id
+        tmf_key: brand
+        direction: to_tmf
+        ref_type: BrandRef
+        ref_odoo_model: product.brand
+        id_field: tmf_id
+        name_field: name
+        if_truthy: true
+
+      - type: direct
+        odoo_field: write_date
+        tmf_key: lastUpdate
+        transform: datetime_iso
+        direction: to_tmf
+        if_truthy: true

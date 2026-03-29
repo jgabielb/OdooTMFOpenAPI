@@ -2822,6 +2822,96 @@
                                         "list_by_id_filter_enabled":  false,
                                         "not_found_enabled":  false
                                     }
+                  },
+                  {
+                      "name":  "TMFC020 DigitalIdentity (TMF720) — CRUD",
+                      "collection_path":  "/tmf-api/digitalIdentityManagement/v4/digitalIdentity",
+                      "id_path":  "/tmf-api/digitalIdentityManagement/v4/digitalIdentity/{id}",
+                      "list":  {
+                                   "query":  "fields=id,nickname,status",
+                                   "expected_status":  [200]
+                               },
+                      "create":  {
+                                     "save_as":  "tmfc020_identity_id",
+                                     "payload":  {
+                                                     "nickname":  "smoke-identity",
+                                                     "status":  "active",
+                                                     "credential":  [{"name":  "smoke-cred",  "@type":  "UsernamePassword"}],
+                                                     "relatedParty":  [
+                                                                          {
+                                                                              "id":  "{{partner_id}}",
+                                                                              "@type":  "Individual",
+                                                                              "@referredType":  "Individual"
+                                                                          }
+                                                                      ],
+                                                     "individualIdentified":  {
+                                                                                   "id":  "{{partner_id}}",
+                                                                                   "@type":  "Individual"
+                                                                               },
+                                                     "@type":  "DigitalIdentity"
+                                                 },
+                                     "expected_status":  [200, 201]
+                                 },
+                      "patch":  {
+                                    "payload":  {"status":  "inactive",  "@type":  "DigitalIdentity"},
+                                    "expected_status":  [200]
+                                },
+                      "delete":  {
+                                     "enabled":  true,
+                                     "expected_status":  [204]
+                                 },
+                      "scenarios":  {
+                                        "not_found_enabled":  true,
+                                        "not_found_suffix":  "-missing",
+                                        "not_found_expected_status":  [400, 404],
+                                        "verify_deleted_enabled":  true,
+                                        "verify_deleted_expected_status":  [404]
+                                    }
+                  },
+                  {
+                      "name":  "TMFC020 Wiring — relatedParty resolves to res.partner",
+                      "collection_path":  "/tmf-api/digitalIdentityManagement/v4/digitalIdentity",
+                      "id_path":  "/tmf-api/digitalIdentityManagement/v4/digitalIdentity/{id}",
+                      "list":  {
+                                   "query":  "status=active&fields=id,nickname",
+                                   "expected_status":  [200]
+                               },
+                      "create":  {
+                                     "save_as":  "tmfc020_wiring_id",
+                                     "payload":  {
+                                                     "nickname":  "smoke-wiring-identity",
+                                                     "status":  "active",
+                                                     "credential":  [{"name":  "wiring-cred",  "@type":  "UsernamePassword"}],
+                                                     "relatedParty":  [
+                                                                          {
+                                                                              "id":  "{{partner_id}}",
+                                                                              "@type":  "Individual",
+                                                                              "@referredType":  "Individual"
+                                                                          }
+                                                                      ],
+                                                     "individualIdentified":  {
+                                                                                   "id":  "{{partner_id}}",
+                                                                                   "@type":  "Individual"
+                                                                               },
+                                                     "@type":  "DigitalIdentity"
+                                                 },
+                                     "expected_status":  [200, 201]
+                                 },
+                      "get_by_id":  {
+                                        "id":  "{{tmfc020_wiring_id}}",
+                                        "expected_status":  [200]
+                                    },
+                      "delete":  {
+                                     "enabled":  true,
+                                     "expected_status":  [204]
+                                 },
+                      "scenarios":  {
+                                        "list_fields_enabled":  false,
+                                        "get_by_id_fields_enabled":  false,
+                                        "list_by_id_filter_enabled":  false,
+                                        "not_found_enabled":  false,
+                                        "verify_deleted_enabled":  false
+                                    }
                   }
               ]
 }

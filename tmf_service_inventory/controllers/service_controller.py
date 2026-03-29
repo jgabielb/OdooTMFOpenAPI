@@ -44,6 +44,10 @@ class TMFServiceController(http.Controller):
         route=[
             '/tmf-api/serviceInventoryManagement/v5/service',
             '/tmf-api/serviceInventory/v5/service',
+            '/tmf-api/serviceInventoryManagement/v4/Service',
+            '/tmf-api/serviceInventory/v4/Service',
+            '/tmf-api/serviceInventoryManagement/v4/service',
+            '/tmf-api/serviceInventory/v4/service',
         ],
         type='http', auth='public', methods=['GET'], csrf=False
     )
@@ -88,6 +92,10 @@ class TMFServiceController(http.Controller):
         route=[
             '/tmf-api/serviceInventoryManagement/v5/service/<string:tmf_id>',
             '/tmf-api/serviceInventory/v5/service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/service/<string:tmf_id>',
         ],
         type='http', auth='public', methods=['GET'], csrf=False
     )
@@ -112,6 +120,10 @@ class TMFServiceController(http.Controller):
         route=[
             '/tmf-api/serviceInventoryManagement/v5/service',
             '/tmf-api/serviceInventory/v5/service',
+            '/tmf-api/serviceInventoryManagement/v4/Service',
+            '/tmf-api/serviceInventory/v4/Service',
+            '/tmf-api/serviceInventoryManagement/v4/service',
+            '/tmf-api/serviceInventory/v4/service',
         ],
         type='http', auth='public', methods=['POST'], csrf=False
     )
@@ -212,6 +224,10 @@ class TMFServiceController(http.Controller):
         route=[
             '/tmf-api/serviceInventoryManagement/v5/service/<string:tmf_id>',
             '/tmf-api/serviceInventory/v5/service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/service/<string:tmf_id>',
         ],
         type='http', auth='public', methods=['PATCH'], csrf=False
     )
@@ -310,6 +326,10 @@ class TMFServiceController(http.Controller):
         route=[
             '/tmf-api/serviceInventoryManagement/v5/service/<string:tmf_id>',
             '/tmf-api/serviceInventory/v5/service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/Service/<string:tmf_id>',
+            '/tmf-api/serviceInventoryManagement/v4/service/<string:tmf_id>',
+            '/tmf-api/serviceInventory/v4/service/<string:tmf_id>',
         ],
         type='http', auth='public', methods=['DELETE'], csrf=False
     )

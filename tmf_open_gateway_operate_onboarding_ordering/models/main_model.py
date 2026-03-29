@@ -146,6 +146,13 @@ class TMFApiProduct(models.Model):
     _api_path = "/openGatewayOperateAPIOnboardingandOrdering/v5/apiProduct"
 
 
+_PRODUCT_ORDER_ITEM_TYPE_MAP = {
+    "add": "ApiProductOrderItemAdd",
+    "modify": "ApiProductOrderItemModify",
+    "delete": "ProductOrderItemDelete",
+}
+
+
 class TMFApiProductOrder(models.Model):
     _name = "tmf.ogw.api.product.order"
     _description = "TMF931 ApiProductOrder"
@@ -156,6 +163,30 @@ class TMFApiProductOrder(models.Model):
     _api_path = "/openGatewayOperateAPIOnboardingandOrdering/v5/apiProductOrder"
 
     sale_order_id = fields.Many2one("sale.order", string="Sales Order", copy=False, index=True)
+
+    def to_tmf_json(self):
+        payload = super().to_tmf_json()
+        # Fix productOrderItem: correct @type per action, and ensure product is a dict
+        items = payload.get("productOrderItem")
+        if isinstance(items, list):
+            fixed_items = []
+            for item in items:
+                if isinstance(item, dict):
+                    action = _safe_str(item.get("action", "")).lower()
+                    item["@type"] = _PRODUCT_ORDER_ITEM_TYPE_MAP.get(action, "ApiProductOrderItemAdd")
+                    product = item.get("product")
+                    if product is not None:
+                        if isinstance(product, str):
+                            item["product"] = {"@type": "ProductRef", "id": product or "0", "name": product} if product else {"@type": "ProductRef", "id": "0"}
+                        elif isinstance(product, dict):
+                            product["@type"] = "ProductRef"
+                            if "id" not in product:
+                                product["id"] = product.get("name", "0") or "0"
+                        else:
+                            item["product"] = {"@type": "ProductRef", "id": "0"}
+                fixed_items.append(item)
+            payload["productOrderItem"] = fixed_items
+        return payload
 
     def _resolve_partner_from_payload(self, payload):
         partner = self.env["res.partner"]
@@ -220,6 +251,32 @@ class TMFApplication(models.Model):
 
     partner_id = fields.Many2one("res.partner", string="Owner Partner", copy=False, index=True)
 
+    def to_tmf_json(self):
+        payload = super().to_tmf_json()
+        # Ensure description and applicationOwner are always present
+        if "description" not in payload:
+            payload["description"] = ""
+        app_owner = payload.get("applicationOwner")
+        fallback_owner_id = ""
+        if self.partner_id:
+            fallback_owner_id = getattr(self.partner_id, "tmf_id", "") or str(self.partner_id.id)
+
+        if app_owner is None:
+            payload["applicationOwner"] = {"@type": "PartyRoleRef", "id": fallback_owner_id}
+        elif isinstance(app_owner, dict):
+            if not app_owner.get("@type"):
+                app_owner["@type"] = "PartyRoleRef"
+            if "id" not in app_owner:
+                app_owner["id"] = fallback_owner_id
+        elif isinstance(app_owner, list):
+            for ao in app_owner:
+                if isinstance(ao, dict):
+                    if not ao.get("@type"):
+                        ao["@type"] = "PartyRoleRef"
+                    if "id" not in ao:
+                        ao["id"] = fallback_owner_id
+        return payload
+
     def _sync_owner_partner(self):
         Partner = self.env["res.partner"].sudo()
         Owner = self.env["tmf.ogw.application.owner"].sudo()
@@ -262,6 +319,16 @@ class TMFApplicationOwner(models.Model):
     _api_path = "/openGatewayOperateAPIOnboardingandOrdering/v5/applicationOwner"
 
     partner_id = fields.Many2one("res.partner", string="Partner", copy=False, index=True)
+
+    def to_tmf_json(self):
+        payload = super().to_tmf_json()
+        # Ensure engagedParty is always present with correct @type
+        engaged_party = payload.get("engagedParty")
+        if not isinstance(engaged_party, dict):
+            engaged_party = {}
+        engaged_party["@type"] = "ApplicationOwnerOrganization"
+        payload["engagedParty"] = engaged_party
+        return payload
 
     def _sync_partner_link(self):
         Partner = self.env["res.partner"].sudo()

@@ -1,0 +1,1553 @@
+[
+  {
+    "module": "tmf_sales",
+    "tmf_api": "TMF699",
+    "odoo_model": "tmf.sales.lead",
+    "odoo_native_model": "crm.lead",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_to_crm_lead",
+      "_sync_to_sale_order"
+    ],
+    "field_pair_count": 32,
+    "spec_version": "TMF699-v4.0",
+    "odoo_version": ">=19.0",
+    "mapping_yaml_path": "mappings/tmf699_sales.yaml",
+    "has_yaml": true
+  },
+  {
+    "module": "tmf_product_catalog",
+    "tmf_api": "TMF620",
+    "odoo_model": "product.template",
+    "odoo_native_model": "product.template",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 26,
+    "spec_version": "TMF620-v5.0",
+    "odoo_version": ">=19.0",
+    "mapping_yaml_path": "mappings/tmf620_product_catalog.yaml",
+    "has_yaml": true
+  },
+  {
+    "module": "tmf_product_ordering",
+    "tmf_api": "TMF622",
+    "odoo_model": "sale.order",
+    "odoo_native_model": "sale.order",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 10,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_customer",
+    "tmf_api": "TMF629",
+    "odoo_model": "tmf.customer",
+    "odoo_native_model": "res.partner",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 10,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_party",
+    "tmf_api": "TMF632",
+    "odoo_model": "tmf.party",
+    "odoo_native_model": "res.partner",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 11,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_quote_management",
+    "tmf_api": "TMF648",
+    "odoo_model": "tmf.quote",
+    "odoo_native_model": "res.partner",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 24,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_billing_management",
+    "tmf_api": "TMF666",
+    "odoo_model": "tmf.billing.account",
+    "odoo_native_model": "account.move",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 15,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_geographic_address",
+    "tmf_api": "TMF673",
+    "odoo_model": "tmf.geographic.address",
+    "odoo_native_model": "res.partner",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_links"
+    ],
+    "field_pair_count": 20,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_order",
+    "tmf_api": "TMF641",
+    "odoo_model": "tmf.service.order",
+    "odoo_native_model": "project.task",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_project_task"
+    ],
+    "field_pair_count": 28,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_order",
+    "tmf_api": "TMF652",
+    "odoo_model": "tmf.resource.order",
+    "odoo_native_model": "project.task",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_fulfillment_records"
+    ],
+    "field_pair_count": 22,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_appointment",
+    "tmf_api": "TMF646",
+    "odoo_model": "tmf.appointment",
+    "odoo_native_model": "calendar.event",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_calendar_event"
+    ],
+    "field_pair_count": 19,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_trouble_ticket",
+    "tmf_api": "TMF621",
+    "odoo_model": "tmf.trouble.ticket",
+    "odoo_native_model": "helpdesk.ticket",
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_helpdesk_ticket"
+    ],
+    "field_pair_count": 19,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_5gslice_service_activation",
+    "tmf_api": "TMF924",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_account",
+    "tmf_api": "TMF666",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_agreement",
+    "tmf_api": "TMF651",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 19,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_ai_contract_specification",
+    "tmf_api": null,
+    "odoo_model": "tmf.ai.contract.specification",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 16,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_ai_management",
+    "tmf_api": "TMF915",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_alarm",
+    "tmf_api": "TMF642",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_helpdesk_ticket"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_base",
+    "tmf_api": "TMF632",
+    "odoo_model": "tmf.hub.subscription",
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_cdr_transaction_management",
+    "tmf_api": "TMF735",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_change_management",
+    "tmf_api": "TMF655",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_communication_message",
+    "tmf_api": "TMF681",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_sender_partner"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_cost_management",
+    "tmf_api": "TMF764",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_customer360",
+    "tmf_api": "TMF360",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_customer_bill_management",
+    "tmf_api": "TMF678",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_account_move"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_device",
+    "tmf_api": null,
+    "odoo_model": "tmf.device",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 46,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_digital_identity_management",
+    "tmf_api": "TMF720",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_document",
+    "tmf_api": "TMF667",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_dunning_case_management",
+    "tmf_api": "TMF728",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_entity",
+    "tmf_api": "TMF703",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 14,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_entity_catalog",
+    "tmf_api": "TMF662",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_product_template"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_event",
+    "tmf_api": "TMF688",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_general_test_artifact",
+    "tmf_api": "TMF710",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 13,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_geographic_location",
+    "tmf_api": "TMF675",
+    "odoo_model": "tmf.geographic.location",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_stock_location_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_geographic_site",
+    "tmf_api": "TMF674",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_incident_management",
+    "tmf_api": "TMF724",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_helpdesk_ticket"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_intent_management",
+    "tmf_api": "TMF921",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_iot_agent_device_management",
+    "tmf_api": "TMF908",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_iot_service_management",
+    "tmf_api": "TMF914",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_managed_entity",
+    "tmf_api": null,
+    "odoo_model": "tmf.managed.entity",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 19,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_metadata_catalog_management",
+    "tmf_api": "TMF725",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_network_as_a_service_management",
+    "tmf_api": "TMF909",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_non_functional_test_result_definition",
+    "tmf_api": null,
+    "odoo_model": "tmf.non.functional.test.result.definition",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 11,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_open_gateway_operate_onboarding_ordering",
+    "tmf_api": "TMF931",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_owner_partner",
+      "_sync_partner_link",
+      "_sync_sale_order_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_open_gateway_operate_product_catalog",
+    "tmf_api": "TMF936",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_product_template_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_outage_management",
+    "tmf_api": "TMF777",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_partnership_management",
+    "tmf_api": "TMF668",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [
+      "_sync_native_links",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_party_interaction",
+    "tmf_api": "TMF683",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_party_privacy_agreement",
+    "tmf_api": null,
+    "odoo_model": "tmf.party.privacy.agreement",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 21,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_party_role",
+    "tmf_api": "TMF669",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_party_role_product_offering_risk_assessment",
+    "tmf_api": "TMF696",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_payment",
+    "tmf_api": "TMF676",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_account_payment"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_payment_method",
+    "tmf_api": "TMF670",
+    "odoo_model": "TMF670",
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [
+      "_sync_account_payment_method"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_performance_management",
+    "tmf_api": "TMF628",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_permission",
+    "tmf_api": null,
+    "odoo_model": "tmf.permission",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 10,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_physical_resource",
+    "tmf_api": null,
+    "odoo_model": "tmf.physical.resource",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 25,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_prepay_balance_management",
+    "tmf_api": "TMF654",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_privacy_management",
+    "tmf_api": "TMF644",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_private_optimized_binding",
+    "tmf_api": "TMF759",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_process_flow",
+    "tmf_api": "TMF701",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_product",
+    "tmf_api": "TMF760",
+    "odoo_model": "tmf.product",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 27,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_product_inventory",
+    "tmf_api": "TMF637",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 17,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_product_offering_qualification",
+    "tmf_api": "TMF679",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 5,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_product_stock_relationship",
+    "tmf_api": "TMF687",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_from_odoo_stock"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_product_usage_catalog_management",
+    "tmf_api": "TMF767",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_product_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_promotion_management",
+    "tmf_api": "TMF671",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [
+      "_sync_pricing"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_recommendation_management",
+    "tmf_api": "TMF680",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_activation",
+    "tmf_api": "TMF702",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_fulfillment_records"
+    ],
+    "field_pair_count": 21,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_catalog",
+    "tmf_api": null,
+    "odoo_model": "tmf.resource.catalog",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_product_template_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_function",
+    "tmf_api": "TMF664",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 29,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_inventory",
+    "tmf_api": "TMF639",
+    "odoo_model": "stock.lot",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 12,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_pool_management",
+    "tmf_api": "TMF685",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_reservation",
+    "tmf_api": "TMF716",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_role_management",
+    "tmf_api": "TMF768",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_resource_usage_management",
+    "tmf_api": "TMF771",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_revenue_sharing_algorithm_management",
+    "tmf_api": "TMF736",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_revenue_sharing_model_management",
+    "tmf_api": "TMF738",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_revenue_sharing_report_management",
+    "tmf_api": "TMF737",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_self_care_management",
+    "tmf_api": "TMF910",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_activation_configuration",
+    "tmf_api": "TMF640",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_project_task"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_catalog",
+    "tmf_api": "TMF633",
+    "odoo_model": "tmf.service.catalog",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_product_template_link"
+    ],
+    "field_pair_count": 11,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_inventory",
+    "tmf_api": "TMF638",
+    "odoo_model": "tmf.service",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_stock_picking"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_level_objective",
+    "tmf_api": "TMF623",
+    "odoo_model": "tmf.service.level.objective",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_helpdesk_sla"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_problem",
+    "tmf_api": "TMF656",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_helpdesk_ticket"
+    ],
+    "field_pair_count": 6,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_qualification",
+    "tmf_api": "TMF645",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_quality_management",
+    "tmf_api": "TMF657",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_test",
+    "tmf_api": "TMF653",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_service_usage_management",
+    "tmf_api": "TMF727",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_shipment_management",
+    "tmf_api": "TMF711",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_shipment_tracking_management",
+    "tmf_api": "TMF684",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_shipping_order",
+    "tmf_api": "TMF700",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_shopping_cart",
+    "tmf_api": "TMF663",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_odoo_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_software_compute_management",
+    "tmf_api": "TMF730",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_case",
+    "tmf_api": "TMF704",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_data",
+    "tmf_api": "TMF706",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_data_instance_definition",
+    "tmf_api": null,
+    "odoo_model": "tmf.test.data.instance.definition",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 11,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_environment",
+    "tmf_api": "TMF705",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_execution",
+    "tmf_api": "TMF708",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_result",
+    "tmf_api": "TMF707",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_test_scenario",
+    "tmf_api": "TMF709",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 13,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_transfer_balance",
+    "tmf_api": null,
+    "odoo_model": "tmf.transfer.balance",
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 26,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_usage",
+    "tmf_api": "TMF635",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 3,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_usage_consumption",
+    "tmf_api": null,
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_userinfo",
+    "tmf_api": "TMF691",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_user_role_permission",
+    "tmf_api": "TMF672",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": null,
+    "sync_methods": [
+      "_sync_native_links"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_warranty_management",
+    "tmf_api": "TMF715",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_partner_link",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_work_management",
+    "tmf_api": "TMF713",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [
+      "_sync_native_links",
+      "_sync_product_link"
+    ],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  },
+  {
+    "module": "tmf_work_qualification",
+    "tmf_api": "TMF714",
+    "odoo_model": null,
+    "odoo_native_model": null,
+    "to_tmf_method": "to_tmf_json",
+    "sync_methods": [],
+    "field_pair_count": 0,
+    "spec_version": null,
+    "odoo_version": null,
+    "mapping_yaml_path": null,
+    "has_yaml": false
+  }
+]

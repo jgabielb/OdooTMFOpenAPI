@@ -1,0 +1,366 @@
+# ============================================================
+# TMF699 Sales Management — Field Mapping
+# ============================================================
+# Covers:
+#   - SalesLead ↔ tmf_sales.lead (main TMF model)
+#   - CRM Lead sync: _sync_to_crm_lead   (TMF → crm.lead)
+#   - CRM Lead bridge: _sync_to_tmf_sales_lead (crm.lead → TMF)
+#
+# Reference: TMF Open API — TMF699 v5 (Sales Management)
+# Odoo models: tmf_sales.lead, crm.lead
+#
+# Patterns covered:
+#   Pattern 1 — Direct field mapping
+#   Pattern 2 — Conditional inclusion (if_truthy, conditional_block)
+#   Pattern 3 — State/value mapping (priority, status)
+#   Pattern 4 — Sync (reverse: TMF → crm.lead, crm.lead → TMF)
+#   Pattern 5 — RelatedParty resolution
+#   Pattern 6 — Many2one reference serialization (salesOpportunity)
+
+schema_version: "1.0"
+spec_version: "TMF699-v4.0"
+odoo_version: ">=19.0"
+tmf_spec: "TMF699"
+tmf_version: "5.0"
+description: >
+  Declarative mapping for TMF699 Sales Management.
+  Replaces to_tmf_json(), _sync_to_crm_lead(), and _sync_to_tmf_sales_lead()
+  in the tmf_sales module. Covers bidirectional sync between tmf_sales.lead
+  and crm.lead via two distinct mapping entries.
+
+changelog:
+  - version: "1.1"
+    date: "2026-03-29"
+    author: "architect"
+    notes: "Target Odoo >=19.0 and align headers for validation"
+  - version: "1.0"
+    date: "2026-03-29"
+    author: "architect"
+    notes: "Initial extraction from Python hardcoded mappings"
+
+mappings:
+
+  # ----------------------------------------------------------
+  # SalesLead ↔ tmf_sales.lead (main TMF entity)
+  # ----------------------------------------------------------
+  - id: sales_lead
+    odoo_model: tmf_sales.lead
+    tmf_type: SalesLead
+    direction: bidirectional
+    fields:
+
+      # ID: prefer tmf_id, fall back to str(id)
+      - type: fallback
+        tmf_key: id
+        direction: to_tmf
+        sources:
+          - odoo_field: tmf_id
+          - odoo_field: id
+            transform: str
+
+      # TMF @type constant
+      - type: literal
+        tmf_key: "@type"
+        value: SalesLead
+        direction: to_tmf
+
+      # Pattern 1: Direct name mapping with fallback default on sync
+      - type: fallback
+        tmf_key: name
+        direction: to_tmf
+        sources:
+          - odoo_field: name
+          - default: "SalesLead"
+
+      # Pattern 4: On sync to_odoo, default to "SalesLead" if name absent
+      - type: fallback
+        odoo_field: name
+        direction: to_odoo
+        sources:
+          - tmf_key: name
+          - default: "SalesLead"
+
+      # Pattern 2: description — only included if truthy
+      - type: direct
+        odoo_field: description
+        tmf_key: description
+        direction: bidirectional
+        if_truthy: true
+
+      # Pattern 3: priority mapping — TMF uses string labels, Odoo uses "0"/"1"/"2"/"3"
+      - type: value_map
+        odoo_field: priority
+        tmf_key: priority
+        direction: bidirectional
+        map:
+          to_tmf:
+            "0": Low
+            "1": Medium
+            "2": High
+            "3": Critical
+          to_odoo:
+            Low: "0"
+            Medium: "1"
+            High: "2"
+            Critical: "3"
+        default:
+          to_tmf: Low
+          to_odoo: "0"
+
+      # Pattern 3: status — derived from TMF lifecycle values
+      - type: value_map
+        odoo_field: status
+        tmf_key: status
+        direction: bidirectional
+        map:
+          to_tmf:
+            new: Open
+            qualified: InProgress
+            won: Won
+            lost: Lost
+            cancelled: Cancelled
+          to_odoo:
+            Open: new
+            InProgress: qualified
+            Won: won
+            Lost: lost
+            Cancelled: cancelled
+        default:
+          to_tmf: Open
+          to_odoo: new
+
+      # Pattern 5: relatedParty — customer/contact partner resolution
+      - type: related_party
+        tmf_key: relatedParty
+        odoo_field: partner_id
+        direction: bidirectional
+        role_filter: Customer
+        if_truthy: true
+
+      # Pattern 2: Conditional block — include either relatedParty OR salesOpportunity
+      # This replicates the if/elif logic in tmf_sales/main_model.py
+      - type: conditional_block
+        direction: to_tmf
+        branches:
+          # Branch 1: If related_party is set, it's already handled above.
+          # Branch 2: If no relatedParty but sale_order_id is set, emit salesOpportunity ref.
+          - if_truthy_field: sale_order_id
+            emit:
+              - type: literal
+                tmf_key: salesOpportunity
+                value_from_field: sale_order_id.name
+                wrap:
+                  "@type": SalesOpportunityRef
+
+      # Pattern 6: account reference — Many2one to account.move or sale.order
+      - type: many2one_ref
+        odoo_field: sale_order_id
+        tmf_key: relatedSalesOrder
+        direction: bidirectional
+        ref_type: SalesOrder
+        ref_odoo_model: sale.order
+        id_field: tmf_id
+        name_field: name
+        href_template: "/tmf-api/salesManagement/v5/salesOrder/{id}"
+        if_truthy: true
+
+      # Pattern 1: Expected close date
+      - type: direct
+        odoo_field: expected_closing_date
+        tmf_key: expectedClosingDate
+        transform: date_iso
+        direction: bidirectional
+        if_truthy: true
+
+      # Pattern 1: Estimated revenue
+      - type: direct
+        odoo_field: planned_revenue
+        tmf_key: estimatedRevenue
+        direction: bidirectional
+        if_truthy: true
+
+      # Pattern 1: Last update timestamp
+      - type: direct
+        odoo_field: write_date
+        tmf_key: lastUpdate
+        transform: datetime_iso
+        direction: to_tmf
+        if_truthy: true
+
+
+  # ----------------------------------------------------------
+  # CRM Lead bridge: tmf_sales.lead → crm.lead
+  # Replicates: _sync_to_crm_lead / _crm_vals()
+  # Direction: to_odoo only (TMF payload → crm.lead values)
+  # ----------------------------------------------------------
+  - id: tmf_sales_to_crm_lead
+    odoo_model: crm.lead
+    tmf_type: SalesLead
+    direction: to_odoo
+    fields:
+
+      # Pattern 4: name with fallback default (mirrors self.name or "SalesLead")
+      - type: fallback
+        odoo_field: name
+        direction: to_odoo
+        sources:
+          - tmf_key: name
+          - default: "SalesLead"
+
+      # Pattern 4: description (or False if absent — Odoo convention)
+      - type: direct
+        tmf_key: description
+        odoo_field: description
+        direction: to_odoo
+
+      # Pattern 3: priority — TMF string → Odoo numeric string
+      # NOTE: _tmf_priority_to_crm has custom range logic; discrete map covers standard cases.
+      # Complex range logic (0.0–0.3 → "0", etc.) requires a Python custom transform.
+      - type: value_map
+        tmf_key: priority
+        odoo_field: priority
+        direction: to_odoo
+        map:
+          Low: "0"
+          Medium: "1"
+          High: "2"
+          Critical: "3"
+        default:
+          to_odoo: "0"
+
+      # Pattern 4: status → stage mapping (TMF status → Odoo stage_id name hint)
+      # NOTE: stage_id is a Many2one; full resolution requires Python lookup by name.
+      # We output a resolution hint dict here; caller does: Stage.search([("name","=", val)])
+      - type: value_map
+        tmf_key: status
+        odoo_field: stage_name_hint
+        direction: to_odoo
+        map:
+          Open: New
+          InProgress: Qualified
+          Won: Won
+          Lost: Lost
+          Cancelled: Lost
+        default:
+          to_odoo: New
+
+      # Pattern 5: relatedParty → partner_id resolution
+      - type: related_party
+        tmf_key: relatedParty
+        odoo_field: partner_id
+        direction: to_odoo
+        role_filter: Customer
+        if_truthy: true
+
+      # Pattern 1: planned revenue
+      - type: direct
+        tmf_key: estimatedRevenue
+        odoo_field: planned_revenue
+        direction: to_odoo
+        if_truthy: true
+
+      # Pattern 1: expected closing date
+      - type: direct
+        tmf_key: expectedClosingDate
+        odoo_field: date_deadline
+        direction: to_odoo
+        if_truthy: true
+
+
+  # ----------------------------------------------------------
+  # CRM Lead bridge: crm.lead → tmf_sales.lead
+  # Replicates: _sync_to_tmf_sales_lead in crm_lead_bridge.py
+  # Direction: to_tmf only (crm.lead record → TMF SalesLead values)
+  # ----------------------------------------------------------
+  - id: crm_lead_to_tmf_sales
+    odoo_model: crm.lead
+    tmf_type: SalesLead
+    direction: to_tmf
+    fields:
+
+      # ID: prefer tmf_id on the crm.lead if it exists, otherwise str(id)
+      - type: fallback
+        tmf_key: id
+        direction: to_tmf
+        sources:
+          - odoo_field: tmf_id
+          - odoo_field: id
+            transform: str
+
+      - type: literal
+        tmf_key: "@type"
+        value: SalesLead
+        direction: to_tmf
+
+      # Pattern 4: name (or False → engine will emit null)
+      - type: direct
+        odoo_field: name
+        tmf_key: name
+        direction: to_tmf
+
+      # Pattern 4: description (or False if absent)
+      - type: direct
+        odoo_field: description
+        tmf_key: description
+        direction: to_tmf
+
+      # Pattern 4: priority (Odoo "0"/"1"/"2" → TMF string)
+      - type: value_map
+        odoo_field: priority
+        tmf_key: priority
+        direction: to_tmf
+        map:
+          to_tmf:
+            "0": Low
+            "1": Medium
+            "2": High
+            "3": Critical
+        default:
+          to_tmf: Low
+
+      # Pattern 3 + Pattern 4: status derived from CRM stage/probability
+      # NOTE: _derive_tmf_status() uses stage_id + probability combination.
+      # Simple stage_name → TMF status covered here; complex derivation needs Python.
+      - type: value_map
+        odoo_field: stage_name
+        tmf_key: status
+        direction: to_tmf
+        map:
+          to_tmf:
+            New: Open
+            Qualified: InProgress
+            Proposition: InProgress
+            Won: Won
+            Lost: Lost
+        default:
+          to_tmf: Open
+
+      # Pattern 5: partner_id → relatedParty
+      - type: related_party
+        tmf_key: relatedParty
+        odoo_field: partner_id
+        direction: to_tmf
+        if_truthy: true
+
+      # Pattern 1: planned revenue
+      - type: direct
+        odoo_field: planned_revenue
+        tmf_key: estimatedRevenue
+        direction: to_tmf
+        if_truthy: true
+
+      # Pattern 1: expected closing date
+      - type: direct
+        odoo_field: date_deadline
+        tmf_key: expectedClosingDate
+        transform: date_iso
+        direction: to_tmf
+        if_truthy: true
+
+      # Pattern 1: last update
+      - type: direct
+        odoo_field: write_date
+        tmf_key: lastUpdate
+        transform: datetime_iso
+        direction: to_tmf
+        if_truthy: true

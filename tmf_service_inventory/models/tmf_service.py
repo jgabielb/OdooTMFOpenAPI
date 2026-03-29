@@ -143,6 +143,19 @@ class TMFService(models.Model):
             "serviceDate": self.service_date.isoformat() if self.service_date else None,
             "startDate": self.start_date.isoformat() if self.start_date else None,
             "endDate": self.end_date.isoformat() if self.end_date else None,
+
+            # Keep the payload shape explicit for CTK v4 expectations.
+            "serviceSpecification": None,
+            "supportingResource": None,
+            "supportingService": None,
+            "feature": None,
+            "serviceRelationship": None,
+            "relatedEntity": None,
+            "isBundle": None,
+            "serviceOrderItem": None,
+            "place": None,
+            "serviceCharacteristic": None,
+            "note": None,
         }
 
         if self.partner_id:
@@ -184,7 +197,7 @@ class TMFService(models.Model):
                 "@referredType": "Resource",
             }]
 
-        return {k: v for k, v in data.items() if v is not None}
+        return data
 
     @api.model
     def create(self, vals):

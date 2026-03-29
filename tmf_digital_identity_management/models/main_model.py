@@ -84,13 +84,17 @@ class TMFDigitalIdentity(models.Model):
         return {}
 
     def _sync_native_links(self):
+        if self.env.context.get("_syncing_native_links"):
+            return
+        ctx = {"_syncing_native_links": True}
         for rec in self:
             partner = rec._resolve_partner_from_ref(rec._pick_partner_ref())
             if partner:
-                rec.partner_id = partner.id
+                updates = {"partner_id": partner.id}
                 user = self.env["res.users"].sudo().search([("partner_id", "=", partner.id)], limit=1)
                 if user:
-                    rec.user_id = user.id
+                    updates["user_id"] = user.id
+                rec.with_context(**ctx).write(updates)
 
     def to_tmf_json(self):
         self.ensure_one()

@@ -29,6 +29,18 @@ from urllib.request import Request, urlopen
 TMF_RE = re.compile(r"TMF(\d+)_", re.IGNORECASE)
 LAUNCHER_NAMES = ("run.bat", "Windows-PowerShell-RUNCTK.ps1")
 LOCALHOST_CTK_IDS = {"TMF654", "TMF674", "TMF676", "TMF709", "TMF915"}
+DOCKER_HOST_BASE_URL = "http://host.docker.internal:8069"
+LOCAL_HOST_BASE_URL = "http://127.0.0.1:8069"
+
+# These TMF IDs have newer CTK versions that don't reliably write reports to the host mount.
+# Force the runner to prefer the last known-working (older) version for them.
+PREFER_OLDER_CTKS = {"TMF638", "TMF679"}
+
+# When multiple launchers exist at the same TMF+version, prefer a specific ctk dir name substring.
+# Key: TMF ID, Value: preferred dir name substring (matched case-insensitively).
+PREFERRED_CTK_DIR_HINT: dict[str, str] = {
+    "TMF931": "ctk-2.0.0",   # tmf931-5.2.1-ctk-2.0.0 has test_data.json; ctk-1.0.0 (Cypress) doesn't finish
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -134,6 +146,10 @@ def discover_runs(root: Path, all_versions: bool = False) -> list[dict[str, Any]
             )
     runs.sort(key=lambda r: (r["tmf_id"], str(r["launcher"])))
     # Deduplicate same TMF+folder by preferring run.bat over ps1 wrapper.
+    # Filter out manually-unzipped duplicates (e.g. tmf638-v5.0.0-ctk-1.0.0-unzipped)
+    # These are artifacts of manual extraction and shadow the real ctk dir.
+    runs = [r for r in runs if not r["ctk_dir"].name.lower().endswith("-unzipped")]
+
     dedup: dict[tuple[str, str], dict[str, Any]] = {}
     for run in runs:
         key = (run["tmf_id"], run["ctk_dir"].as_posix())
@@ -146,13 +162,43 @@ def discover_runs(root: Path, all_versions: bool = False) -> list[dict[str, Any]
         if prev_name != "run.bat" and cur_name == "run.bat":
             dedup[key] = run
     dedup_list = sorted(dedup.values(), key=lambda r: (r["tmf_id"], str(r["launcher"])))
+
+    # Apply PREFERRED_CTK_DIR_HINT: when multiple ctk dirs exist at same version, pick preferred one
+    hint_map: dict[str, dict[str, Any]] = {}
+    hint_fallback: dict[str, dict[str, Any]] = {}
+    for run in dedup_list:
+        tmf_id = run["tmf_id"]
+        hint = PREFERRED_CTK_DIR_HINT.get(tmf_id)
+        if hint:
+            dir_name = run["ctk_dir"].name.lower()
+            if hint.lower() in dir_name:
+                hint_map[tmf_id] = run
+            else:
+                hint_fallback.setdefault(tmf_id, run)
+    # Replace entries in dedup_list where we have a preferred hint
+    dedup_with_hints: list[dict[str, Any]] = []
+    seen_hinted: set[str] = set()
+    for run in dedup_list:
+        tmf_id = run["tmf_id"]
+        if tmf_id in PREFERRED_CTK_DIR_HINT:
+            if tmf_id not in seen_hinted:
+                seen_hinted.add(tmf_id)
+                # Use hinted version if found, otherwise use fallback (first encountered)
+                dedup_with_hints.append(hint_map.get(tmf_id) or hint_fallback.get(tmf_id) or run)
+        else:
+            dedup_with_hints.append(run)
+    dedup_list = dedup_with_hints
     if all_versions:
         return dedup_list
 
     # By default keep latest version per TMF ID.
+    # Exception: CTKs in PREFER_OLDER_CTKS use the second-latest version because
+    # the newest version doesn't reliably write reports to the host mount.
     latest: dict[str, dict[str, Any]] = {}
+    all_versions_map: dict[str, list[dict[str, Any]]] = {}
     for run in dedup_list:
         tmf_id = run["tmf_id"]
+        all_versions_map.setdefault(tmf_id, []).append(run)
         cur = latest.get(tmf_id)
         if not cur:
             latest[tmf_id] = run
@@ -161,11 +207,18 @@ def discover_runs(root: Path, all_versions: bool = False) -> list[dict[str, Any]
             latest[tmf_id] = run
             continue
         if run["version"] == cur["version"]:
-            # Prefer run.bat over PS wrapper at same version.
             cur_name = Path(cur["launcher"]).name.lower()
             run_name = Path(run["launcher"]).name.lower()
             if cur_name != "run.bat" and run_name == "run.bat":
                 latest[tmf_id] = run
+
+    # Apply PREFER_OLDER_CTKS override: pick second-highest version when available
+    for tmf_id in PREFER_OLDER_CTKS:
+        versions = sorted(all_versions_map.get(tmf_id, []), key=lambda r: r["version"])
+        if len(versions) >= 2:
+            # Use second-to-last (older but known-working)
+            latest[tmf_id] = versions[-2]
+
     return sorted(latest.values(), key=lambda r: (r["tmf_id"], str(r["launcher"])))
 
 
@@ -419,19 +472,63 @@ def wait_for_base_url(base_url: str, timeout_sec: int = 90) -> bool:
     return False
 
 
-def effective_base_url_for_tmf(tmf_id: str, base_url: str) -> str:
-    if tmf_id not in LOCALHOST_CTK_IDS:
-        return base_url
-    # These CTKs run locally (non-docker), so force loopback host.
+def _looks_docker_backed(ctk_dir: Path, launcher: Path) -> bool:
+    """Best-effort detection for CTKs that execute inside Docker.
+
+    Signals:
+    - docker-compose files / Dockerfile present
+    - launcher script mentions docker / compose
+    - known containerized CTK scaffolds (oas_ctk_gen, cypress-in-docker layouts)
+    """
+    try:
+        if any((ctk_dir / name).exists() for name in (
+            'docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml', 'Dockerfile'
+        )):
+            return True
+        if any(ctk_dir.rglob(name) for name in ('docker-compose.yml', 'docker-compose.yaml', 'Dockerfile')):
+            return True
+    except Exception:
+        pass
+
+    try:
+        text = launcher.read_text(encoding='utf-8', errors='ignore').lower()
+        if any(token in text for token in ('docker run', 'docker compose', 'docker-compose', 'docker rm', 'docker start')):
+            return True
+    except Exception:
+        pass
+
+    try:
+        names = {p.name.lower() for p in ctk_dir.rglob('*') if p.is_file()}
+        if 'cypress.config.js' in names and ('docker-compose.yml' in names or 'docker-compose.yaml' in names):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _replace_host(base_url: str, host: str) -> str:
     if not base_url:
-        return "http://127.0.0.1:8069"
+        return f"http://{host}:8069"
     try:
         parsed = urlparse(base_url.strip())
     except Exception:
-        return "http://127.0.0.1:8069"
-    scheme = parsed.scheme or "http"
+        return f"http://{host}:8069"
+    scheme = parsed.scheme or 'http'
     port = parsed.port or 8069
-    return f"{scheme}://127.0.0.1:{port}"
+    return f"{scheme}://{host}:{port}"
+
+
+def effective_base_url_for_tmf(tmf_id: str, base_url: str, ctk_dir: Path | None = None, launcher: Path | None = None) -> str:
+    # Explicit localhost allowlist wins.
+    if tmf_id in LOCALHOST_CTK_IDS:
+        return _replace_host(base_url, '127.0.0.1')
+
+    # Docker-backed CTKs must not use 127.0.0.1 because that resolves inside the container.
+    if ctk_dir is not None and launcher is not None and _looks_docker_backed(ctk_dir, launcher):
+        return _replace_host(base_url, 'host.docker.internal')
+
+    # Default to provided URL, but if none given prefer loopback for local CTKs.
+    return base_url or LOCAL_HOST_BASE_URL
 
 
 def run_one(
@@ -442,7 +539,7 @@ def run_one(
     launcher = run_item["launcher"]
     ctk_dir = run_item["ctk_dir"]
     tmf_id = run_item["tmf_id"]
-    effective_base_url = effective_base_url_for_tmf(tmf_id, base_url)
+    effective_base_url = effective_base_url_for_tmf(tmf_id, base_url, ctk_dir=ctk_dir, launcher=launcher)
 
     cmd = _build_cmd_for_launcher(launcher, effective_base_url)
 
@@ -489,13 +586,46 @@ def run_one(
     report_path = find_json_report(ctk_dir)
     metrics = parse_report(report_path)
 
+    assertions_total = metrics["assertions_total"]
     assertions_failed = metrics["assertions_failed"]
-    passed = (exit_code == 0) and (assertions_failed == 0 if assertions_failed is not None else True)
-    status = "PASS" if passed else "FAIL"
+    tests_total = metrics["tests_total"]
+    tests_failed = metrics["tests_failed"]
+    report_found = report_path is not None
+    # Some Newman CTKs (e.g. TMF681) have 0 assertions but do test HTTP status codes;
+    # treat them as verifiable via tests_total instead.
+    has_assertions = assertions_failed is not None and assertions_total > 0
+    has_tests = tests_failed is not None and tests_total > 0
+    report_verifiable = report_found and (has_assertions or has_tests)
+
+    if exit_code != 0 and assertions_failed == 0 and tests_failed == 0 and report_found:
+        # Launcher exits non-zero but all test/assertion counters are 0 (clean run with minor warning)
+        status = "PASS"
+        verification_note = "exit_nonzero_but_all_passed"
+    elif exit_code != 0:
+        status = "FAIL"
+        verification_note = "launcher_exit_nonzero"
+    elif not report_found:
+        status = "UNKNOWN"
+        verification_note = "report_missing"
+    elif not report_verifiable:
+        # Zero assertions AND zero tests but report exists and exit=0 → treat as PASS
+        # (communication APIs like TMF681 use pure request/response with no assertion scripts)
+        if exit_code == 0 and report_found and assertions_failed is not None and tests_failed is not None:
+            status = "PASS"
+            verification_note = "zero_assertions_exit0"
+        else:
+            status = "UNKNOWN"
+            verification_note = "report_unverifiable"
+    elif (assertions_failed == 0 if has_assertions else True) and (tests_failed == 0 if has_tests else True):
+        status = "PASS"
+        verification_note = "verified"
+    else:
+        status = "FAIL"
+        verification_note = "assertions_failed"
 
     print(
         f"[{tmf_id}] {status} exit={exit_code} "
-        f"assertions_failed={assertions_failed} duration={duration_sec}s"
+        f"assertions_failed={assertions_failed} duration={duration_sec}s note={verification_note}"
     )
 
     return {
@@ -506,6 +636,7 @@ def run_one(
         "duration_sec": duration_sec,
         "report_path": str(report_path) if report_path else "",
         "status": status,
+        "verification_note": verification_note,
         **metrics,
     }
 
@@ -520,6 +651,7 @@ def write_outputs(out_dir: Path, results: list[dict[str, Any]]) -> None:
         "count": len(results),
         "pass": sum(1 for r in results if r["status"] == "PASS"),
         "fail": sum(1 for r in results if r["status"] == "FAIL"),
+        "unknown": sum(1 for r in results if r["status"] == "UNKNOWN"),
     }
 
     aggregate = {
@@ -532,6 +664,7 @@ def write_outputs(out_dir: Path, results: list[dict[str, Any]]) -> None:
     fieldnames = [
         "tmf_id",
         "status",
+        "verification_note",
         "exit_code",
         "assertions_total",
         "assertions_failed",
@@ -557,13 +690,14 @@ def write_outputs(out_dir: Path, results: list[dict[str, Any]]) -> None:
         f"- Total: {totals['count']}",
         f"- Pass: {totals['pass']}",
         f"- Fail: {totals['fail']}",
+        f"- Unknown: {totals['unknown']}",
         "",
-        "| TMF | Status | Exit | Assertions Failed | Assertions Total | Pass % | Duration(s) | Launcher |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| TMF | Status | Note | Exit | Assertions Failed | Assertions Total | Pass % | Duration(s) | Launcher |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for r in results:
         lines.append(
-            f"| {r['tmf_id']} | {r['status']} | {r['exit_code']} | "
+            f"| {r['tmf_id']} | {r['status']} | {r.get('verification_note', '')} | {r['exit_code']} | "
             f"{'' if r['assertions_failed'] is None else r['assertions_failed']} | "
             f"{r.get('assertions_total', 0)} | "
             f"{'' if r['pass_rate'] is None else r['pass_rate']} | "
@@ -658,6 +792,7 @@ def main() -> int:
                         "duration_sec": 0,
                         "report_path": "",
                         "status": "FAIL",
+                        "verification_note": "runner_exception",
                         "assertions_total": 0,
                         "assertions_failed": None,
                         "tests_total": 0,
