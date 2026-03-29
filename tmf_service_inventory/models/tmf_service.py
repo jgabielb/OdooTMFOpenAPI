@@ -114,8 +114,14 @@ class TMFService(models.Model):
             if picking and picking.exists():
                 rec.stock_picking_id = picking.id
 
-    def to_tmf_json(self):
+    def to_tmf_json(self, include_nulls=None):
         self.ensure_one()
+
+        if include_nulls is None:
+            try:
+                include_nulls = "/v4/" in (request.httprequest.path or "")
+            except Exception:
+                include_nulls = False
 
         sid = self.tmf_id or str(self.id)
         href_path = f"/tmf-api{self._get_tmf_api_path()}/{sid}"
@@ -143,22 +149,25 @@ class TMFService(models.Model):
             "serviceDate": self.service_date.isoformat() if self.service_date else None,
             "startDate": self.start_date.isoformat() if self.start_date else None,
             "endDate": self.end_date.isoformat() if self.end_date else None,
-
-            # Keep the payload shape explicit for CTK v4 expectations.
-            "serviceSpecification": None,
-            "supportingResource": None,
-            "supportingService": None,
-            "feature": None,
-            "serviceRelationship": None,
-            "relatedEntity": None,
-            "isBundle": None,
-            "serviceOrderItem": None,
-            "place": None,
-            "serviceCharacteristic": None,
-            "note": None,
         }
 
-        if self.partner_id:
+        if include_nulls:
+            # Keep the payload shape explicit for CTK v4 expectations.
+            data.update({
+                "serviceSpecification": None,
+                "supportingResource": None,
+                "supportingService": None,
+                "feature": None,
+                "serviceRelationship": None,
+                "relatedEntity": None,
+                "isBundle": None,
+                "serviceOrderItem": None,
+                "place": None,
+                "serviceCharacteristic": None,
+                "note": None,
+            })
+
+        if include_nulls and self.partner_id:
             party_id = self.partner_id.tmf_id or str(self.partner_id.id)
             party_href = f"/tmf-api/partyManagement/v5/party/{party_id}"
             party_ref = {
@@ -196,6 +205,9 @@ class TMFService(models.Model):
                 "@type": "ResourceRef",
                 "@referredType": "Resource",
             }]
+
+        if not include_nulls:
+            data = {k: v for k, v in data.items() if v is not None}
 
         return data
 
