@@ -4,7 +4,7 @@
         <field name="model">tmf657.hub.subscription</field>
         <field name="arch" type="xml">
             <list>
-                <field name="id"/>
+                <field name="tmf_id"/>
                 <field name="callback"/>
                 <field name="query"/>
             </list>
@@ -17,20 +17,45 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <group>
-                        <field name="id"/>
-                        <field name="callback"/>
-                        <field name="query"/>
-                        <field name="headers_json"/>
-                    </group>
+                    <div class="oe_title">
+                        <h1><field name="callback" placeholder="Callback URL"/></h1>
+                        <div class="text-muted">
+                            <field name="tmf_id"/>
+                        </div>
+                    </div>
+                    <notebook>
+                        <page string="General">
+                            <group>
+                                <group>
+                                    <field name="tmf_id"/>
+                                    <field name="callback"/>
+                                </group>
+                                <group>
+                                    <field name="query"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Technical / Payload">
+                            <group>
+                                <field name="headers_json"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="tmf657_hub_action" model="ir.actions.act_window">
-        <field name="name">Hub Subscriptions</field>
-        <field name="res_model">tmf657.hub.subscription</field>
-        <field name="view_mode">list,form</field>
+    <record id="tmf657_hub_search" model="ir.ui.view">
+        <field name="name">tmf657.hub.subscription.search</field>
+        <field name="model">tmf657.hub.subscription</field>
+        <field name="arch" type="xml">
+            <search string="Search Hub Subscriptions">
+                <field name="tmf_id"/>
+                <field name="callback"/>
+                <field name="query"/>
+                <filter string="With Query" name="with_query" domain="[('query', '!=', False)]"/>
+            </search>
+        </field>
     </record>
 </odoo>

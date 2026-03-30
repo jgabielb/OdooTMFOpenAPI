@@ -5,11 +5,13 @@
     <field name="model">tmf672.permission</field>
     <field name="arch" type="xml">
       <list string="TMF672 Permissions">
-        <field name="id"/>
-        <field name="tmf_type"/>
+        <field name="tmf_id"/>
+        <field name="tmf_type" optional="show"/>
+        <field name="user_partner_id" optional="show"/>
+        <field name="user_id" optional="show"/>
         <field name="creation_date"/>
         <field name="valid_for_start"/>
-        <field name="valid_for_end"/>
+        <field name="valid_for_end" optional="show"/>
       </list>
     </field>
   </record>
@@ -20,26 +22,103 @@
     <field name="arch" type="xml">
       <form string="TMF672 Permission">
         <sheet>
+          <div class="oe_title">
+            <h1><field name="tmf_id" readonly="1"/></h1>
+            <div class="text-muted">
+              <field name="description" placeholder="Permission summary"/>
+            </div>
+          </div>
           <group>
-            <field name="tmf_type"/>
-            <field name="base_type"/>
-            <field name="schema_location"/>
-            <field name="href"/>
-            <field name="creation_date"/>
-            <field name="description"/>
+            <group>
+              <field name="tmf_type"/>
+              <field name="user_partner_id"/>
+              <field name="user_id"/>
+              <field name="creation_date"/>
+            </group>
+            <group>
+              <field name="base_type"/>
+              <field name="schema_location"/>
+              <field name="href"/>
+            </group>
           </group>
-          <group string="validFor">
-            <field name="valid_for_start"/>
-            <field name="valid_for_end"/>
-          </group>
-          <group string="Relationships / Collections">
-            <field name="granter_json"/>
-            <field name="user_json"/>
-            <field name="asset_user_role_json"/>
-            <field name="privilege_json"/>
-          </group>
+          <notebook>
+            <page string="General">
+              <group>
+                <group>
+                  <field name="tmf_id" readonly="1"/>
+                  <field name="tmf_type"/>
+                  <field name="description"/>
+                </group>
+                <group>
+                  <field name="creation_date"/>
+                  <field name="href"/>
+                  <field name="schema_location"/>
+                </group>
+              </group>
+            </page>
+            <page string="Validity">
+              <group>
+                <field name="valid_for_start"/>
+                <field name="valid_for_end"/>
+              </group>
+            </page>
+            <page string="Relationships">
+              <group>
+                <group>
+                  <field name="user_partner_id"/>
+                  <field name="user_id"/>
+                </group>
+                <group>
+                  <field name="granter_json" string="Granter Payload"/>
+                  <field name="user_json" string="User Payload"/>
+                </group>
+              </group>
+            </page>
+            <page string="Privileges / Technical">
+              <group>
+                <field name="asset_user_role_json" string="Asset User Role Payload"/>
+                <field name="privilege_json" string="Privilege Payload"/>
+              </group>
+            </page>
+          </notebook>
         </sheet>
       </form>
+    </field>
+  </record>
+
+  <record id="view_tmf672_permission_search" model="ir.ui.view">
+    <field name="name">tmf672.permission.search</field>
+    <field name="model">tmf672.permission</field>
+    <field name="arch" type="xml">
+      <search string="Search Permissions">
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="user_partner_id"/>
+        <field name="user_id"/>
+        <field name="creation_date"/>
+        <field name="valid_for_start"/>
+
+        <filter string="With User" name="with_user" domain="[('user_id', '!=', False)]"/>
+        <filter string="With User Partner" name="with_user_partner" domain="[('user_partner_id', '!=', False)]"/>
+        <filter string="Current / Future Validity" name="current_validity" domain="[('valid_for_start', '!=', False)]"/>
+
+        <separator/>
+        <filter string="Group by TMF Type" name="group_tmf_type" context="{'group_by': 'tmf_type'}"/>
+        <filter string="Group by User" name="group_user" context="{'group_by': 'user_id'}"/>
+        <filter string="Group by User Partner" name="group_partner" context="{'group_by': 'user_partner_id'}"/>
+        <filter string="Group by Creation Date" name="group_creation_date" context="{'group_by': 'creation_date:day'}"/>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_tmf672_permission" model="ir.actions.act_window">
+    <field name="name">Permissions</field>
+    <field name="res_model">tmf672.permission</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_tmf672_permission_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first permission</p>
+      <p>Manage permission records, user relationships, validity windows, and privilege payloads from this screen.</p>
     </field>
   </record>
 </odoo>

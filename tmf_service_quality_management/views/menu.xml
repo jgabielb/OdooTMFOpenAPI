@@ -3,12 +3,12 @@
   <menuitem id="tmf657_root_menu" name="TMF657 Service Quality" parent="tmf_product_catalog.menu_tmf_root" sequence="30"/>
 
   <menuitem id="tmf657_slo_menu" name="Service Level Objectives"
-            parent="tmf657_root_menu" sequence="10"/>
+            parent="tmf657_root_menu" action="tmf657_slo_action" sequence="10"/>
 
   <menuitem id="tmf657_sls_menu" name="Service Level Specifications"
-            parent="tmf657_root_menu" sequence="20"/>
+            parent="tmf657_root_menu" action="tmf657_sls_action" sequence="20"/>
 
   <menuitem id="tmf657_hub_menu" name="Hub Subscriptions"
-            parent="tmf657_root_menu" sequence="30"/>
+            parent="tmf657_root_menu" action="tmf657_hub_action" sequence="30"/>
 
 </odoo>

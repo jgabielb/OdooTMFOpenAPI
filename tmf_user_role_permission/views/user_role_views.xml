@@ -4,10 +4,12 @@
     <field name="name">tmf672.user.role.list</field>
     <field name="model">tmf672.user.role</field>
     <field name="arch" type="xml">
-      <list string="TMF672 UserRoles">
-        <field name="id"/>
-        <field name="tmf_type"/>
+      <list string="TMF672 User Roles">
+        <field name="tmf_id"/>
+        <field name="tmf_type" optional="show"/>
         <field name="involvement_role"/>
+        <field name="user_id" optional="show"/>
+        <field name="group_id" optional="show"/>
       </list>
     </field>
   </record>
@@ -16,20 +18,87 @@
     <field name="name">tmf672.user.role.form</field>
     <field name="model">tmf672.user.role</field>
     <field name="arch" type="xml">
-      <form string="TMF672 UserRole">
+      <form string="TMF672 User Role">
         <sheet>
+          <div class="oe_title">
+            <h1><field name="tmf_id" readonly="1"/></h1>
+            <div class="text-muted">
+              <field name="involvement_role" placeholder="Role name"/>
+            </div>
+          </div>
           <group>
-            <field name="tmf_type"/>
-            <field name="base_type"/>
-            <field name="schema_location"/>
-            <field name="href"/>
-            <field name="involvement_role"/>
+            <group>
+              <field name="tmf_type"/>
+              <field name="involvement_role"/>
+              <field name="user_id"/>
+            </group>
+            <group>
+              <field name="group_id"/>
+              <field name="base_type"/>
+              <field name="schema_location"/>
+              <field name="href"/>
+            </group>
           </group>
-          <group string="Entitlements">
-            <field name="entitlement_json"/>
-          </group>
+          <notebook>
+            <page string="General">
+              <group>
+                <group>
+                  <field name="tmf_id" readonly="1"/>
+                  <field name="tmf_type"/>
+                  <field name="involvement_role"/>
+                </group>
+                <group>
+                  <field name="user_id"/>
+                  <field name="group_id"/>
+                  <field name="href"/>
+                </group>
+              </group>
+            </page>
+            <page string="Technical / Entitlements">
+              <group>
+                <field name="entitlement_json" string="Entitlement Payload"/>
+              </group>
+            </page>
+          </notebook>
         </sheet>
       </form>
     </field>
   </record>
+
+  <record id="view_tmf672_user_role_search" model="ir.ui.view">
+    <field name="name">tmf672.user.role.search</field>
+    <field name="model">tmf672.user.role</field>
+    <field name="arch" type="xml">
+      <search string="Search User Roles">
+        <field name="tmf_id"/>
+        <field name="tmf_type"/>
+        <field name="involvement_role"/>
+        <field name="user_id"/>
+        <field name="group_id"/>
+
+        <filter string="With User" name="with_user" domain="[('user_id', '!=', False)]"/>
+        <filter string="With Group" name="with_group" domain="[('group_id', '!=', False)]"/>
+
+        <separator/>
+        <filter string="Group by Role" name="group_role" context="{'group_by': 'involvement_role'}"/>
+        <filter string="Group by User" name="group_user" context="{'group_by': 'user_id'}"/>
+        <filter string="Group by Group" name="group_group" context="{'group_by': 'group_id'}"/>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_tmf672_user_role" model="ir.actions.act_window">
+    <field name="name">User Roles</field>
+    <field name="res_model">tmf672.user.role</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_tmf672_user_role_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first user role</p>
+      <p>Manage user role records, involvement roles, linked users or groups, and entitlement payloads from this screen.</p>
+    </field>
+  </record>
+
+  <menuitem id="menu_tmf672_root" name="TMF672 User Role &amp; Permission" parent="tmf_product_catalog.menu_tmf_root" sequence="36"/>
+  <menuitem id="menu_tmf672_user_role" name="User Roles" parent="menu_tmf672_root" action="action_tmf672_user_role" sequence="10"/>
+  <menuitem id="menu_tmf672_permission" name="Permissions" parent="menu_tmf672_root" action="action_tmf672_permission" sequence="20"/>
 </odoo>

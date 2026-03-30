@@ -294,14 +294,14 @@ class TMFCheckProductOfferingQualification(models.Model):
     _rec_name = "tmf_id"
     _inherit = ["tmf.model.mixin"]
 
-    tmf_id = fields.Char(string="id", required=True, index=True, default=lambda self: str(uuid.uuid4()))
-    href = fields.Char(string="href", compute="_compute_href", store=False)
+    tmf_id = fields.Char(string="TMF ID", required=True, index=True, default=lambda self: str(uuid.uuid4()))
+    href = fields.Char(string="Resource URL", compute="_compute_href", store=False)
 
-    tmf_type = fields.Char(string="@type", default="CheckProductOfferingQualification", required=True)
-    description = fields.Text(string="description")
+    tmf_type = fields.Char(string="TMF Type", default="CheckProductOfferingQualification", required=True)
+    description = fields.Text(string="Description")
 
     effective_qualification_date = fields.Datetime(
-        string="effectiveQualificationDate",
+        string="Qualification Date",
         required=True,
         default=fields.Datetime.now,
     )
@@ -312,7 +312,7 @@ class TMFCheckProductOfferingQualification(models.Model):
             ("unableToProvide", "Unable To Provide"),
             ("insufficientInformation", "Insufficient Information"),
         ],
-        string="qualificationResult",
+        string="Qualification Result",
         required=True,
         default="qualified",
     )
@@ -331,13 +331,13 @@ class TMFCheckProductOfferingQualification(models.Model):
     item_ids = fields.One2many(
         "tmf.check.poq.item",
         "parent_id",
-        string="checkProductOfferingQualificationItem",
+        string="Qualification Items",
     )
 
-    related_party_json = fields.Json(string="relatedParty", default=list)
-    partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
-    product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
-    sale_order_id = fields.Many2one("sale.order", string="Draft Sale Order", ondelete="set null")
+    related_party_json = fields.Json(string="Related Party Payload", default=list)
+    partner_id = fields.Many2one("res.partner", string="Related Party", ondelete="set null")
+    product_tmpl_id = fields.Many2one("product.template", string="Product", ondelete="set null")
+    sale_order_id = fields.Many2one("sale.order", string="Draft Sales Order", ondelete="set null")
 
     def _resolve_partner(self):
         self.ensure_one()
@@ -534,12 +534,12 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
         ondelete="cascade",
     )
 
-    tmf_id = fields.Char(string="id", required=True, default=lambda self: str(uuid.uuid4()))
-    tmf_type = fields.Char(string="@type", required=True, default="CheckProductOfferingQualificationItem")
+    tmf_id = fields.Char(string="Item ID", required=True, default=lambda self: str(uuid.uuid4()))
+    tmf_type = fields.Char(string="TMF Type", required=True, default="CheckProductOfferingQualificationItem")
 
     # JSONB object, MUST have @type for CTK
     product_json = fields.Json(
-        string="product",
+        string="Product Payload",
         required=True,
         default=lambda self: {"@type": "ProductRefOrValue"},
     )

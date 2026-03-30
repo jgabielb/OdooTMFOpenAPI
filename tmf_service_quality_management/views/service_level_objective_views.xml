@@ -8,13 +8,12 @@
                 <field name="name"/>
                 <field name="conformance_comparator"/>
                 <field name="conformance_target"/>
-                <field name="threshold_target"/>
-                <field name="tolerance_target"/>
-                <field name="grace_times"/>
+                <field name="threshold_target" optional="show"/>
+                <field name="tolerance_target" optional="show"/>
+                <field name="grace_times" optional="show"/>
             </list>
         </field>
     </record>
-
 
     <record id="tmf657_slo_form" model="ir.ui.view">
         <field name="name">tmf.service.level.objective.form</field>
@@ -22,43 +21,93 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Service level objective"/></h1>
+                        <div class="text-muted">
+                            <field name="tmf_id"/>
+                        </div>
+                    </div>
+
                     <group>
-                        <field name="tmf_id"/>
-                        <field name="href"/>
-                        <field name="name"/>
+                        <group>
+                            <field name="conformance_comparator"/>
+                            <field name="conformance_target"/>
+                            <field name="grace_times"/>
+                        </group>
+                        <group>
+                            <field name="threshold_target"/>
+                            <field name="tolerance_target"/>
+                            <field name="href"/>
+                        </group>
                     </group>
 
-                    <group string="Conformance">
-                        <field name="conformance_comparator"/>
-                        <field name="conformance_target"/>
-                        <field name="conformance_period_json"/>
-                        <field name="grace_times"/>
-                    </group>
-
-                    <group string="Threshold / Tolerance">
-                        <field name="threshold_target"/>
-                        <field name="tolerance_target"/>
-                        <field name="tolerance_period_json"/>
-                    </group>
-
-                    <group string="Parameter / Consequence">
-                        <field name="service_level_objective_parameter_json"/>
-                        <field name="service_level_objective_consequence_json"/>
-                    </group>
-
-                    <group string="Validity / Debug">
-                        <field name="valid_for_json"/>
-                        <field name="raw_json"/>
-                    </group>
+                    <notebook>
+                        <page string="General">
+                            <group>
+                                <group>
+                                    <field name="name"/>
+                                    <field name="tmf_id"/>
+                                    <field name="href"/>
+                                </group>
+                                <group>
+                                    <field name="conformance_comparator"/>
+                                    <field name="conformance_target"/>
+                                    <field name="grace_times"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Targets / Tolerance">
+                            <group>
+                                <group>
+                                    <field name="threshold_target"/>
+                                    <field name="tolerance_target"/>
+                                </group>
+                                <group>
+                                    <field name="conformance_period_json"/>
+                                    <field name="tolerance_period_json"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Parameters / Consequences">
+                            <group>
+                                <field name="service_level_objective_parameter_json"/>
+                                <field name="service_level_objective_consequence_json"/>
+                            </group>
+                        </page>
+                        <page string="Technical / Payload">
+                            <group>
+                                <field name="valid_for_json"/>
+                                <field name="raw_json"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
+    <record id="tmf657_slo_search" model="ir.ui.view">
+        <field name="name">tmf.service.level.objective.search</field>
+        <field name="model">tmf.service.level.objective</field>
+        <field name="arch" type="xml">
+            <search string="Search Service Level Objectives">
+                <field name="tmf_id"/>
+                <field name="name"/>
+                <field name="conformance_comparator"/>
+                <field name="conformance_target"/>
+                <field name="threshold_target"/>
+                <field name="tolerance_target"/>
+                <field name="grace_times"/>
 
-    <record id="tmf657_slo_action" model="ir.actions.act_window">
-        <field name="name">Service Level Objectives</field>
-        <field name="res_model">tmf.service.level.objective</field>
-        <field name="view_mode">list,form</field>
+                <filter string="With Grace Times" name="with_grace_times" domain="[('grace_times', '!=', False)]"/>
+                <filter string="With Threshold Target" name="with_threshold" domain="[('threshold_target', '!=', False)]"/>
+                <filter string="With Tolerance Target" name="with_tolerance" domain="[('tolerance_target', '!=', False)]"/>
+
+                <separator/>
+                <filter string="Group by Comparator" name="group_comparator" context="{'group_by': 'conformance_comparator'}"/>
+                <filter string="Group by Grace Times" name="group_grace_times" context="{'group_by': 'grace_times'}"/>
+            </search>
+        </field>
     </record>
 </odoo>

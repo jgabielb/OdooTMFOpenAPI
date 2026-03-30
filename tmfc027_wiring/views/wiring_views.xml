@@ -6,35 +6,41 @@
         <field name="model">tmf.check.product.offering.qualification</field>
         <field name="inherit_id" ref="tmf_product_offering_qualification.view_tmf_check_poq_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet" position="inside">
-                <notebook>
-                    <page string="TMFC027 Cross-API Wiring" name="tmfc027_wiring">
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="TMFC027 Cross-API Wiring" name="tmfc027_wiring">
+                    <group>
                         <group string="TMF632 — Related Parties">
                             <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
                         </group>
                         <group string="TMF637 — Products">
                             <field name="product_ids" widget="many2many_tags" nolabel="1"/>
                         </group>
+                    </group>
+                    <group>
                         <group string="TMF620 — Product Offerings">
                             <field name="product_offering_ids" widget="many2many_tags" nolabel="1"/>
                         </group>
                         <group string="TMF622 — Product Orders">
                             <field name="product_order_ids" widget="many2many_tags" nolabel="1"/>
                         </group>
+                    </group>
+                    <group>
                         <group string="TMF666 / TMF669">
                             <field name="billing_account_id"/>
                             <field name="party_role_id"/>
                         </group>
-                        <group string="TMF673/674 — Place">
+                        <group string="TMF673 / TMF674 — Place">
                             <field name="geographic_address_id"/>
                             <field name="geographic_site_id"/>
                         </group>
-                        <group string="TMF662 / TMF921">
+                    </group>
+                    <group string="TMF662 / TMF921">
+                        <group>
                             <field name="entity_specification_id"/>
                             <field name="intent_id"/>
                         </group>
-                    </page>
-                </notebook>
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>

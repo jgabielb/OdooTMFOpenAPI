@@ -6,13 +6,13 @@
     <field name="arch" type="xml">
       <list>
         <field name="tmf_id"/>
-        <field name="tmf_external_id"/>
+        <field name="tmf_external_id" optional="show"/>
         <field name="partner_id"/>
-        <field name="lead_id"/>
-        <field name="sale_order_id"/>
-        <field name="category"/>
-        <field name="state"/>
-        <field name="version"/>
+        <field name="lead_id" optional="show"/>
+        <field name="sale_order_id" optional="show"/>
+        <field name="category" optional="show"/>
+        <field name="state" widget="badge" decoration-success="state == 'approved' or state == 'accepted'" decoration-warning="state == 'pending' or state == 'inProgress'" decoration-danger="state == 'rejected' or state == 'cancelled'"/>
+        <field name="version" optional="show"/>
         <field name="quote_date"/>
       </list>
     </field>
@@ -24,34 +24,125 @@
     <field name="arch" type="xml">
       <form>
         <sheet>
+          <div class="oe_title">
+            <h1><field name="tmf_id" readonly="1"/></h1>
+            <div class="text-muted">
+              <field name="description" placeholder="Quote summary"/>
+            </div>
+          </div>
+
           <group>
-            <field name="tmf_id" readonly="1"/>
-            <field name="tmf_external_id"/>
-            <field name="partner_id"/>
-            <field name="lead_id"/>
-            <field name="sale_order_id"/>
-            <field name="category"/>
-            <field name="state"/>
-            <field name="version"/>
+            <group>
+              <field name="partner_id"/>
+              <field name="lead_id"/>
+              <field name="sale_order_id"/>
+              <field name="state"/>
+            </group>
+            <group>
+              <field name="tmf_external_id"/>
+              <field name="category"/>
+              <field name="version"/>
+              <field name="quote_date"/>
+            </group>
           </group>
 
           <notebook>
+            <page string="General">
+              <group>
+                <group>
+                  <field name="tmf_id" readonly="1"/>
+                  <field name="tmf_external_id"/>
+                  <field name="tmf_href"/>
+                  <field name="description"/>
+                </group>
+                <group>
+                  <field name="partner_id"/>
+                  <field name="lead_id"/>
+                  <field name="sale_order_id"/>
+                  <field name="state"/>
+                  <field name="category"/>
+                  <field name="version"/>
+                </group>
+              </group>
+            </page>
+
+            <page string="Dates / Lifecycle">
+              <group>
+                <group>
+                  <field name="quote_date"/>
+                  <field name="requested_quote_completion_date"/>
+                  <field name="expected_quote_completion_date"/>
+                </group>
+                <group>
+                  <field name="effective_quote_completion_date"/>
+                  <field name="expected_fulfillment_start_date"/>
+                </group>
+              </group>
+            </page>
+
             <page string="Quote Items">
               <field name="quote_item_ids">
                 <list editable="bottom">
-                  <field name="item_id"/>
+                  <field name="item_id" string="Item ID"/>
                   <field name="action"/>
                   <field name="quantity"/>
+                  <field name="state" optional="show"/>
                 </list>
+                <form string="Quote Item">
+                  <group>
+                    <group>
+                      <field name="item_id" string="Item ID"/>
+                      <field name="action"/>
+                      <field name="quantity"/>
+                      <field name="state"/>
+                    </group>
+                    <group>
+                      <field name="product_json" string="Product Payload"/>
+                      <field name="product_offering_json" string="Product Offering Payload"/>
+                    </group>
+                  </group>
+                  <notebook>
+                    <page string="Relationships / Payload">
+                      <group>
+                        <field name="related_party_json" string="Related Party Payload"/>
+                        <field name="quote_item_rel_json" string="Quote Item Relationship Payload"/>
+                        <field name="embedded_quote_item_json" string="Embedded Quote Item Payload"/>
+                      </group>
+                    </page>
+                    <page string="Commercial / Technical">
+                      <group>
+                        <field name="quote_item_price_json" string="Quote Item Price Payload"/>
+                        <field name="quote_item_auth_json" string="Quote Item Authorization Payload"/>
+                        <field name="attachment_json" string="Attachment Payload"/>
+                        <field name="note_json" string="Note Payload"/>
+                        <field name="appointment_json" string="Appointment Payload"/>
+                      </group>
+                    </page>
+                  </notebook>
+                </form>
               </field>
             </page>
 
-            <page string="Raw JSON">
+            <page string="Relationships / Commercial">
               <group>
-                <field name="related_party_json"/>
-                <field name="agreement_json"/>
-                <field name="billing_account_json"/>
-                <field name="quote_total_price_json"/>
+                <group>
+                  <field name="related_party_json" string="Related Party Payload"/>
+                  <field name="agreement_json" string="Agreement Payload"/>
+                  <field name="billing_account_json" string="Billing Account Payload"/>
+                </group>
+                <group>
+                  <field name="poq_json" string="Qualification Payload"/>
+                  <field name="authorization_json" string="Authorization Payload"/>
+                  <field name="quote_total_price_json" string="Quote Total Price Payload"/>
+                </group>
+              </group>
+            </page>
+
+            <page string="Technical / Payload">
+              <group>
+                <field name="contact_medium_json" string="Contact Medium Payload"/>
+                <field name="note_json" string="Note Payload"/>
+                <field name="valid_for_json" string="Validity Payload"/>
               </group>
             </page>
           </notebook>
@@ -59,4 +150,60 @@
       </form>
     </field>
   </record>
+
+  <record id="view_tmf_quote_search" model="ir.ui.view">
+    <field name="name">tmf.quote.search</field>
+    <field name="model">tmf.quote</field>
+    <field name="arch" type="xml">
+      <search string="Search Quotes">
+        <field name="tmf_id"/>
+        <field name="tmf_external_id"/>
+        <field name="partner_id"/>
+        <field name="lead_id"/>
+        <field name="sale_order_id"/>
+        <field name="category"/>
+        <field name="state"/>
+        <field name="version"/>
+        <field name="quote_date"/>
+
+        <filter string="In Progress" name="in_progress" domain="[('state', '=', 'inProgress')]"/>
+        <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+        <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+        <filter string="Accepted" name="accepted" domain="[('state', '=', 'accepted')]"/>
+        <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+        <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+        <filter string="Recent" name="recent" domain="[('quote_date', '>=', context_today())]"/>
+        <filter string="With Customer" name="with_customer" domain="[('partner_id', '!=', False)]"/>
+
+        <separator/>
+        <filter string="Group by State" name="group_state" context="{'group_by': 'state'}"/>
+        <filter string="Group by Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+        <filter string="Group by Category" name="group_category" context="{'group_by': 'category'}"/>
+        <filter string="Group by Version" name="group_version" context="{'group_by': 'version'}"/>
+        <filter string="Group by Quote Date" name="group_quote_date" context="{'group_by': 'quote_date:day'}"/>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_tmf_quote" model="ir.actions.act_window">
+    <field name="name">Quotes</field>
+    <field name="res_model">tmf.quote</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_tmf_quote_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first quote</p>
+      <p>Manage customer quotes, lifecycle state, commercial relationships, quote items, and technical payload details from this screen.</p>
+    </field>
+  </record>
+
+  <menuitem id="menu_tmf_quote_management_root"
+            name="TMF648 Quote Management"
+            parent="tmf_product_catalog.menu_tmf_root"
+            sequence="35"/>
+
+  <menuitem id="menu_tmf_quote"
+            name="Quotes"
+            parent="menu_tmf_quote_management_root"
+            action="action_tmf_quote"
+            sequence="10"/>
 </odoo>

@@ -1,17 +1,127 @@
 <odoo>
+    <record id="view_tmf_query_product_recommendation_tree" model="ir.ui.view">
+        <field name="name">tmf.query.product.recommendation.tree</field>
+        <field name="model">tmf.query.product.recommendation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="tmf_id"/>
+                <field name="partner_id" optional="show"/>
+                <field name="sale_order_id" optional="show"/>
+                <field name="product_tmpl_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'acknowledged' or state == 'inProgress'" decoration-danger="state == 'rejected'"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
     <record id="view_tmf_query_product_recommendation_form" model="ir.ui.view">
         <field name="name">tmf.query.product.recommendation.form</field>
         <field name="model">tmf.query.product.recommendation</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_title">
+                        <h1><field name="tmf_id" readonly="1"/></h1>
+                        <div class="text-muted">
+                            <field name="state"/>
+                        </div>
+                    </div>
                     <group>
-                        <field name="tmf_id"/>
-                        <field name="state"/>
-                        <field name="recommendation_item"/>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="product_tmpl_id"/>
+                        </group>
+                        <group>
+                            <field name="state"/>
+                            <field name="href"/>
+                            <field name="tmf_type"/>
+                        </group>
                     </group>
+                    <notebook>
+                        <page string="General">
+                            <group>
+                                <group>
+                                    <field name="tmf_id" readonly="1"/>
+                                    <field name="href"/>
+                                    <field name="tmf_type"/>
+                                    <field name="base_type"/>
+                                    <field name="schema_location"/>
+                                </group>
+                                <group>
+                                    <field name="partner_id"/>
+                                    <field name="sale_order_id"/>
+                                    <field name="product_tmpl_id"/>
+                                    <field name="state"/>
+                                    <field name="create_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Recommendation Context">
+                            <group>
+                                <group>
+                                    <field name="shopping_cart"/>
+                                    <field name="shopping_cart_item"/>
+                                    <field name="product_order"/>
+                                    <field name="product_order_item"/>
+                                </group>
+                                <group>
+                                    <field name="category"/>
+                                    <field name="related_party"/>
+                                    <field name="place"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Recommendation Output">
+                            <group>
+                                <field name="recommendation_item"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
+
+    <record id="view_tmf_query_product_recommendation_search" model="ir.ui.view">
+        <field name="name">tmf.query.product.recommendation.search</field>
+        <field name="model">tmf.query.product.recommendation</field>
+        <field name="arch" type="xml">
+            <search string="Search Product Recommendations">
+                <field name="tmf_id"/>
+                <field name="partner_id"/>
+                <field name="sale_order_id"/>
+                <field name="product_tmpl_id"/>
+                <field name="state"/>
+                <field name="create_date"/>
+
+                <filter string="Acknowledged" name="acknowledged" domain="[('state', '=', 'acknowledged')]"/>
+                <filter string="In Progress" name="in_progress" domain="[('state', '=', 'inProgress')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="With Partner" name="with_partner" domain="[('partner_id', '!=', False)]"/>
+                <filter string="Recent" name="recent" domain="[('create_date', '>=', context_today())]"/>
+
+                <separator/>
+                <filter string="Group by State" name="group_state" context="{'group_by': 'state'}"/>
+                <filter string="Group by Partner" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                <filter string="Group by Product" name="group_product" context="{'group_by': 'product_tmpl_id'}"/>
+                <filter string="Group by Create Date" name="group_create_date" context="{'group_by': 'create_date:day'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tmf_query_product_recommendation" model="ir.actions.act_window">
+        <field name="name">Product Recommendations</field>
+        <field name="res_model">tmf.query.product.recommendation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tmf_query_product_recommendation_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first product recommendation query</p>
+            <p>Manage recommendation queries, related parties, recommendation context, and recommendation output from this screen.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_tmf680_root" name="TMF680 Recommendation Management" parent="tmf_product_catalog.menu_tmf_root" sequence="37"/>
+    <menuitem id="menu_tmf_query_product_recommendation" name="Product Recommendations" parent="menu_tmf680_root" action="action_tmf_query_product_recommendation" sequence="10"/>
 </odoo>

@@ -6,44 +6,92 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="state" widget="statusbar"/>
+                    <field name="state" widget="statusbar" statusbar_visible="inProgress,done,terminatedWithError"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
                         <h1>
                             <field name="tmf_id" readonly="1"/>
                         </h1>
+                        <div class="text-muted">
+                            <field name="description" placeholder="Qualification summary"/>
+                        </div>
                     </div>
                     <group>
                         <group>
-                            <field name="effective_qualification_date"/>
-                            <field name="qualification_result"/>
-                            <field name="tmf_type" invisible="1"/>
+                            <field name="partner_id"/>
+                            <field name="product_tmpl_id"/>
+                            <field name="sale_order_id"/>
                         </group>
                         <group>
-                            <field name="create_date" string="Creation Date" readonly="1"/>
-                            <field name="description"/>
+                            <field name="effective_qualification_date"/>
+                            <field name="qualification_result"/>
+                            <field name="state"/>
+                            <field name="tmf_type" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
+                        <page string="General">
+                            <group>
+                                <group>
+                                    <field name="description" placeholder="Business context for this qualification"/>
+                                    <field name="effective_qualification_date"/>
+                                </group>
+                                <group>
+                                    <field name="qualification_result"/>
+                                    <field name="state"/>
+                                    <field name="create_date" string="Creation Date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Relationships">
+                            <group>
+                                <group>
+                                    <field name="partner_id"/>
+                                    <field name="product_tmpl_id"/>
+                                </group>
+                                <group>
+                                    <field name="sale_order_id"/>
+                                    <field name="tmf_type" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
                         <page string="Qualification Items">
                             <field name="item_ids">
                                 <list editable="bottom">
-                                    <field name="tmf_id"/>
-                                    <field name="product_json"/>
+                                    <field name="tmf_id" string="Item ID"/>
                                     <field name="qualification_item_result"/>
                                     <field name="state"/>
+                                    <field name="product_json" string="Product Payload"/>
                                 </list>
+                                <form string="Qualification Item">
+                                    <group>
+                                        <group>
+                                            <field name="tmf_id"/>
+                                            <field name="tmf_type"/>
+                                            <field name="qualification_item_result"/>
+                                            <field name="state"/>
+                                        </group>
+                                        <group>
+                                            <field name="product_json" string="Product Payload"/>
+                                        </group>
+                                    </group>
+                                </form>
                             </field>
                         </page>
-                        <page string="Related Parties">
-                            <field name="related_party_json"/>
+                        <page string="Technical / Payload">
+                            <group>
+                                <group>
+                                    <field name="related_party_json" string="Related Party Payload"/>
+                                </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
             </form>
         </field>
     </record>
+
     <!-- Main Model Tree -->
     <record id="view_tmf_check_poq_tree" model="ir.ui.view">
         <field name="name">tmf.check.poq.tree</field>
@@ -51,11 +99,43 @@
         <field name="arch" type="xml">
             <list>
                 <field name="tmf_id"/>
-                <field name="create_date"/>
+                <field name="partner_id" optional="show"/>
+                <field name="product_tmpl_id" optional="show"/>
+                <field name="create_date" optional="show"/>
+                <field name="effective_qualification_date"/>
+                <field name="qualification_result" widget="badge"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'inProgress'" decoration-danger="state == 'terminatedWithError'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Main Model Search -->
+    <record id="view_tmf_check_poq_search" model="ir.ui.view">
+        <field name="name">tmf.check.poq.search</field>
+        <field name="model">tmf.check.product.offering.qualification</field>
+        <field name="arch" type="xml">
+            <search string="Search Product Offering Qualifications">
+                <field name="tmf_id"/>
+                <field name="description"/>
+                <field name="partner_id"/>
+                <field name="product_tmpl_id"/>
                 <field name="effective_qualification_date"/>
                 <field name="qualification_result"/>
                 <field name="state"/>
-            </list>
+
+                <filter string="In Progress" name="in_progress" domain="[('state', '=', 'inProgress')]"/>
+                <filter string="Qualified" name="qualified" domain="[('qualification_result', '=', 'qualified')]"/>
+                <filter string="Unable To Provide" name="unable" domain="[('qualification_result', '=', 'unableToProvide')]"/>
+                <filter string="Recent" name="recent" domain="[('create_date', '>=', context_today())]"/>
+                <filter string="With Related Party" name="with_party" domain="[('partner_id', '!=', False)]"/>
+
+                <separator/>
+                <filter string="Group by State" name="group_state" context="{'group_by': 'state'}"/>
+                <filter string="Group by Result" name="group_result" context="{'group_by': 'qualification_result'}"/>
+                <filter string="Group by Qualification Date" name="group_date" context="{'group_by': 'effective_qualification_date:day'}"/>
+                <filter string="Group by Product" name="group_product" context="{'group_by': 'product_tmpl_id'}"/>
+                <filter string="Group by Related Party" name="group_partner" context="{'group_by': 'partner_id'}"/>
+            </search>
         </field>
     </record>
 
@@ -63,6 +143,11 @@
         <field name="name">Check Product Offering Qualification</field>
         <field name="res_model">tmf.check.product.offering.qualification</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tmf_check_poq_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first product offering qualification</p>
+            <p>Use this screen to review qualification requests, related parties, product context, results, and technical payloads.</p>
+        </field>
     </record>
 
     <menuitem id="menu_tmf_check_poq" name="Product Offering Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_check_poq"/>

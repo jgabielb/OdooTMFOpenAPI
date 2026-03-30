@@ -3,17 +3,32 @@
     <field name="name">Service Level Objectives</field>
     <field name="res_model">tmf.service.level.objective</field>
     <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="tmf657_slo_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first service level objective</p>
+      <p>Manage conformance targets, thresholds, tolerances, and supporting payloads for service quality objectives.</p>
+    </field>
   </record>
 
   <record id="tmf657_sls_action" model="ir.actions.act_window">
     <field name="name">Service Level Specifications</field>
     <field name="res_model">tmf.service.level.specification</field>
     <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="tmf657_sls_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first service level specification</p>
+      <p>Manage service level specifications, related objectives, and validity settings from this screen.</p>
+    </field>
   </record>
 
   <record id="tmf657_hub_action" model="ir.actions.act_window">
     <field name="name">Hub Subscriptions</field>
     <field name="res_model">tmf657.hub.subscription</field>
     <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="tmf657_hub_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Create your first TMF657 hub subscription</p>
+      <p>Manage callback endpoints, filters, and subscription headers for TMF657 event delivery.</p>
+    </field>
   </record>
 </odoo>

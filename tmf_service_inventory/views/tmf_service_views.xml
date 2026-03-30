@@ -6,22 +6,88 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="state" widget="statusbar" statusbar_visible="inactive,active,terminated"/>
+                    <field name="state" widget="statusbar" statusbar_visible="inactive,active,suspended,terminated"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
-                        <h1><field name="name"/></h1>
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Service name"/></h1>
+                        <div class="text-muted">
+                            <field name="tmf_id" readonly="1"/>
+                        </div>
                     </div>
                     <group>
                         <group>
                             <field name="partner_id"/>
                             <field name="product_specification_id"/>
+                            <field name="resource_id"/>
                         </group>
                         <group>
-                            <field name="start_date"/>
-                            <field name="tmf_id" readonly="1"/>
+                            <field name="state"/>
+                            <field name="operating_status"/>
+                            <field name="service_type"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="General">
+                            <group>
+                                <group>
+                                    <field name="description" placeholder="Business description of the service"/>
+                                    <field name="category"/>
+                                </group>
+                                <group>
+                                    <field name="is_service_enabled"/>
+                                    <field name="has_started"/>
+                                    <field name="is_stateful"/>
+                                    <field name="start_mode"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Relationships">
+                            <group>
+                                <group>
+                                    <field name="partner_id"/>
+                                    <field name="product_specification_id"/>
+                                    <field name="resource_id"/>
+                                </group>
+                                <group>
+                                    <field name="order_line_id"/>
+                                    <field name="sale_order_id" readonly="1"/>
+                                    <field name="stock_picking_id"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Lifecycle / Status">
+                            <group>
+                                <group>
+                                    <field name="state"/>
+                                    <field name="operating_status"/>
+                                    <field name="category"/>
+                                    <field name="service_type"/>
+                                </group>
+                                <group>
+                                    <field name="service_date"/>
+                                    <field name="start_date"/>
+                                    <field name="end_date"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Technical">
+                            <group>
+                                <group>
+                                    <field name="tmf_id" readonly="1"/>
+                                    <field name="is_service_enabled"/>
+                                    <field name="has_started"/>
+                                    <field name="is_stateful"/>
+                                </group>
+                                <group>
+                                    <field name="start_mode"/>
+                                    <field name="resource_id"/>
+                                    <field name="stock_picking_id"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -34,11 +100,47 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="tmf_id"/>
+                <field name="partner_id"/>
+                <field name="product_specification_id" optional="hide"/>
+                <field name="service_type" optional="show"/>
+                <field name="category" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-warning="state == 'suspended'" decoration-danger="state == 'terminated'"/>
+                <field name="operating_status" optional="show"/>
+                <field name="service_date" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Service Search -->
+    <record id="view_tmf_service_search" model="ir.ui.view">
+        <field name="name">tmf.service.search</field>
+        <field name="model">tmf.service</field>
+        <field name="arch" type="xml">
+            <search string="Search Services">
+                <field name="name"/>
+                <field name="tmf_id"/>
                 <field name="partner_id"/>
                 <field name="product_specification_id"/>
-                <field name="state" widget="badge" decoration-success="state == 'active'"/>
-                <field name="start_date"/>
-            </list>
+                <field name="service_type"/>
+                <field name="state"/>
+                <field name="operating_status"/>
+                <field name="service_date"/>
+
+                <filter string="Active" name="active" domain="[('state', '=', 'active')]"/>
+                <filter string="Inactive" name="inactive" domain="[('state', '=', 'inactive')]"/>
+                <filter string="Suspended" name="suspended" domain="[('state', '=', 'suspended')]"/>
+                <filter string="With Specification" name="with_spec" domain="[('product_specification_id', '!=', False)]"/>
+                <filter string="With Resource" name="with_resource" domain="[('resource_id', '!=', False)]"/>
+                <filter string="Recent" name="recent" domain="[('service_date', '>=', context_today())]"/>
+
+                <separator/>
+                <filter string="Group by State" name="group_state" context="{'group_by': 'state'}"/>
+                <filter string="Group by Category" name="group_category" context="{'group_by': 'category'}"/>
+                <filter string="Group by Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                <filter string="Group by Service Type" name="group_service_type" context="{'group_by': 'service_type'}"/>
+                <filter string="Group by Service Date" name="group_service_date" context="{'group_by': 'service_date:day'}"/>
+            </search>
         </field>
     </record>
 
@@ -47,6 +149,11 @@
         <field name="name">Service Inventory</field>
         <field name="res_model">tmf.service</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tmf_service_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first service inventory record</p>
+            <p>Track installed services, lifecycle state, linked customers, supporting resources, and service specifications from this screen.</p>
+        </field>
     </record>
 
     <!-- Menu Link (Links to your TMF Root Menu) -->
