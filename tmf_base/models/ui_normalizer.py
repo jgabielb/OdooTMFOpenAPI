@@ -50,6 +50,10 @@ class TMFUiNormalizer(models.AbstractModel):
         "tmf_service_activation_configuration": "assurance",
         "tmf_userinfo": "platform_identity",
         "tmf_private_optimized_binding": "platform_identity",
+        "tmf_open_gateway_operate_onboarding_ordering": "platform_identity",
+        "tmf_change_management": "assurance",
+        "tmf_service_usage_management": "assurance",
+        "tmf_work_management": "assurance",
         "tmf_iot_agent_device_management": "platform_identity",
         "tmf_iot_service_management": "platform_identity",
     }

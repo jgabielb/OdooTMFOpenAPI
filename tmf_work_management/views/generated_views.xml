@@ -48,7 +48,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_work_root" name="TMF Work Management" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_work_root" name="TMF Assurance Work Management" parent="tmf_product_catalog.menu_tmf_root"/>
     <menuitem id="menu_tmf_work" name="Work Orders" parent="menu_tmf_work_root" action="action_tmf_work"/>
 
     <record id="view_tmf_work_specification_tree" model="ir.ui.view">

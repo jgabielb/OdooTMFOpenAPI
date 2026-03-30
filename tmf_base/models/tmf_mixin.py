@@ -28,14 +28,14 @@ class TMFModelMixin(models.AbstractModel):
 
     # 2. HREF - Self-referencing URL required by TMF
     href = fields.Char(
-        string="HREF",
+        string="Resource URL",
         compute="_compute_href",
-        help="API Reference URL"
+        help="API reference URL"
     )
 
     # 3. Polymorphism (Optional but recommended)
     # TMF uses @type to distinguish objects (e.g., Individual vs Organization)
-    tmf_type = fields.Char(string="@type", compute="_compute_tmf_type")
+    tmf_type = fields.Char(string="TMF Type", compute="_compute_tmf_type")
 
     @api.depends('tmf_id')
     def _compute_href(self):

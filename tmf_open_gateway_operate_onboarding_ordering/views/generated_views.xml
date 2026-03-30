@@ -33,13 +33,13 @@
     </record>
 
     <record id="action_tmf_ogw_application" model="ir.actions.act_window">
-        <field name="name">OGW Applications</field>
+        <field name="name">Platform OGW Applications</field>
         <field name="res_model">tmf.ogw.application</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tmf_ogw_application"
-              name="OGW Applications"
+              name="Platform OGW Applications"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_ogw_application"/>
 </odoo>
