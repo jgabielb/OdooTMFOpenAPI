@@ -167,9 +167,9 @@
     <!-- ========================= -->
     <!-- Menu -->
     <!-- ========================= -->
-    <menuitem id="menu_tmf_root" name="TMF666 Billing Account Management" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_root" name="TMF666 Account Management" parent="tmf_product_catalog.menu_tmf_root"/>
     <menuitem id="menu_tmf_account"
-              name="Billing Accounts"
+              name="TMF666 Accounts"
               parent="menu_tmf_root"
               action="action_tmf_account"/>
 

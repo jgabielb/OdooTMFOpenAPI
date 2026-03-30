@@ -36,7 +36,7 @@
               sequence="50"/>
 
     <menuitem id="menu_tmf_billing_accounts"
-              name="Accounts"
+              name="Billing Accounts"
               parent="menu_tmf_billing"
               action="action_tmf_billing_account"/>
               
