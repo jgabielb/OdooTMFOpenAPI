@@ -42,5 +42,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_service_usage" name="Service Usage" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_service_usage"/>
+    <menuitem id="menu_tmf_service_usage" name="TMF Service Usage Assurance" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_service_usage"/>
 </odoo>

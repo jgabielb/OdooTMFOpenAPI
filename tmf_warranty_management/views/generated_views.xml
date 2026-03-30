@@ -48,7 +48,8 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_warranty" name="Warranty" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_warranty"/>
+    <menuitem id="menu_tmf_warranty_root" name="TMF Warranty Catalog" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_warranty" name="Warranties" parent="menu_tmf_warranty_root" action="action_tmf_warranty"/>
 
     <record id="view_tmf_warranty_specification_tree" model="ir.ui.view">
         <field name="name">tmf.warranty.specification.tree</field>
@@ -94,5 +95,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_warranty_specification" name="Warranty Specification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_warranty_specification"/>
+    <menuitem id="menu_tmf_warranty_specification" name="Warranty Specifications" parent="menu_tmf_warranty_root" action="action_tmf_warranty_specification"/>
 </odoo>

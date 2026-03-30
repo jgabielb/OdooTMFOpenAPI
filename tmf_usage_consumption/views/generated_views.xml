@@ -85,7 +85,7 @@
 
   <!-- Menus -->
   <menuitem id="menu_tmf_usage_consumption_root"
-            name="Usage Consumption (TMF677)"
+            name="TMF677 Usage Consumption Billing"
             parent="tmf_product_catalog.menu_tmf_root"
             sequence="50"/>
 

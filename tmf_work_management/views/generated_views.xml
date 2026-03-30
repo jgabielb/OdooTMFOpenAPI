@@ -48,7 +48,8 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_work" name="Work" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_work"/>
+    <menuitem id="menu_tmf_work_root" name="TMF Work Management" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_work" name="Work Orders" parent="menu_tmf_work_root" action="action_tmf_work"/>
 
     <record id="view_tmf_work_specification_tree" model="ir.ui.view">
         <field name="name">tmf.work.specification.tree</field>
@@ -95,5 +96,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_work_specification" name="Work Specification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_work_specification"/>
+    <menuitem id="menu_tmf_work_specification" name="Work Specifications" parent="menu_tmf_work_root" action="action_tmf_work_specification"/>
 </odoo>

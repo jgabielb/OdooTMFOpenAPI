@@ -70,7 +70,7 @@
     </record>
 
     <menuitem id="menu_tmf_userinfo"
-              name="User Info"
+              name="Customer User Info"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_userinfo"/>
 </odoo>

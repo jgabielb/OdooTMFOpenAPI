@@ -1,5 +1,5 @@
 <odoo>
-  <menuitem id="tmf640_root" name="TMF640" parent="tmf_product_catalog.menu_tmf_root" sequence="50"/>
+  <menuitem id="tmf640_root" name="TMF640 Service Activation &amp; Monitoring" parent="tmf_product_catalog.menu_tmf_root" sequence="50"/>
   <menuitem id="tmf640_service_menu" name="Services" parent="tmf640_root" action="tmf640_service_action"/>
   <menuitem id="tmf640_monitor_menu" name="Monitors" parent="tmf640_root" action="tmf640_monitor_action"/>
   <menuitem id="tmf640_hub_menu" name="Hubs" parent="tmf640_root" action="tmf640_hub_action"/>
