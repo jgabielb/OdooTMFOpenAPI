@@ -19,9 +19,10 @@ class TMF672UserRole(models.Model):
     user_id = fields.Many2one("res.users", string="User", ondelete="set null")
     group_id = fields.Many2one("res.groups", string="Group", ondelete="set null")
 
-    _sql_constraints = [
-        ("tmf672_user_role_tmf_id_uniq", "unique(tmf_id)", "TMF672 UserRole id must be unique."),
-    ]
+    _tmf672_user_role_tmf_id_uniq = models.Constraint(
+        "UNIQUE(tmf_id)",
+        "TMF672 UserRole id must be unique.",
+    )
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()

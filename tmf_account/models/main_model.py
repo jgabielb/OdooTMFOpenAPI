@@ -41,7 +41,7 @@ class TMFAccount(models.Model):
         ],
         required=True,
         default="PartyAccount",
-        string="@type",
+        string="Resource Type",
     )
 
     # Common fields used across the account types

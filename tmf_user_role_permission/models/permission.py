@@ -73,7 +73,10 @@ class TMF672Permission(models.Model):
     user_partner_id = fields.Many2one("res.partner", string="User Partner", ondelete="set null")
     user_id = fields.Many2one("res.users", string="User", ondelete="set null")
 
-    _sql_constraints = [("tmf672_permission_tmf_id_uniq", "unique(tmf_id)", "TMF672 Permission id must be unique.")]
+    _tmf672_permission_tmf_id_uniq = models.Constraint(
+        "UNIQUE(tmf_id)",
+        "TMF672 Permission id must be unique.",
+    )
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()

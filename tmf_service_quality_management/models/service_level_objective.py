@@ -28,9 +28,10 @@ class TMFServiceLevelObjective(models.Model):
 
     raw_json = fields.Text(string="raw payload (json)")
 
-    _sql_constraints = [
-        ("tmf_slo_id_unique", "unique(tmf_id)", "ServiceLevelObjective id must be unique."),
-    ]
+    _tmf_slo_id_unique = models.Constraint(
+        "UNIQUE(tmf_id)",
+        "ServiceLevelObjective id must be unique.",
+    )
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()

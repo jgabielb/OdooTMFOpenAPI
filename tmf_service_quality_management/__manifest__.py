@@ -6,7 +6,14 @@
     'author': 'You',
     'license': 'LGPL-3',
     'depends': ['base', 'tmf_product_catalog'],
-    'data': ['security/ir.model.access.csv', 'views/menu.xml', 'views/service_level_objective_views.xml', 'views/service_level_specification_views.xml', 'views/actions.xml', 'views/hub_views.xml'],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/menu.xml',
+        'views/service_level_objective_views.xml',
+        'views/service_level_specification_views.xml',
+        'views/hub_views.xml',
+        'views/actions.xml',
+    ],
     'application': False,
     'installable': True,
 }

@@ -30,7 +30,7 @@ class TMFQueryProductRecommendation(models.Model):
 
     # TMF core identifiers
     tmf_id = fields.Char(
-        string="ID",
+        string="TMF ID",
         required=True,
         index=True,
         default=lambda self: str(uuid.uuid4())
