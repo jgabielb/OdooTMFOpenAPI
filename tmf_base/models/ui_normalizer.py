@@ -75,6 +75,7 @@ class TMFUiNormalizer(models.AbstractModel):
         "software and compute": "inventory_resource",
         "resource software and compute": "inventory_resource",
         "tmf change management": "assurance",
+        "tmf assurance change management": "assurance",
         "tmf640": "assurance",
         "tmf640 service activation & monitoring": "assurance",
         "usage": "billing_revenue",
@@ -91,6 +92,14 @@ class TMFUiNormalizer(models.AbstractModel):
         "tmf warranty catalog": "catalog",
         "work": "assurance",
         "tmf work management": "assurance",
+        "tmf assurance work management": "assurance",
+    }
+    _XMLID_DOMAIN_MAP = {
+        "tmf_private_optimized_binding.menu_tmf_cloud_application": "platform_identity",
+        "tmf_open_gateway_operate_onboarding_ordering.menu_tmf_ogw_application": "platform_identity",
+        "tmf_change_management.menu_tmf_change_management_root": "assurance",
+        "tmf_service_usage_management.menu_tmf_service_usage": "assurance",
+        "tmf_work_management.menu_tmf_work_root": "assurance",
     }
 
     @api.model
@@ -314,7 +323,12 @@ class TMFUiNormalizer(models.AbstractModel):
         )
 
     @api.model
-    def _guess_menu_domain_key(self, menu_name, module_name=None):
+    def _guess_menu_domain_key(self, menu_name, module_name=None, xmlid_name=None):
+        if module_name and xmlid_name:
+            xmlid = f"{module_name}.{xmlid_name}"
+            if xmlid in self._XMLID_DOMAIN_MAP:
+                return self._XMLID_DOMAIN_MAP[xmlid]
+
         if module_name and module_name in self._MODULE_DOMAIN_MAP:
             return self._MODULE_DOMAIN_MAP[module_name]
 
@@ -402,6 +416,21 @@ class TMFUiNormalizer(models.AbstractModel):
         return "other"
 
     @api.model
+    def _apply_explicit_menu_routes(self, buckets):
+        moved = 0
+        for xmlid, domain_key in self._XMLID_DOMAIN_MAP.items():
+            menu = self.env.ref(xmlid, raise_if_not_found=False)
+            if not menu or menu._name != "ir.ui.menu":
+                continue
+            menu = menu.sudo()
+            target = (buckets.get(domain_key) or buckets.get("other"))
+            target = target.sudo() if target else target
+            if target and menu.parent_id.id != target.id:
+                menu.write({"parent_id": target.id})
+                moved += 1
+        return moved
+
+    @api.model
     def _group_tmf_menus(self):
         root = self._get_tmf_root_menu()
         if not root:
@@ -419,6 +448,7 @@ class TMFUiNormalizer(models.AbstractModel):
         )
         tmf_menu_ids = {rec.res_id for rec in tmf_menu_imd if rec.res_id}
         menu_module_map = {rec.res_id: rec.module for rec in tmf_menu_imd if rec.res_id and rec.module}
+        menu_xmlid_name_map = {rec.res_id: rec.name for rec in tmf_menu_imd if rec.res_id and rec.name}
         if not tmf_menu_ids:
             return
 
@@ -439,11 +469,17 @@ class TMFUiNormalizer(models.AbstractModel):
             if menu.id not in tmf_menu_ids:
                 continue
 
-            key = self._guess_menu_domain_key(menu.name, menu_module_map.get(menu.id))
+            key = self._guess_menu_domain_key(
+                menu.name,
+                menu_module_map.get(menu.id),
+                menu_xmlid_name_map.get(menu.id),
+            )
             target = buckets.get(key) or buckets["other"]
             if menu.parent_id.id != target.id:
                 menu.write({"parent_id": target.id})
                 moved += 1
+
+        moved += self._apply_explicit_menu_routes(buckets)
 
         _logger.info("TMF menu domain grouping completed: %s menus moved", moved)
 
