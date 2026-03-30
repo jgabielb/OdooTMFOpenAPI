@@ -75,7 +75,7 @@
     </record>
 
     <menuitem id="menu_tmf_entity_association"
-              name="Association"
+              name="Resource Association"
               parent="tmf_product_catalog.menu_tmf_root"
               action="action_tmf_entity_association"/>
 </odoo>
