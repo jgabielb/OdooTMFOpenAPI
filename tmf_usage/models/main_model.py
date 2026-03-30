@@ -23,7 +23,7 @@ class TMFUsageCharacteristic(models.Model):
 
     usage_id = fields.Many2one("tmf.usage", required=True, ondelete="cascade")
     name = fields.Char(required=True)
-    value_type = fields.Char(string="valueType")
+    value_type = fields.Char(string="Value Type")
     value = fields.Char(string="value")
     # (Optional) characteristicRelationship omitted for now; can be added if you need.
 
@@ -48,11 +48,11 @@ class TMFUsageRelatedParty(models.Model):
     _inherit = ["tmf.model.mixin"]
 
     usage_id = fields.Many2one("tmf.usage", required=True, ondelete="cascade")
-    party_id = fields.Char(string="id")  # TMF party id
+    party_id = fields.Char(string="TMF ID")  # TMF party id
     href = fields.Char()
     name = fields.Char()
     role = fields.Char()
-    referred_type = fields.Char(string="@referredType")
+    referred_type = fields.Char(string="Referred Type")
 
     def _get_tmf_api_path(self):
         return "/tmf-api/usageManagement/v4/usage"
@@ -81,12 +81,12 @@ class TMFRatedProductUsage(models.Model):
     usage_id = fields.Many2one("tmf.usage", required=True, ondelete="cascade")
 
     # minimal set that is commonly used; extend as your CTK requires
-    usage_rating_tag = fields.Char(string="usageRatingTag")
-    rating_date = fields.Datetime(string="ratingDate")
-    is_billed = fields.Boolean(string="isBilled")
-    tax_included_rating_amount = fields.Float(string="taxIncludedRatingAmount")
-    tax_excluded_rating_amount = fields.Float(string="taxExcludedRatingAmount")
-    currency_code = fields.Char(string="currencyCode")
+    usage_rating_tag = fields.Char(string="Usage Rating Tag")
+    rating_date = fields.Datetime(string="Rating Date")
+    is_billed = fields.Boolean(string="Is Billed")
+    tax_included_rating_amount = fields.Float(string="Tax Included Rating Amount")
+    tax_excluded_rating_amount = fields.Float(string="Tax Excluded Rating Amount")
+    currency_code = fields.Char(string="Currency Code")
 
     def _get_tmf_api_path(self):
         return "/tmf-api/usageManagement/v4/usage"
@@ -114,9 +114,9 @@ class TMFUsageSpecification(models.Model):
 
     name = fields.Char(required=True)
     description = fields.Char()
-    is_bundle = fields.Boolean(string="isBundle", default=False)
-    last_update = fields.Datetime(string="lastUpdate")
-    lifecycle_status = fields.Char(string="lifecycleStatus")
+    is_bundle = fields.Boolean(string="Is Bundle", default=False)
+    last_update = fields.Datetime(string="Last Update")
+    lifecycle_status = fields.Char(string="Lifecycle Status")
     version = fields.Char()
     product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
@@ -177,9 +177,9 @@ class TMFUsage(models.Model):
     _inherit = ["tmf.model.mixin"]
 
     description = fields.Char(string="description")
-    usage_date = fields.Datetime(string="usageDate")
-    usage_type = fields.Char(string="usageType")
-    status = fields.Char(string="status")
+    usage_date = fields.Datetime(string="Usage Date")
+    usage_type = fields.Char(string="Usage Type")
+    status = fields.Char(string="Status")
 
     usage_specification_id = fields.Many2one(
         "tmf.usage.specification",
