@@ -8,7 +8,7 @@
   <menuitem id="tmf657_sls_menu" name="Service Level Specifications"
             parent="tmf657_root_menu" action="tmf657_sls_action" sequence="20"/>
 
-  <menuitem id="tmf657_hub_menu" name="Hub Subscriptions"
+  <menuitem id="tmf657_hub_menu" name="TMF657 Hub Subscriptions"
             parent="tmf657_root_menu" action="tmf657_hub_action" sequence="30"/>
 
 </odoo>
