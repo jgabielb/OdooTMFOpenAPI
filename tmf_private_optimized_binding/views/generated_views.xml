@@ -32,7 +32,7 @@
     </record>
 
     <record id="action_tmf_cloud_application" model="ir.actions.act_window">
-        <field name="name">Cloud Application</field>
+        <field name="name">Platform Cloud Application</field>
         <field name="res_model">tmf.cloud.application</field>
         <field name="view_mode">list,form</field>
     </record>
@@ -110,7 +110,7 @@
     </record>
 
     <record id="action_tmf_user_equipment" model="ir.actions.act_window">
-        <field name="name">User Equipment</field>
+        <field name="name">Resource User Equipment</field>
         <field name="res_model">tmf.user.equipment</field>
         <field name="view_mode">list,form</field>
     </record>
@@ -148,7 +148,7 @@
     </record>
 
     <record id="action_tmf_user_equipment_specification" model="ir.actions.act_window">
-        <field name="name">User Equipment Spec</field>
+        <field name="name">Resource User Equipment Specification</field>
         <field name="res_model">tmf.user.equipment.specification</field>
         <field name="view_mode">list,form</field>
     </record>
