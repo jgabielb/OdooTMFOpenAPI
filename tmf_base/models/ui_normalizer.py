@@ -32,6 +32,7 @@ class TMFUiNormalizer(models.AbstractModel):
         ("billing_revenue", "Billing & Revenue"),
         ("testing_quality", "Testing & Quality"),
         ("platform_identity", "Platform & Identity"),
+        ("webhooks_events", "Webhooks & Events"),
         ("other", "Other"),
     ]
     _MODULE_DOMAIN_MAP = {
@@ -44,12 +45,32 @@ class TMFUiNormalizer(models.AbstractModel):
         "tmf_quote_management": "orders_sales",
         "tmf_product_ordering": "orders_sales",
         "tmf_shopping_cart": "orders_sales",
-        "tmf_base": "platform_identity",
+        "tmf_base": "webhooks_events",
+        "tmf_event": "webhooks_events",
         "tmf_service_activation_configuration": "assurance",
         "tmf_userinfo": "platform_identity",
         "tmf_private_optimized_binding": "platform_identity",
         "tmf_iot_agent_device_management": "platform_identity",
         "tmf_iot_service_management": "platform_identity",
+    }
+    _EXACT_MENU_DOMAIN_MAP = {
+        "account management": "billing_revenue",
+        "association": "inventory_resource",
+        "cloud application": "platform_identity",
+        "ogw applications": "platform_identity",
+        "products": "catalog",
+        "recommendation management": "orders_sales",
+        "service usage": "assurance",
+        "software and compute": "inventory_resource",
+        "tmf change management": "assurance",
+        "tmf640": "assurance",
+        "usage": "billing_revenue",
+        "usage consumption": "billing_revenue",
+        "user equipment": "inventory_resource",
+        "user equipment spec": "inventory_resource",
+        "user info": "customer_party",
+        "warranty": "catalog",
+        "work": "assurance",
     }
 
     @api.model
@@ -277,14 +298,17 @@ class TMFUiNormalizer(models.AbstractModel):
         if module_name and module_name in self._MODULE_DOMAIN_MAP:
             return self._MODULE_DOMAIN_MAP[module_name]
 
-        name = (menu_name or "").lower()
+        name = (menu_name or "").lower().strip()
+        if name in self._EXACT_MENU_DOMAIN_MAP:
+            return self._EXACT_MENU_DOMAIN_MAP[name]
+
         compact = re.sub(r"[^a-z0-9]", "", name)
 
-        if any(k in name for k in ["catalog", "specification", "offering", "product usage"]):
+        if any(k in name for k in ["catalog", "specification", "offering", "product usage", "product", "warranty"]):
             return "catalog"
-        if any(k in name for k in ["customer", "party", "agreement", "role", "interaction", "privacy"]):
+        if any(k in name for k in ["customer", "party", "agreement", "role", "interaction", "privacy", "user info"]):
             return "customer_party"
-        if any(k in name for k in ["order", "quote", "sales", "shopping cart", "promotion", "appointment"]):
+        if any(k in name for k in ["order", "quote", "sales", "shopping cart", "promotion", "appointment", "recommendation"]):
             return "orders_sales"
         if any(
             k in name
@@ -299,6 +323,9 @@ class TMFUiNormalizer(models.AbstractModel):
                 "entity",
                 "reservation",
                 "pool",
+                "association",
+                "software and compute",
+                "user equipment",
             ]
         ):
             return "inventory_resource"
@@ -314,10 +341,14 @@ class TMFUiNormalizer(models.AbstractModel):
                 "qualification",
                 "performance",
                 "monitor",
+                "change management",
+                "work",
+                "service usage",
+                "tmf640",
             ]
         ):
             return "assurance"
-        if any(k in name for k in ["payment", "bill", "billing", "cost", "revenue", "dunning", "balance", "cdr"]):
+        if any(k in name for k in ["payment", "bill", "billing", "cost", "revenue", "dunning", "balance", "cdr", "account", "usage", "consumption"]):
             return "billing_revenue"
         if any(
             k in name
@@ -331,6 +362,8 @@ class TMFUiNormalizer(models.AbstractModel):
                 "permission",
                 "userinfo",
                 "open gateway",
+                "ogw",
+                "applications",
                 "intent",
                 "ai",
                 "process flow",
@@ -338,9 +371,12 @@ class TMFUiNormalizer(models.AbstractModel):
                 "self care",
                 "network as a service",
                 "installed services",
+                "cloud application",
             ]
         ):
             return "platform_identity"
+        if any(k in name for k in ["event", "webhook", "hub subscription", "tmf webhook"]):
+            return "webhooks_events"
         if any(k in compact for k in ["iot", "opengateway", "5g", "dcs5g"]):
             return "platform_identity"
         return "other"
