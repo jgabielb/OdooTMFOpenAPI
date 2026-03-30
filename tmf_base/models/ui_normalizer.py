@@ -34,6 +34,23 @@ class TMFUiNormalizer(models.AbstractModel):
         ("platform_identity", "Platform & Identity"),
         ("other", "Other"),
     ]
+    _MODULE_DOMAIN_MAP = {
+        "tmf_account": "billing_revenue",
+        "tmf_customer_bill_management": "billing_revenue",
+        "tmf_prepay_balance_management": "billing_revenue",
+        "tmf_usage": "billing_revenue",
+        "tmf_usage_consumption": "billing_revenue",
+        "tmf_recommendation_management": "orders_sales",
+        "tmf_quote_management": "orders_sales",
+        "tmf_product_ordering": "orders_sales",
+        "tmf_shopping_cart": "orders_sales",
+        "tmf_base": "platform_identity",
+        "tmf_service_activation_configuration": "assurance",
+        "tmf_userinfo": "platform_identity",
+        "tmf_private_optimized_binding": "platform_identity",
+        "tmf_iot_agent_device_management": "platform_identity",
+        "tmf_iot_service_management": "platform_identity",
+    }
 
     @api.model
     def _normalize_label(self, label):
@@ -256,7 +273,10 @@ class TMFUiNormalizer(models.AbstractModel):
         )
 
     @api.model
-    def _guess_menu_domain_key(self, menu_name):
+    def _guess_menu_domain_key(self, menu_name, module_name=None):
+        if module_name and module_name in self._MODULE_DOMAIN_MAP:
+            return self._MODULE_DOMAIN_MAP[module_name]
+
         name = (menu_name or "").lower()
         compact = re.sub(r"[^a-z0-9]", "", name)
 
@@ -342,6 +362,7 @@ class TMFUiNormalizer(models.AbstractModel):
             ]
         )
         tmf_menu_ids = {rec.res_id for rec in tmf_menu_imd if rec.res_id}
+        menu_module_map = {rec.res_id: rec.module for rec in tmf_menu_imd if rec.res_id and rec.module}
         if not tmf_menu_ids:
             return
 
@@ -362,7 +383,7 @@ class TMFUiNormalizer(models.AbstractModel):
             if menu.id not in tmf_menu_ids:
                 continue
 
-            key = self._guess_menu_domain_key(menu.name)
+            key = self._guess_menu_domain_key(menu.name, menu_module_map.get(menu.id))
             target = buckets.get(key) or buckets["other"]
             if menu.parent_id.id != target.id:
                 menu.write({"parent_id": target.id})
