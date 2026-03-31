@@ -8,7 +8,7 @@
             <field name="model">tmf.hub.subscription</field>
             <field name="arch" type="xml">
                 <!-- list ✅ (tree ❌ in v19) -->
-                <list string="TMF Hub Subscriptions">
+                <list string="Platform Hub Subscriptions">
                     <field name="name"/>
                     <field name="api_name"/>
                     <field name="callback"/>
@@ -26,7 +26,7 @@
             <field name="name">tmf.hub.subscription.form</field>
             <field name="model">tmf.hub.subscription</field>
             <field name="arch" type="xml">
-                <form string="TMF Hub Subscription">
+                <form string="Platform Hub Subscription">
                     <sheet>
                         <group>
                             <field name="name"/>
@@ -44,11 +44,11 @@
 
         <!-- Action -->
         <record id="action_tmf_hub_subscription" model="ir.actions.act_window">
-            <field name="name">TMF Hub Subscriptions</field>
+            <field name="name">Platform Hub Subscriptions</field>
             <field name="res_model">tmf.hub.subscription</field>
             <field name="view_mode">list,form</field>
             <field name="help" type="html">
-                <p>Manage TMF API hub subscriptions (callback, query, status).</p>
+                <p>Manage TMF API platform-level hub subscriptions (callback, query, status).</p>
             </field>
         </record>
 
@@ -65,7 +65,7 @@
                   groups="base.group_system"/>
 
         <menuitem id="menu_tmf_hub_subscription"
-                  name="Subscriptions"
+                  name="Platform Hub Subscriptions"
                   parent="menu_tmf_hub_root"
                   action="action_tmf_hub_subscription"
                   sequence="10"
