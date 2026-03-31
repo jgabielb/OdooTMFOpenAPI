@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+
+    <!--
+      Expose TMF Party fields on native Contacts (res.partner).
+      Admin-only to avoid clutter for normal users.
+    -->
+
+    <record id="view_res_partner_form_tmf_party" model="ir.ui.view">
+      <field name="name">res.partner.form.tmf.party</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="arch" type="xml">
+
+        <!-- Add a TMF group near the top of the form (admin-only via groups attr) -->
+        <xpath expr="//sheet/group" position="before">
+          <group string="TMF" groups="base.group_system">
+            <group>
+              <field name="tmf_id" readonly="1"/>
+              <field name="tmf_managed"/>
+              <field name="tmf_status"/>
+            </group>
+            <group>
+              <field name="tmf_given_name"/>
+              <field name="tmf_family_name"/>
+            </group>
+          </group>
+        </xpath>
+
+      </field>
+    </record>
+
+    <record id="view_res_partner_tree_tmf_party" model="ir.ui.view">
+      <field name="name">res.partner.tree.tmf.party</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_tree"/>
+      <field name="arch" type="xml">
+        <xpath expr="//list/field[@name='complete_name']" position="after">
+          <field name="tmf_id" optional="hide" groups="base.group_system"/>
+          <field name="tmf_managed" optional="hide" groups="base.group_system"/>
+          <field name="tmf_status" optional="hide" groups="base.group_system"/>
+        </xpath>
+      </field>
+    </record>
+
+  </data>
+</odoo>

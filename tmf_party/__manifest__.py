@@ -13,6 +13,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/generated_views.xml',
+        'views/res_partner_tmf_views.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',
