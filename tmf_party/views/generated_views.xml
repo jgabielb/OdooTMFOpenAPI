@@ -28,14 +28,29 @@
     </field>
   </record>
 
-  <record id="action_tmf_party" model="ir.actions.act_window">
-    <field name="name">Party</field>
-    <field name="res_model">tmf.party</field>
+  <!--
+    NOTE:
+    TMF632 PartyManagement is implemented on top of Odoo native Contacts (res.partner)
+    via tmf_party/models/res_partner.py.
+
+    This UI entry is a convenience shortcut so users can browse TMF-managed parties
+    in the GUI without having to hunt in Contacts.
+  -->
+  <record id="action_tmf_party_res_partner" model="ir.actions.act_window">
+    <field name="name">Party Management (TMF632)</field>
+    <field name="res_model">res.partner</field>
     <field name="view_mode">list,form</field>
+    <field name="domain">[("tmf_managed","=",True)]</field>
+    <field name="context">{"search_default_tmf_managed": 1}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">No TMF-managed parties yet</p>
+      <p>TMF632 parties are stored as Contacts (res.partner). This view shows only TMF-managed records.</p>
+    </field>
   </record>
 
   <menuitem id="menu_tmf_party"
-            name="Party"
-            parent="base.menu_custom"
-            action="action_tmf_party"/>
+            name="Party Management (TMF632)"
+            parent="tmf_product_catalog.menu_tmf_root"
+            action="action_tmf_party_res_partner"
+            sequence="10"/>
 </odoo>
