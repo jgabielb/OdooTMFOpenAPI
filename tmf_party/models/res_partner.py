@@ -17,6 +17,10 @@ class ResPartner(models.Model):
     # Common TMF status (examples in user guide include initialized/validated)
     tmf_managed = fields.Boolean(string="TMF Managed Party", default=False, index=True)
 
+    # Document / identity key (used to link Party/Customer to a stable CRM contact)
+    tmf_document_type = fields.Char(string="Document Type", index=True)
+    tmf_document_number = fields.Char(string="Document Number", index=True)
+
     tmf_status = fields.Selection([
         ('initialized', 'Initialized'),
         ('validated', 'Validated'),

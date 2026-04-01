@@ -20,6 +20,8 @@
               <field name="tmf_id" readonly="1"/>
               <field name="tmf_managed"/>
               <field name="tmf_status"/>
+              <field name="tmf_document_type"/>
+              <field name="tmf_document_number"/>
             </group>
             <group>
               <field name="tmf_given_name"/>

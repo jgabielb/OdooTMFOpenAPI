@@ -1,6 +1,9 @@
 from odoo import http
 from odoo.http import request
 from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+import logging
+
+_logger = logging.getLogger(__name__)
 
 TMF_BASE = "/tmf-api/partyManagement/v5"
 
@@ -20,6 +23,13 @@ class TMFPartyController(TMFBaseController):
             domain.append(('tmf_family_name', 'ilike', params['familyName']))
         if params.get('status'):
             domain.append(('tmf_status', '=', params['status']))
+
+        # Document-based filters (HTTP-only verification support)
+        if params.get('documentNumber'):
+            domain.append(('tmf_document_number', '=', str(params['documentNumber']).strip()))
+        if params.get('documentType'):
+            domain.append(('tmf_document_type', '=', str(params['documentType']).strip()))
+
         return domain
 
     def _partner_domain_for_org(self, params):
@@ -28,6 +38,13 @@ class TMFPartyController(TMFBaseController):
             domain.append(('name', 'ilike', params['name']))
         if params.get('status'):
             domain.append(('tmf_status', '=', params['status']))
+
+        # Document-based filters (HTTP-only verification support)
+        if params.get('documentNumber'):
+            domain.append(('tmf_document_number', '=', str(params['documentNumber']).strip()))
+        if params.get('documentType'):
+            domain.append(('tmf_document_type', '=', str(params['documentType']).strip()))
+
         return domain
 
     def _find_individual(self, tmf_id):
@@ -72,6 +89,22 @@ class TMFPartyController(TMFBaseController):
         if payload.get('@type') is None:
             return self._error(400, "Bad Request", "Missing mandatory field: @type")
 
+        Partner = request.env['res.partner'].sudo()
+
+        # Document-based matching (user preference: document is the primary key)
+        doc = payload.get('document') if isinstance(payload.get('document'), dict) else {}
+        doc_number = (doc.get('number') or doc.get('documentNumber') or '').strip()
+        doc_type = (doc.get('type') or doc.get('documentType') or '').strip()
+
+        partner = Partner
+        if doc_number:
+            dom = [('tmf_document_number', '=', doc_number), ('is_company', '=', False)]
+            if doc_type:
+                dom.append(('tmf_document_type', '=', doc_type))
+            _logger.info("TMF632 create_individual document match: dom=%s", dom)
+            partner = Partner.search(dom, limit=1)
+            _logger.info("TMF632 create_individual document match: found=%s", partner.id if partner else None)
+
         vals = {
             'is_company': False,
             'tmf_managed': True,
@@ -80,8 +113,16 @@ class TMFPartyController(TMFBaseController):
             'name': f"{payload.get('givenName')} {payload.get('familyName')}",
             'tmf_status': payload.get('status') or 'initialized',
         }
+        if doc_number:
+            vals['tmf_document_number'] = doc_number
+        if doc_type:
+            vals['tmf_document_type'] = doc_type
 
-        partner = request.env['res.partner'].sudo().create(vals)
+        if partner and partner.exists():
+            # Reuse existing CRM contact by document
+            partner.write(vals)
+        else:
+            partner = Partner.create(vals)
         body = partner.to_tmf_json()
         return self._json(body, status=201, headers=[('Location', body.get('href', ''))])
 
@@ -171,13 +212,37 @@ class TMFPartyController(TMFBaseController):
         if not payload.get('name'):
             return self._error(400, "Bad Request", "Missing mandatory field: name")
 
+        Partner = request.env['res.partner'].sudo()
+
+        # Document-based matching (optional for organizations too)
+        doc = payload.get('document') if isinstance(payload.get('document'), dict) else {}
+        doc_number = (doc.get('number') or doc.get('documentNumber') or '').strip()
+        doc_type = (doc.get('type') or doc.get('documentType') or '').strip()
+
+        partner = Partner
+        if doc_number:
+            dom = [('tmf_document_number', '=', doc_number), ('is_company', '=', True)]
+            if doc_type:
+                dom.append(('tmf_document_type', '=', doc_type))
+            _logger.info("TMF632 create_organization document match: dom=%s", dom)
+            partner = Partner.search(dom, limit=1)
+            _logger.info("TMF632 create_organization document match: found=%s", partner.id if partner else None)
+
         vals = {
             'is_company': True,
             'tmf_managed': True,
             'name': payload.get('name'),
             'tmf_status': payload.get('status') or 'initialized',
         }
-        partner = request.env['res.partner'].sudo().create(vals)
+        if doc_number:
+            vals['tmf_document_number'] = doc_number
+        if doc_type:
+            vals['tmf_document_type'] = doc_type
+
+        if partner and partner.exists():
+            partner.write(vals)
+        else:
+            partner = Partner.create(vals)
         body = partner.to_tmf_json()
         return self._json(body, status=201, headers=[('Location', body.get('href', ''))])
 
