@@ -175,8 +175,6 @@ class TMFGeographicAddressController(TMFBaseController):
             ("address_id", "=", addr.id),
             ("tmf_id", "=", sub_id),
         ], limit=1)
-        if not rec and addr.sub_address_ids:
-            rec = addr.sub_address_ids[0]
         if not rec:
             return self._error(404, "NOT_FOUND", "GeographicSubAddress not found")
 
