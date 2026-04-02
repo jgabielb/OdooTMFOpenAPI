@@ -1,7 +1,8 @@
-from odoo import http, fields
-from odoo.http import request
 import json
 import logging
+
+from odoo import http, fields
+from odoo.http import request
 
 from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 
@@ -17,12 +18,6 @@ class TMFOrderingController(TMFBaseController):
     }
 
     # ---------- helpers ----------
-
-    def _error(self, code, reason, message):
-        return self._json(
-            {"code": str(code), "reason": reason, "message": message, "status": str(code), "@type": "Error"},
-            status=code,
-        )
 
     def _find_order(self, id_value):
         Order = request.env['sale.order'].sudo()
@@ -150,12 +145,9 @@ class TMFOrderingController(TMFBaseController):
         return base
 
     def _listener_ok(self):
-        try:
-            payload = json.loads(request.httprequest.data or b"{}")
-        except Exception:
-            payload = None
+        payload = self._parse_json_body()
         if not isinstance(payload, dict):
-            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
         return request.make_response("", status=201)
 
     # =======================================================
@@ -166,9 +158,8 @@ class TMFOrderingController(TMFBaseController):
         '/tmf-api/productOrderingManagement/v5/productOrder/',
     ], type='http', auth='public', methods=['GET'], csrf=False)
     def get_orders(self, **params):
-        offset = int(params.get('offset', 0))
-        limit = int(params.get('limit', 20))
         domain = []
+        limit, offset = self._paginate_params(params)
 
         state = params.get('state')
         if state:
@@ -180,9 +171,15 @@ class TMFOrderingController(TMFBaseController):
                 return self._json([])
 
         orders = request.env['sale.order'].sudo().search(domain, offset=offset, limit=limit, order='id desc')
-        data = [o.to_tmf_json() for o in orders]
-        data = self._select_fields_list(data, params.get('fields'))
-        return self._json(data)
+        data = self._select_fields_list([o.to_tmf_json() for o in orders], params.get('fields'))
+        total = request.env['sale.order'].sudo().search_count(domain)
+        return self._json(
+            data,
+            headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(data))),
+            ],
+        )
 
     # =======================================================
     # POST: Create Order
@@ -193,7 +190,9 @@ class TMFOrderingController(TMFBaseController):
     ], type='http', auth='public', methods=['POST'], csrf=False)
     def create_order(self, **params):
         try:
-            body = json.loads(request.httprequest.data or b"{}")
+            body = self._parse_json_body()
+            if not isinstance(body, dict):
+                return self._error(400, "InvalidRequest", "Invalid JSON body")
             quote = self._find_quote_from_body(body)
 
             partner = None
@@ -209,7 +208,7 @@ class TMFOrderingController(TMFBaseController):
             if not partner:
                 partner = self._get_fallback_partner()
             if not partner:
-                return self._error(500, "NO_PARTNER", "No partner available to create the order")
+                return self._error(500, "InternalError", "No partner available to create the order")
 
             order = request.env['sale.order'].sudo().create({
                 'partner_id': partner.id,
@@ -256,7 +255,7 @@ class TMFOrderingController(TMFBaseController):
 
         except Exception as e:
             _logger.exception("TMF622 POST /productOrder failed")
-            return self._error(500, "Internal Server Error", str(e))
+            return self._error(500, "InternalError", str(e))
 
     # =======================================================
     # GET: Retrieve by id
@@ -266,9 +265,10 @@ class TMFOrderingController(TMFBaseController):
         '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
     ], type='http', auth='public', methods=['GET'], csrf=False)
     def get_order_by_id(self, id, **params):
+        id = self._normalize_tmf_id(id)
         order = self._find_order(id)
         if not order:
-            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
+            return self._error(404, "NotFound", f"ProductOrder {id} not found")
         data = self._select_fields(order.to_tmf_json(), params.get('fields'))
         return self._json(data)
 
@@ -280,11 +280,14 @@ class TMFOrderingController(TMFBaseController):
         '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
     ], type='http', auth='public', methods=['PATCH'], csrf=False)
     def patch_product_order(self, id, **params):
+        id = self._normalize_tmf_id(id)
         order = self._find_order(id)
         if not order:
-            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
+            return self._error(404, "NotFound", f"ProductOrder {id} not found")
         try:
-            body = json.loads(request.httprequest.data or b"{}")
+            body = self._parse_json_body()
+            if not isinstance(body, dict):
+                return self._error(400, "InvalidRequest", "Invalid JSON body")
             vals = {}
             if 'description' in body:
                 vals['description'] = body['description']
@@ -292,16 +295,17 @@ class TMFOrderingController(TMFBaseController):
                 order.write(vals)
             return self._json(order.to_tmf_json())
         except Exception as e:
-            return self._error(400, "BAD_REQUEST", str(e))
+            return self._error(400, "InvalidRequest", str(e))
 
     @http.route([
         '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>',
         '/tmf-api/productOrderingManagement/v5/productOrder/<string:id>/',
     ], type='http', auth='public', methods=['DELETE'], csrf=False)
     def delete_product_order(self, id, **params):
+        id = self._normalize_tmf_id(id)
         order = self._find_order(id)
         if not order:
-            return self._error(404, "NOT_FOUND", f"ProductOrder {id} not found")
+            return self._error(404, "NotFound", f"ProductOrder {id} not found")
         order.unlink()
         return request.make_response('', status=204)
 
@@ -314,17 +318,19 @@ class TMFOrderingController(TMFBaseController):
     ], type='http', auth='public', methods=['POST'], csrf=False)
     def cancel_product_order_collection(self, **params):
         try:
-            data = json.loads(request.httprequest.data or b"{}")
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "InvalidRequest", "Invalid JSON body")
 
             po_ref = data.get('productOrder') or {}
             po_id = po_ref.get('id')
             if not po_id:
-                return self._error(400, "BAD_REQUEST", "productOrder.id is required")
+                return self._error(400, "MissingMandatoryAttribute", "productOrder.id is required")
 
             Order = request.env['sale.order'].sudo()
             order = Order.browse(int(po_id)) if str(po_id).isdigit() else Order.search([('tmf_id', '=', str(po_id))], limit=1)
             if not order:
-                return self._error(404, "NOT_FOUND", f"ProductOrder {po_id} not found")
+                return self._error(404, "NotFound", f"ProductOrder {po_id} not found")
 
             Cancel = request.env['tmf.cancel.product.order'].sudo()
             cancel_rec = Cancel.create({
@@ -339,7 +345,7 @@ class TMFOrderingController(TMFBaseController):
 
         except Exception as e:
             _logger.exception("CancelProductOrder POST failed")
-            return self._error(400, "BAD_REQUEST", str(e))
+            return self._error(400, "InvalidRequest", str(e))
 
     @http.route([
         '/tmf-api/productOrderingManagement/v5/cancelProductOrder',
@@ -350,22 +356,22 @@ class TMFOrderingController(TMFBaseController):
     def get_cancel_product_orders(self, id=None, **params):
         CancelModel = request.env['tmf.cancel.product.order'].sudo()
         if id:
+            id = self._normalize_tmf_id(id)
             cancel_rec = CancelModel.browse(int(id)) if id.isdigit() else CancelModel.search([('tmf_id', '=', id)], limit=1)
             if not cancel_rec or not cancel_rec.exists():
-                return self._error(404, "NOT_FOUND", f"CancelProductOrder {id} not found")
+                return self._error(404, "NotFound", f"CancelProductOrder {id} not found")
             return self._json(cancel_rec.to_tmf_json())
         recs = CancelModel.search([], limit=int(params.get('limit', 20)))
         return self._json([r.to_tmf_json() for r in recs])
 
     @http.route('/tmf-api/productOrderingManagement/v5/hub', type='http', auth='public', methods=['POST'], csrf=False)
     def register_listener(self, **params):
-        try:
-            data = json.loads(request.httprequest.data or b"{}")
-        except Exception:
-            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        data = self._parse_json_body()
+        if not isinstance(data, dict):
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
         callback = data.get("callback")
         if not callback:
-            return self._error(400, "BAD_REQUEST", "Missing mandatory attribute: callback")
+            return self._error(400, "MissingMandatoryAttribute", "Missing mandatory attribute: callback")
         rec = request.env["tmf.hub.subscription"].sudo().create({
             "name": f"tmf622-product-order-{callback}",
             "api_name": "productOrder",
@@ -380,7 +386,7 @@ class TMFOrderingController(TMFBaseController):
     def unregister_listener(self, sid, **params):
         rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
         if not rec or not rec.exists() or rec.api_name != "productOrder":
-            return self._error(404, "NOT_FOUND", f"Hub subscription {sid} not found")
+            return self._error(404, "NotFound", f"Hub subscription {sid} not found")
         rec.unlink()
         return request.make_response("", status=204)
 
