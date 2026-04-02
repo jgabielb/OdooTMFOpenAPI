@@ -25,15 +25,8 @@ RESOURCE = "product"
 BASE_PATH = f"{API_BASE}/{RESOURCE}"
 
 
-def _apply_fields_filter(obj: dict, fields_param):
-    if not fields_param:
-        return obj
-    wanted = {f.strip() for f in str(fields_param).split(",") if f.strip()}
-    if not wanted:
-        return obj
-    # Always keep mandatory identifiers for CTK
-    keep = wanted.union({"id", "href", "@type"})
-    return {k: v for k, v in obj.items() if k in keep}
+# NOTE: field projection is handled by TMFBaseController._select_fields/_select_fields_list
+# to ensure consistent behavior across all standardized controllers.
 
 
 def _as_iso_string(v):
@@ -194,7 +187,7 @@ class TMF637ProductInventoryController(TMFBaseController):
             return self._error(404, "NotFound", f"Product '{tmf_id}' not found")
 
         data = _normalize_product_response(rec, rec.to_tmf_json())
-        return self._json(_apply_fields_filter(data, fields_param), status=200)
+        return self._json(self._select_fields(data, fields_param), status=200)
 
     # -------------------------
     # GET /product
@@ -228,7 +221,7 @@ class TMF637ProductInventoryController(TMFBaseController):
         out = []
         for r in recs:
             data = _normalize_product_response(r, r.to_tmf_json())
-            out.append(_apply_fields_filter(data, fields_param))
+            out.append(self._select_fields(data, fields_param))
 
         return self._json(
             out,

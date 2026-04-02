@@ -56,7 +56,7 @@ class TMFCatalogController(TMFBaseController):
 
     def _listener_ok(self):
         try:
-            payload = json.loads(request.httprequest.data or b"{}")
+            payload = self._parse_json_body()
         except Exception:
             payload = None
         if not isinstance(payload, dict):
@@ -81,7 +81,7 @@ class TMFCatalogController(TMFBaseController):
     def product_specification_collection(self, **params):
         if request.httprequest.method == 'POST':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 vals = {
                     "name": data.get("name") or "ProductSpecification",
                     "version": data.get("version") or "1.0",
@@ -139,7 +139,7 @@ class TMFCatalogController(TMFBaseController):
 
         if request.httprequest.method == 'PATCH':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 vals = {}
                 if 'name' in data:
                     vals['name'] = data['name']
@@ -217,7 +217,7 @@ class TMFCatalogController(TMFBaseController):
     def product_offering_collection(self, **params):
         if request.httprequest.method == 'POST':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 lc = (data.get("lifecycleStatus") or "Active").lower()
                 vals = {
                     "name": data.get("name") or "ProductOffering",
@@ -268,7 +268,7 @@ class TMFCatalogController(TMFBaseController):
 
         if request.httprequest.method == 'PATCH':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 vals = {}
                 if 'name' in data:
                     vals['name'] = data['name']
@@ -374,7 +374,7 @@ class TMFCatalogController(TMFBaseController):
     def price_collection(self, **params):
         if request.httprequest.method == 'POST':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 vals = {
                     "name": data.get("name") or "ProductOfferingPrice",
                     "version": data.get("version") or "1.0",
@@ -426,7 +426,7 @@ class TMFCatalogController(TMFBaseController):
 
         if request.httprequest.method == 'PATCH':
             try:
-                data = json.loads(request.httprequest.data)
+                data = self._parse_json_body()
                 vals = {}
                 if 'name' in data:
                     vals['name'] = data['name']
@@ -492,7 +492,7 @@ class TMFCatalogController(TMFBaseController):
                 type='http', auth='public', methods=['POST'], csrf=False)
     def register_listener(self, **params):
         try:
-            data = json.loads(request.httprequest.data or b"{}")
+            data = self._parse_json_body()
         except Exception:
             return self._error(400, "BAD_REQUEST", "Invalid JSON body")
         callback = data.get("callback")

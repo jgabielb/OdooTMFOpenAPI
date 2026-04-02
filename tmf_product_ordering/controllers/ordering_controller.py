@@ -148,7 +148,8 @@ class TMFOrderingController(TMFBaseController):
         payload = self._parse_json_body()
         if not isinstance(payload, dict):
             return self._error(400, "InvalidRequest", "Invalid JSON body")
-        return request.make_response("", status=201)
+        # Keep listener responses lightweight, but include correlation id header.
+        return self._json({}, status=201)
 
     # =======================================================
     # GET: List Orders
@@ -307,6 +308,7 @@ class TMFOrderingController(TMFBaseController):
         if not order:
             return self._error(404, "NotFound", f"ProductOrder {id} not found")
         order.unlink()
+        # 204: no content
         return request.make_response('', status=204)
 
     # =======================================================
@@ -388,6 +390,7 @@ class TMFOrderingController(TMFBaseController):
         if not rec or not rec.exists() or rec.api_name != "productOrder":
             return self._error(404, "NotFound", f"Hub subscription {sid} not found")
         rec.unlink()
+        # 204: no content
         return request.make_response("", status=204)
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)

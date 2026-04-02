@@ -110,7 +110,7 @@ class TMFTicketController(TMFBaseController):
 
     def _create_ticket(self):
         try:
-            data = json.loads(request.httprequest.data)
+            data = self._parse_json_body()
             
             # --- Robust Defaults ---
             vals = {
@@ -145,7 +145,7 @@ class TMFTicketController(TMFBaseController):
 
     def _patch_ticket(self, ticket):
         try:
-            data = json.loads(request.httprequest.data)
+            data = self._parse_json_body()
             vals = {}
             # Direct mapping allowed by Char fields
             if 'description' in data: vals['description'] = data['description']
@@ -189,7 +189,7 @@ class TMFTicketController(TMFBaseController):
 
     def _create_specification(self):
         try:
-            data = json.loads(request.httprequest.data)
+            data = self._parse_json_body()
             vals = {
                 'name': data.get('name') or 'TroubleTicket',
                 'description': data.get('description') or False,
@@ -204,7 +204,7 @@ class TMFTicketController(TMFBaseController):
 
     def _patch_specification(self, specification):
         try:
-            data = json.loads(request.httprequest.data)
+            data = self._parse_json_body()
             vals = {}
             if 'name' in data:
                 vals['name'] = data['name']
