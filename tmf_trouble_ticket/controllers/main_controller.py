@@ -13,18 +13,9 @@ class TMFTicketController(TMFBaseController):
     # Helper Methods
     # -------------------------------------------------------------------------
 
-    def _error(self, status, code, message):
-        return request.make_response(
-            json.dumps({
-                "code": str(code), 
-                "message": message, 
-                "reason": message,
-                "status": str(status),
-                "@type": "Error"
-            }),
-            headers=[('Content-Type', 'application/json')],
-            status=status
-        )
+    # NOTE: Do not override TMFBaseController._error.
+    # We standardize on tmf_base error schema:
+    #   {"code": "<http-status>", "reason": "...", "message": "..."}
 
     def _get_base_url(self):
         return request.httprequest.host_url.rstrip('/') + "/tmf-api/troubleTicketManagement/v5/troubleTicket"
@@ -103,14 +94,7 @@ class TMFTicketController(TMFBaseController):
         if params.get('status'):
             domain.append(('status', '=', params.get('status')))
 
-        try:
-            limit = max(1, min(int(params.get("limit") or 50), 1000))
-        except (ValueError, TypeError):
-            limit = 50
-        try:
-            offset = max(0, int(params.get("offset") or 0))
-        except (ValueError, TypeError):
-            offset = 0
+        limit, offset = self._paginate_params(params)
 
         env = request.env['tmf.trouble.ticket'].sudo()
         tickets = env.search(domain, limit=limit, offset=offset, order='id desc')
@@ -189,14 +173,7 @@ class TMFTicketController(TMFBaseController):
         if params.get('id'):
             domain.append(('tmf_id', '=', params.get('id')))
 
-        try:
-            limit = max(1, min(int(params.get("limit") or 50), 1000))
-        except (ValueError, TypeError):
-            limit = 50
-        try:
-            offset = max(0, int(params.get("offset") or 0))
-        except (ValueError, TypeError):
-            offset = 0
+        limit, offset = self._paginate_params(params)
 
         env = request.env['tmf.trouble.ticket.specification'].sudo()
         specs = env.search(domain, limit=limit, offset=offset, order='id desc')
