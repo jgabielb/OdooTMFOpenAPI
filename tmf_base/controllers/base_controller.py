@@ -1,6 +1,8 @@
 # tmf_base/controllers/base_controller.py
 import json
 import logging
+import time
+import uuid
 from urllib.parse import unquote
 
 from odoo import http
@@ -25,9 +27,56 @@ class TMFBaseController(http.Controller):
     # Response helpers
     # ------------------------------------------------------------------
 
+    def _get_correlation_id(self):
+        """Return a correlation id for the current request.
+
+        Priority:
+        - X-Correlation-ID (preferred)
+        - X-Request-ID
+        - generated UUID4
+
+        Stored on the request object to keep it stable during the request.
+        """
+        cid = getattr(request, "tmf_correlation_id", None)
+        if cid:
+            return cid
+
+        headers = getattr(request, "httprequest", None) and request.httprequest.headers or {}
+        cid = (headers.get("X-Correlation-ID") or headers.get("X-Request-ID") or "").strip()
+        if not cid:
+            cid = str(uuid.uuid4())
+
+        request.tmf_correlation_id = cid
+        return cid
+
+    def _response_headers(self, headers=None):
+        """Merge standard TMF API headers with custom headers."""
+        h = list(headers or [])
+        # Always return JSON from this helper.
+        h.append(("Content-Type", "application/json"))
+        # Correlation id for tracing across services.
+        h.append(("X-Correlation-ID", self._get_correlation_id()))
+        return h
+
+    def _log_request(self, status, extra=None, level="info"):
+        """Lightweight structured-ish request log."""
+        req = request.httprequest
+        payload = {
+            "cid": self._get_correlation_id(),
+            "method": getattr(req, "method", ""),
+            "path": getattr(req, "path", ""),
+            "query": getattr(req, "query_string", b"").decode("utf-8", errors="ignore"),
+            "status": status,
+        }
+        if extra:
+            payload.update(extra)
+
+        log_fn = getattr(_logger, level, _logger.info)
+        log_fn("TMF API %s", payload)
+
     def _json(self, payload, status=200, headers=None):
         """Return a JSON HTTP response with correct Content-Type."""
-        h = list(headers or []) + [('Content-Type', 'application/json')]
+        h = self._response_headers(headers)
         return request.make_response(
             json.dumps(payload, ensure_ascii=False),
             status=status,
@@ -36,6 +85,8 @@ class TMFBaseController(http.Controller):
 
     def _error(self, status, reason, message):
         """Return a TMF-compliant error response."""
+        # Always log errors with correlation id for traceability.
+        self._log_request(status=status, extra={"reason": reason, "message": message}, level="warning")
         return self._json(
             {"code": str(status), "reason": reason, "message": message},
             status=status,
@@ -150,6 +201,7 @@ class TMFBaseController(http.Controller):
                     'my.model', domain, lambda r: r.to_tmf_json(), kwargs
                 )
         """
+        start = time.perf_counter()
         limit, offset = self._paginate_params(kwargs)
         fields_param = kwargs.get("fields")
 
@@ -166,4 +218,16 @@ class TMFBaseController(http.Controller):
             ("X-Total-Count", str(total)),
             ("X-Result-Count", str(len(data))),
         ]
-        return self._json(data, headers=headers)
+        resp = self._json(data, headers=headers)
+        self._log_request(
+            status=200,
+            extra={
+                "model": model,
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+                "results": len(data),
+                "ms": int((time.perf_counter() - start) * 1000),
+            },
+        )
+        return resp
