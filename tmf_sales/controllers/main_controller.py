@@ -1,58 +1,17 @@
-import json
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
 
 API_BASE = "/tmf-api/sales/v4"
-
-
-def _json_response(payload, status=200, headers=None):
-    base_headers = [("Content-Type", "application/json")]
-    if headers:
-        base_headers.extend(headers)
-    return request.make_response(json.dumps(payload), headers=base_headers, status=status)
-
-
-def _error(status, reason):
-    status_str = str(status)
-    return _json_response({"error": {"code": status_str, "status": status_str, "reason": reason}}, status=status)
-
-
-def _parse_json():
-    try:
-        raw = request.httprequest.data or b"{}"
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
-
-
-def _fields_filter(payload, fields_csv):
-    if not fields_csv:
-        return payload
-    wanted = {item.strip() for item in str(fields_csv).split(",") if item.strip()}
-    if not wanted:
-        return payload
-    wanted |= {"id", "href"}
-    return {key: value for key, value in payload.items() if key in wanted}
-
-
-def _find_by_rid(rid):
-    model = request.env["tmf.sales.lead"].sudo()
-    rec = model.search([("tmf_id", "=", rid)], limit=1)
-    if rec:
-        return rec
-    if str(rid).isdigit():
-        rec = model.browse(int(rid))
-        if rec.exists():
-            return rec
-    return None
 
 
 def _subscription_json(rec):
     return {"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}
 
 
-class TMF699SalesController(http.Controller):
+class TMF699SalesController(TMFBaseController):
     @http.route(f"{API_BASE}/salesLead", type="http", auth="public", methods=["GET"], csrf=False)
     def list_sales_lead(self, **params):
         domain = []
@@ -62,24 +21,21 @@ class TMF699SalesController(http.Controller):
             domain.append(("name", "=", params["name"]))
         if params.get("status"):
             domain.append(("status", "=", params["status"]))
-        offset = int(params.get("offset", 0) or 0)
-        limit = params.get("limit")
-        limit = int(limit) if limit not in (None, "") else None
-        model = request.env["tmf.sales.lead"].sudo()
-        total = model.search_count(domain)
-        recs = model.search(domain, offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
-        headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
-        return _json_response(payload, status=200, headers=headers)
+        return self._list_response(
+            "tmf.sales.lead",
+            domain,
+            lambda r: r.to_tmf_json(),
+            params,
+        )
 
     @http.route(f"{API_BASE}/salesLead", type="http", auth="public", methods=["POST"], csrf=False)
     def create_sales_lead(self, **_params):
-        data = _parse_json()
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
         name = data.get("name")
         if not name:
-            return _error(400, "Missing mandatory attribute: name")
+            return self._error(400, "MissingMandatoryAttribute", "Missing mandatory attribute: name")
         vals = {
             "name": name,
             "status": data.get("status") or "new",
@@ -126,23 +82,25 @@ class TMF699SalesController(http.Controller):
             },
         }
         rec = request.env["tmf.sales.lead"].sudo().create(vals)
-        return _json_response(rec.to_tmf_json(), status=201)
+        return self._json(rec.to_tmf_json(), status=201)
 
     @http.route(f"{API_BASE}/salesLead/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_sales_lead(self, rid, **params):
-        rec = _find_by_rid(rid)
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record("tmf.sales.lead", rid)
         if not rec:
-            return _error(404, f"SalesLead {rid} not found")
-        return _json_response(_fields_filter(rec.to_tmf_json(), params.get("fields")), status=200)
+            return self._error(404, "NotFound", f"SalesLead {rid} not found")
+        return self._json(self._select_fields(rec.to_tmf_json(), params.get("fields")), status=200)
 
     @http.route(f"{API_BASE}/salesLead/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_sales_lead(self, rid, **_params):
-        rec = _find_by_rid(rid)
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record("tmf.sales.lead", rid)
         if not rec:
-            return _error(404, f"SalesLead {rid} not found")
-        patch = _parse_json()
+            return self._error(404, "NotFound", f"SalesLead {rid} not found")
+        patch = self._parse_json_body()
         if not isinstance(patch, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
 
         vals = {}
         if "name" in patch:
@@ -207,24 +165,25 @@ class TMF699SalesController(http.Controller):
         vals["extra_json"] = extra
 
         rec.sudo().write(vals)
-        return _json_response(rec.to_tmf_json(), status=200)
+        return self._json(rec.to_tmf_json(), status=200)
 
     @http.route(f"{API_BASE}/salesLead/<string:rid>", type="http", auth="public", methods=["DELETE"], csrf=False)
     def delete_sales_lead(self, rid, **_params):
-        rec = _find_by_rid(rid)
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record("tmf.sales.lead", rid)
         if not rec:
-            return _error(404, f"SalesLead {rid} not found")
+            return self._error(404, "NotFound", f"SalesLead {rid} not found")
         rec.sudo().unlink()
         return request.make_response("", status=204)
 
     @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
     def register_listener(self, **_params):
-        data = _parse_json()
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
         callback = data.get("callback")
         if not callback:
-            return _error(400, "Missing mandatory attribute: callback")
+            return self._error(400, "MissingMandatoryAttribute", "Missing mandatory attribute: callback")
         rec = request.env["tmf.hub.subscription"].sudo().create(
             {
                 "name": f"tmf699-sales-{callback}",
@@ -235,20 +194,20 @@ class TMF699SalesController(http.Controller):
                 "content_type": "application/json",
             }
         )
-        return _json_response(_subscription_json(rec), status=201)
+        return self._json(_subscription_json(rec), status=201)
 
     @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
     def unregister_listener(self, sid, **_params):
         rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
         if not rec or not rec.exists() or rec.api_name != "salesLead":
-            return _error(404, f"Hub subscription {sid} not found")
+            return self._error(404, "NotFound", f"Hub subscription {sid} not found")
         rec.unlink()
         return request.make_response("", status=204)
 
     def _listener_ok(self):
-        data = _parse_json()
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "InvalidRequest", "Invalid JSON body")
         return request.make_response("", status=201)
 
     @http.route(f"{API_BASE}/listener/salesLeadCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
