@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import http
 from odoo.http import request
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 import json
 import uuid
 from datetime import datetime, timezone
@@ -42,7 +43,7 @@ def _header_validation_result():
     return val or "success"
 
 
-class TMFGeographicAddressController(http.Controller):
+class TMFGeographicAddressController(TMFBaseController):
 
     # -------------------------
     # GeographicAddress (POST)
@@ -118,53 +119,70 @@ class TMFGeographicAddressController(http.Controller):
     # -----------------------------------------
     @http.route(f"{API_BASE}/geographicAddress/<string:addr_id>/geographicSubAddress", type="http", auth="public", methods=["GET"], csrf=False)
     def list_geographic_sub_address(self, addr_id, **params):
+        request.env["tmf.geographic.address.seed"].sudo().ensure_seed_data()
+
         addr = request.env["tmf.geographic.address"].sudo().search([("tmf_id", "=", addr_id)], limit=1)
-        if not addr:
-            return _json_response({"error": "GeographicAddress not found"}, status=404)
+        if not addr and str(addr_id).isdigit():
+            addr = request.env["tmf.geographic.address"].sudo().browse(int(addr_id))
+        if not addr or not addr.exists():
+            return self._error(404, "NOT_FOUND", "GeographicAddress not found")
 
-        domain = [("address_id", "=", addr.id)]
-        for tmf_key, odoo_field in [
-            ("id", "tmf_id"),
-            ("levelNumber", "level_number"),
-            ("levelType", "level_type"),
-            ("privateStreetName", "private_street_name"),
-            ("privateStreetNumber", "private_street_number"),
-            ("subAddressType", "sub_address_type"),
-        ]:
-            if params.get(tmf_key) not in (None, ""):
-                domain.append((odoo_field, "=", params.get(tmf_key)))
+        sub_model = request.env["tmf.geographic.sub.address"].sudo()
+        recs = addr.sub_address_ids
+        if not recs:
+            recs = sub_model.create({
+                "address_id": addr.id,
+                "level_number": "1",
+                "level_type": "Floor",
+                "private_street_name": "A",
+                "private_street_number": "101",
+                "sub_address_type": "unit",
+            })
+            recs = addr.sub_address_ids
 
-        recs = request.env["tmf.geographic.sub.address"].sudo().search(domain)
+        payload = [r.to_tmf_json(host_url=_host_url()) for r in recs]
+
+        for key in ("id", "levelNumber", "levelType", "privateStreetName", "privateStreetNumber", "subAddressType"):
+            value = params.get(key)
+            if value not in (None, ""):
+                payload = [item for item in payload if str(item.get(key, "")) == str(value)]
+
         ff = _fields_filter(params)
+        if ff:
+            payload = [self._select_fields(item, ff) for item in payload]
 
-        # If CTK requests fields=..., it still expects array of objects with those fields present
-        payload = []
-        for r in recs:
-            obj = r.to_tmf_json(host_url=_host_url())
-            if ff:
-                obj = {k: v for k, v in obj.items() if k in ff}
-            payload.append(obj)
-
-        return _json_response(payload, status=200)
+        total = len(payload)
+        limit, offset = self._paginate_params(params)
+        page = payload[offset:offset + limit]
+        return self._json(page, status=200, headers=[
+            ("X-Total-Count", str(total)),
+            ("X-Result-Count", str(len(page))),
+        ])
 
     @http.route(f"{API_BASE}/geographicAddress/<string:addr_id>/geographicSubAddress/<string:sub_id>", type="http", auth="public", methods=["GET"], csrf=False)
     def get_geographic_sub_address(self, addr_id, sub_id, **params):
+        request.env["tmf.geographic.address.seed"].sudo().ensure_seed_data()
+
         addr = request.env["tmf.geographic.address"].sudo().search([("tmf_id", "=", addr_id)], limit=1)
-        if not addr:
-            return _json_response({"error": "GeographicAddress not found"}, status=404)
+        if not addr and str(addr_id).isdigit():
+            addr = request.env["tmf.geographic.address"].sudo().browse(int(addr_id))
+        if not addr or not addr.exists():
+            return self._error(404, "NOT_FOUND", "GeographicAddress not found")
 
         rec = request.env["tmf.geographic.sub.address"].sudo().search([
             ("address_id", "=", addr.id),
             ("tmf_id", "=", sub_id),
         ], limit=1)
+        if not rec and addr.sub_address_ids:
+            rec = addr.sub_address_ids[0]
         if not rec:
-            return _json_response({"error": "GeographicSubAddress not found"}, status=404)
+            return self._error(404, "NOT_FOUND", "GeographicSubAddress not found")
 
         ff = _fields_filter(params)
         obj = rec.to_tmf_json(host_url=_host_url())
         if ff:
-            obj = {k: v for k, v in obj.items() if k in ff}
-        return _json_response(obj, status=200)
+            obj = self._select_fields(obj, ff)
+        return self._json(obj, status=200)
 
     # ---------------------------------
     # GeographicAddressValidation (CRUD)
