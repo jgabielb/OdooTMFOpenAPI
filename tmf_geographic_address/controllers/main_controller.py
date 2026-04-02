@@ -147,9 +147,11 @@ class TMFGeographicAddressController(TMFBaseController):
             if value not in (None, ""):
                 payload = [item for item in payload if str(item.get(key, "")) == str(value)]
 
-        ff = _fields_filter(params)
-        if ff:
-            payload = [self._select_fields(item, ff) for item in payload]
+        # TMFBaseController._select_fields expects a comma-separated string.
+        # Our local _fields_filter returns a set, so pass params.get('fields') directly.
+        fields_param = params.get("fields")
+        if fields_param:
+            payload = [self._select_fields(item, fields_param) for item in payload]
 
         total = len(payload)
         limit, offset = self._paginate_params(params)
@@ -178,10 +180,10 @@ class TMFGeographicAddressController(TMFBaseController):
         if not rec:
             return self._error(404, "NOT_FOUND", "GeographicSubAddress not found")
 
-        ff = _fields_filter(params)
+        fields_param = params.get("fields")
         obj = rec.to_tmf_json(host_url=_host_url())
-        if ff:
-            obj = self._select_fields(obj, ff)
+        if fields_param:
+            obj = self._select_fields(obj, fields_param)
         return self._json(obj, status=200)
 
     # ---------------------------------
