@@ -1,35 +1,28 @@
+"""TMF637 Product Inventory controllers.
+
+Phase 1C1: Align controller plumbing with tmf_base.TMFBaseController:
+- JSON parsing
+- error responses
+- id normalization
+- pagination helpers
+
+Business mapping remains unchanged.
+"""
+
 # -*- coding: utf-8 -*-
+
 import json
 from datetime import datetime, timezone
+
 from odoo import http
 from odoo.http import request
+
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 
 
 API_BASE = "/tmf-api/productInventoryManagement/v5"
 RESOURCE = "product"
 BASE_PATH = f"{API_BASE}/{RESOURCE}"
-
-
-# -------------------------
-# Common helpers
-# -------------------------
-def _json_response(payload, status=200, headers=None):
-    headers = headers or []
-    headers.append(("Content-Type", "application/json"))
-    return request.make_response(
-        json.dumps(payload, ensure_ascii=False),
-        headers=headers,
-        status=status,
-    )
-
-
-def _error(status, reason, code=None, details=None):
-    payload = {"error": {"status": status, "reason": reason}}
-    if code:
-        payload["error"]["code"] = code
-    if details:
-        payload["error"]["details"] = details
-    return _json_response(payload, status=status)
 
 
 def _apply_fields_filter(obj: dict, fields_param):
@@ -53,20 +46,6 @@ def _as_iso_string(v):
         return v.isoformat()
     except Exception:
         return str(v)
-
-
-def _parse_json_body():
-    """
-    Odoo 19: request.jsonrequest is only available for routes with type="json".
-    For type="http" routes, parse manually.
-    """
-    raw = request.httprequest.data or b""
-    if not raw:
-        return {}
-    try:
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
 
 
 def _ensure_id(rec):
@@ -190,7 +169,7 @@ def _normalize_product_response(rec, data: dict):
 
 
 
-class TMF637ProductInventoryController(http.Controller):
+class TMF637ProductInventoryController(TMFBaseController):
 
     # -------------------------
     # GET /product/{id}
@@ -206,14 +185,16 @@ class TMF637ProductInventoryController(http.Controller):
         fields_param = query.get("fields")
         Product = request.env["tmf.product"].sudo()
 
+        tmf_id = self._normalize_tmf_id(tmf_id)
+
         rec = Product.search([("tmf_id", "=", tmf_id)], limit=1)
         if not rec and tmf_id.isdigit():
             rec = Product.browse(int(tmf_id))
         if not rec or not rec.exists():
-            return _error(404, f"Product '{tmf_id}' not found")
+            return self._error(404, "NotFound", f"Product '{tmf_id}' not found")
 
         data = _normalize_product_response(rec, rec.to_tmf_json())
-        return _json_response(_apply_fields_filter(data, fields_param), status=200)
+        return self._json(_apply_fields_filter(data, fields_param), status=200)
 
     # -------------------------
     # GET /product
@@ -240,14 +221,7 @@ class TMF637ProductInventoryController(http.Controller):
             val = str(query["isBundle"]).lower() in ("true", "1", "yes")
             domain.append(("is_bundle", "=", val))
 
-        try:
-            limit = max(1, min(int(query.get("limit") or 50), 1000))
-        except (ValueError, TypeError):
-            limit = 50
-        try:
-            offset = max(0, int(query.get("offset") or 0))
-        except (ValueError, TypeError):
-            offset = 0
+        limit, offset = self._paginate_params(query)
 
         recs = Product.search(domain, limit=limit, offset=offset, order="id asc")
         total = Product.search_count(domain)
@@ -256,10 +230,14 @@ class TMF637ProductInventoryController(http.Controller):
             data = _normalize_product_response(r, r.to_tmf_json())
             out.append(_apply_fields_filter(data, fields_param))
 
-        return _json_response(out, status=200, headers=[
-            ("X-Total-Count", str(total)),
-            ("X-Result-Count", str(len(out))),
-        ])
+        return self._json(
+            out,
+            status=200,
+            headers=[
+                ("X-Total-Count", str(total)),
+                ("X-Result-Count", str(len(out))),
+            ],
+        )
 
     # -------------------------
     # POST /product
@@ -272,9 +250,9 @@ class TMF637ProductInventoryController(http.Controller):
         csrf=False,
     )
     def create_product(self, **query):
-        payload = _parse_json_body()
-        if payload is None or not isinstance(payload, dict):
-            return _error(400, "Invalid JSON payload")
+        payload = self._parse_json_body()
+        if not isinstance(payload, dict):
+            return self._error(400, "InvalidRequest", "Invalid JSON payload")
 
         Product = request.env["tmf.product"].sudo()
         vals = self._tmf_to_odoo_vals(payload)
@@ -284,7 +262,7 @@ class TMF637ProductInventoryController(http.Controller):
         _ensure_id(rec)
 
         data = _normalize_product_response(rec, rec.to_tmf_json())
-        return _json_response(data, status=201)
+        return self._json(data, status=201)
 
     # -------------------------
     # PATCH /product/{id}
@@ -297,16 +275,18 @@ class TMF637ProductInventoryController(http.Controller):
         csrf=False,
     )
     def patch_product(self, tmf_id, **query):
-        payload = _parse_json_body()
-        if payload is None or not isinstance(payload, dict):
-            return _error(400, "Invalid JSON payload")
+        tmf_id = self._normalize_tmf_id(tmf_id)
+
+        payload = self._parse_json_body()
+        if not isinstance(payload, dict):
+            return self._error(400, "InvalidRequest", "Invalid JSON payload")
 
         Product = request.env["tmf.product"].sudo()
         rec = Product.search([("tmf_id", "=", tmf_id)], limit=1)
         if not rec and tmf_id.isdigit():
             rec = Product.browse(int(tmf_id))
         if not rec or not rec.exists():
-            return _error(404, f"Product '{tmf_id}' not found")
+            return self._error(404, "NotFound", f"Product '{tmf_id}' not found")
 
         vals = self._tmf_to_odoo_vals(payload, partial=True)
         if vals:
@@ -315,7 +295,7 @@ class TMF637ProductInventoryController(http.Controller):
         _ensure_id(rec)
 
         data = _normalize_product_response(rec, rec.to_tmf_json())
-        return _json_response(data, status=200)
+        return self._json(data, status=200)
 
     # -------------------------
     # DELETE /product/{id}
@@ -329,11 +309,13 @@ class TMF637ProductInventoryController(http.Controller):
     )
     def delete_product(self, tmf_id, **query):
         Product = request.env["tmf.product"].sudo()
+
+        tmf_id = self._normalize_tmf_id(tmf_id)
         rec = Product.search([("tmf_id", "=", tmf_id)], limit=1)
         if not rec and tmf_id.isdigit():
             rec = Product.browse(int(tmf_id))
         if not rec or not rec.exists():
-            return _error(404, f"Product '{tmf_id}' not found")
+            return self._error(404, "NotFound", f"Product '{tmf_id}' not found")
 
         rec.unlink()
         return request.make_response("", status=204)
