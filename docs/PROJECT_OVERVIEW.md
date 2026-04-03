@@ -151,9 +151,153 @@ So CTK has at least one deterministic record to query/filter.
 4) Avoid returning `null` for complex nodes when CTK expects omission or arrays.
 5) Always preserve CTK negative tests semantics (404/400/etc.).
 
-## 7) Next documentation targets
+## 7) Product & Inventory TMFCs (001/002/005)
 
-After TMF673:
+We use dedicated wiring addons to connect CTK-compliant TMF APIs into Odoo’s
+native commercial and inventory models without altering CTK-visible behavior.
+
+### TMFC001 – ProductCatalogManagement
+
+- TMF API: TMF620 v5.0.0 Product Catalog Management
+- Core addon: `tmf_product_catalog`
+- Wiring addon: `tmfc001_wiring`
+- Key patterns:
+  - `_inherit = "product.template"` and `_inherit = "tmf.product.specification"`.
+  - Add JSON reference fields (e.g. `related_party_json`, `place_json`,
+    `agreement_json`, `service_specification_json`, `resource_specification_json`).
+  - Add relational fields to:
+    - Parties: `res.partner`, `tmf.party.role`.
+    - Service/resource specs: `tmf.service.specification`, `tmf.resource.specification`.
+    - Agreements: `tmf.agreement`.
+    - Geographic entities: `tmf.geographic.address/site/location`.
+  - All wiring is side-car: no controller changes, no impact on TMF620 CTKs.
+
+### TMFC002 – ProductOrderCaptureAndValidation
+
+- TMF API: TMF622 v5.0.0 Product Ordering Management
+- Core addon: `tmf_product_ordering`
+- Wiring addon: `tmfc002_wiring`
+- Key patterns:
+  - `_inherit = "tmf.product.order"`.
+  - Raw TMF ref fields: `related_party_json`, `product_offering_json`,
+    `billing_account_json`.
+  - Relational fields:
+    - `related_partner_ids` → `res.partner`.
+    - `product_offering_ids` → `product.template`.
+    - `billing_account_id` → `tmf.billing.account`.
+    - `poq_ids` → `tmf.check.product.offering.qualification` (TMF679).
+    - `sq_ids` → `tmf.service.qualification` (TMF645).
+    - `cart_ids` → `tmf.shopping.cart` (TMF663).
+    - `sale_order_id` → `sale.order` via `client_order_ref = tmf_id`.
+  - `_resolve_tmf_refs()`:
+    - Runs on `create`/`write` unless `skip_tmf_wiring` context flag is set.
+    - Reads stored TMF payload JSON, resolves IDs into Odoo records.
+  - TMF622 controllers remain unchanged; CTKs stay green.
+
+### TMFC005 – ProductInventory
+
+- TMF APIs: TMF637/638/639/640 inventory suite
+- Core addons: `tmf_product_inventory`, `tmf_product_stock_relationship`, `tmf_product`
+- Wiring addon: `tmfc005_wiring`
+- Key patterns:
+  - `_inherit = "tmf.product"`.
+  - Raw ref fields: `stock_location_ref_json`, `lot_ref_json`.
+  - Relational fields:
+    - `product_tmpl_id` → `product.template`.
+    - `product_id` → `product.product`.
+    - `stock_location_id` → `stock.location`.
+    - `stock_lot_id` → `stock.lot`.
+    - `stock_quant_id` → `stock.quant`.
+  - `_resolve_tmf_refs()`:
+    - Resolves product by TMF-specific field or name.
+    - Resolves location by TMF id or `name`.
+    - Resolves lot by TMF id or `serialNumber`.
+    - Resolves `stock.quant` from product/location[/lot].
+  - Runs on `create`/`write` unless `skip_tmf_wiring` is set.
+  - Inventory controllers remain untouched; CTKs for TMF637/638/639/640 stay green.
+
+## 8) Party & Identity TMFCs (020/022/023/028)
+
+Party and identity APIs are also CTK-first. All cross-domain wiring lives in
+separate `_inherit` addons that never change controllers or `to_tmf_json`.
+
+### TMFC020 – DigitalIdentityManagement
+
+- TMF API: TMF720 Digital Identity Management
+- Core addon: `tmf_digital_identity_management`
+- Wiring addon: `tmfc020_wiring`
+- Core model: `tmf.digital.identity` stores TMF JSON payloads in `*_json` text
+  fields plus native links `partner_id`/`user_id`.
+- Wiring model: `DigitalIdentityTMFC020Wiring` with `_inherit = "tmf.digital.identity"`.
+- Relational fields:
+  - `related_partner_ids` → `res.partner` from `related_party_json`.
+  - `individual_partner_id` → `res.partner` from `individual_identified_json`.
+  - `party_role_ids` → `tmf.party.role` from `party_role_identified_json` and
+    PartyRole entries in `related_party_json`.
+  - `resource_ids` → `stock.lot` from `resource_identified_json`.
+- `_resolve_tmf_refs()`:
+  - Parses JSON, extracts TMF ids, batch-resolves them into Odoo records.
+  - Runs on `create` and on `write` when relevant `*_json` fields change,
+    unless `skip_tmf_wiring` is present in context.
+- The TMF720 controller and `to_tmf_json` implementation remain unchanged,
+  preserving CTK behavior.
+
+### TMFC028 – PartyManagement
+
+- TMF API: TMF632 Party Management
+- Core addon: `tmf_party` (extends `res.partner` with TMF Party view).
+- Wiring addon: `tmfc028_wiring`.
+- Wiring model: `_inherit = "res.partner"`.
+- Relational fields:
+  - `digital_identity_ids` → One2many to `tmf.digital.identity` via its
+    `partner_id` (Digital Identities for this party).
+  - `privacy_agreement_ids` → Many2many to `tmf.party.privacy.agreement`.
+  - `party_interaction_ids` → One2many to `tmf.party.interaction` via
+    `partner_id`.
+- No `create`/`write` overrides: this is a pure relational view for Odoo and
+  reporting. TMF632 controller behavior and CTKs are unaffected.
+
+### TMFC022 – PartyPrivacyManagement
+
+- TMF API: Party Privacy Agreement (TMF Party Privacy)
+- Core addon: `tmf_party_privacy_agreement`.
+- Wiring addon: `tmfc022_wiring`.
+- Wiring model: `_inherit = "tmf.party.privacy.agreement"`.
+- Wiring-only JSON fields:
+  - `engaged_party_json` → raw TMF `engagedParty` reference.
+  - `privacy_profile_json` → raw TMF `partyPrivacyProfile` reference.
+- Relational fields:
+  - `engaged_partner_ids` → Many2many `res.partner`.
+  - `privacy_identity_ids` → Many2many `tmf.digital.identity`.
+- `_resolve_tmf_refs()`:
+  - Parses JSON refs, extracts TMF ids, resolves them into Party and
+    DigitalIdentity records using their `tmf_id`.
+  - Uses `with_context(skip_tmf_wiring=True)` to avoid recursion.
+  - Hooked into `create`/`write`, but only runs when the wiring JSON fields
+    change and when `skip_tmf_wiring` is not set.
+- Core `to_tmf_json` and any controllers remain untouched; CTK payloads do not
+  change.
+
+### TMFC023 – PartyInteractionManagement
+
+- TMF API: TMF683 Party Interaction Management
+- Core addon: `tmf_party_interaction`.
+- Core model: `tmf.party.interaction` already:
+  - Stores `relatedParty` and other complex nodes as JSON.
+  - Maintains `partner_id` by resolving `relatedParty` into `res.partner`.
+  - Emits hub events for create/update/delete.
+- Wiring addon: `tmfc023_wiring`.
+- Wiring model: `_inherit = "tmf.party.interaction"`.
+- Relational fields:
+  - `digital_identity_ids` → Many2many `tmf.digital.identity`.
+  - `privacy_agreement_ids` → Many2many `tmf.party.privacy.agreement`.
+- `_resolve_tmf_refs()`:
+  - Currently a no-op placeholder, ready to be extended when the TMF683
+    payload introduces explicit references to identities/agreements in JSON.
+  - Wired into `create`/`write` with a `skip_tmf_wiring` guard so we can add
+    resolution logic later without touching controllers.
+
+## 9) Next documentation targets
 
 - Document TMF632 Party mapping to `res.partner` + identity-by-document rules.
 - Document TMF620 Catalog modeling (ProductSpecification vs ProductOffering split).
