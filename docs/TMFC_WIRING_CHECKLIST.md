@@ -111,13 +111,13 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
 |--------|----------|-------------|-----------------|-----------------|-------|
-| TMF620 | product-catalog-management-api | catalog | GET, GET /id, POST, PATCH, DELETE | Not evidenced | Need code verification/implementation |
-| TMF620 | product-catalog-management-api | category | GET, GET /id, POST, PATCH, DELETE | Not evidenced | Need code verification/implementation |
+| TMF620 | product-catalog-management-api | catalog | GET, GET /id, POST, PATCH, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
+| TMF620 | product-catalog-management-api | category | GET, GET /id, POST, PATCH, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
 | TMF620 | product-catalog-management-api | productSpecification | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_product_catalog/controllers/catalog_controller.py` |
 | TMF620 | product-catalog-management-api | productOffering | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_product_catalog/controllers/catalog_controller.py` |
 | TMF620 | product-catalog-management-api | productOfferingPrice | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_product_catalog/controllers/catalog_controller.py` |
-| TMF620 | product-catalog-management-api | importJob | POST, GET, GET /id, DELETE | Not evidenced | Need code verification/implementation |
-| TMF620 | product-catalog-management-api | exportJob | POST, GET, GET /id, DELETE | Not evidenced | Need code verification/implementation |
+| TMF620 | product-catalog-management-api | importJob | POST, GET, GET /id, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
+| TMF620 | product-catalog-management-api | exportJob | POST, GET, GET /id, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
 | TMF701 | process-flow-management-api | processFlow | POST, GET, GET /id, DELETE | Partially evidenced | Base module exists, route-by-route TMFC fit still to confirm |
 | TMF701 | process-flow-management-api | taskFlow | PATCH, GET, GET /id | Partially evidenced | Base module exists, route-by-route TMFC fit still to confirm |
 | TMF671 | promotion-management-api | promotion | GET, GET /id, POST, PATCH, DELETE | Partially evidenced | Base module exists, full TMFC fit still to confirm |
@@ -144,7 +144,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF620 | ProductCatalogManagement | productSpecificationCreate/Delete/Change/StateChange | Evidenced | Published in `tmf_product_catalog/models/product_specification.py` |
 | TMF620 | ProductCatalogManagement | productOfferingCreate/Delete/AttributeValueChange/StateChange | Evidenced | Published in `tmf_product_catalog/models/product_template.py` |
 | TMF620 | ProductCatalogManagement | productOfferingPriceCreate/Delete/AttributeValueChange/StateChange | Evidenced | Published in `tmf_product_catalog/models/product_offering_price.py` |
-| TMF620 | ProductCatalogManagement | catalogCreateEvent, catalogDeleteEvent, categoryCreateEvent, categoryDeleteEvent, catalogBatchEvent | Not evidenced | Need implementation or explicit verification |
+| TMF620 | ProductCatalogManagement | catalogCreateEvent, catalogDeleteEvent, categoryCreateEvent, categoryDeleteEvent, catalogBatchEvent | Partially evidenced | Catalog/category create-update-delete events added; `catalogBatchEvent` still not implemented |
 | TMF671 | PromotionManagement | promotion* events | Not evidenced | Hub/controller exists, event publication not yet verified |
 | TMF701 | ProcessFlowManagement | processFlow/taskFlow events | Partially evidenced | Base module exists, event coverage still to confirm |
 
@@ -157,11 +157,11 @@ These are the first TMFCs we should actively track in detail:
 | TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Not evidenced | Base party listener routes exist globally, TMFC001 callback handling not found |
 
 ### Implementation tasks
-- [ ] Verify whether `catalog` and `category` resources exist anywhere in `tmf_product_catalog`
-- [ ] Implement missing `catalog` endpoints if absent
-- [ ] Implement missing `category` endpoints if absent
-- [ ] Implement missing `importJob` endpoints if absent
-- [ ] Implement missing `exportJob` endpoints if absent
+- [x] Verify whether `catalog` and `category` resources exist anywhere in `tmf_product_catalog`
+- [x] Implement missing `catalog` endpoints if absent
+- [x] Implement missing `category` endpoints if absent
+- [x] Implement missing `importJob` endpoints if absent
+- [x] Implement missing `exportJob` endpoints if absent
 - [ ] Verify TMF671 event publication in `tmf_promotion_management`
 - [ ] Verify TMF701 event publication in `tmf_process_flow`
 - [ ] Implement TMFC001 callback processing for TMF633 events

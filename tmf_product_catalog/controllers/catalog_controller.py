@@ -41,6 +41,23 @@ class TMFCatalogController(TMFBaseController):
                 "state_change": "ProductOfferingPriceStateChangeEvent",
                 "delete": "ProductOfferingPriceDeleteEvent",
             },
+            "catalog": {
+                "create": "CatalogCreateEvent",
+                "update": "CatalogAttributeValueChangeEvent",
+                "delete": "CatalogDeleteEvent",
+            },
+            "category": {
+                "create": "CategoryCreateEvent",
+                "update": "CategoryAttributeValueChangeEvent",
+                "delete": "CategoryDeleteEvent",
+            },
+            "importJob": {
+                "create": "ImportJobCreateEvent",
+            },
+            "exportJob": {
+                "create": "ExportJobCreateEvent",
+                "state_change": "ExportJobStateChangeEvent",
+            },
         }
         event_name = (event_map.get(resource_type) or {}).get(action)
         if not event_name:
@@ -485,6 +502,281 @@ class TMFCatalogController(TMFBaseController):
         return result
 
     # =======================================================
+    # 4. Catalog API
+    # =======================================================
+
+    @http.route('/tmf-api/productCatalogManagement/v5/catalog',
+                type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def catalog_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = self._parse_json_body()
+                vals = {
+                    'name': data.get('name') or 'Catalog',
+                    'description': data.get('description') or '',
+                    'version': data.get('version') or '1.0',
+                    'lifecycle_status': self._OFF_STATUS_IN.get(
+                        str(data.get('lifecycleStatus') or 'active').lower(), 'active'
+                    ),
+                }
+                category_ids = []
+                for item in (data.get('category') or []):
+                    ref_id = str((item or {}).get('id') or '').strip()
+                    if not ref_id:
+                        continue
+                    category = request.env['tmf.product.category'].sudo().search(
+                        [('tmf_id', '=', ref_id)], limit=1
+                    )
+                    if category:
+                        category_ids.append(category.id)
+                if category_ids:
+                    vals['category_ids'] = [(6, 0, category_ids)]
+                rec = request.env['tmf.product.catalog'].sudo().create(vals)
+                return self._json(self._catalog_to_json(rec), status=201)
+            except Exception as e:
+                return self._error(400, 'BAD_REQUEST', str(e))
+
+        env = request.env['tmf.product.catalog'].sudo()
+        domain = []
+        if params.get('name'):
+            domain.append(('name', '=', params['name']))
+        limit, offset = self._paginate_params(params)
+        recs = env.search(domain, limit=limit, offset=offset)
+        total = env.search_count(domain)
+        data = self._select_fields_list([self._catalog_to_json(r) for r in recs], params.get('fields'))
+        return self._json(data, headers=[
+            ('X-Total-Count', str(total)),
+            ('X-Result-Count', str(len(data))),
+        ])
+
+    @http.route('/tmf-api/productCatalogManagement/v5/catalog/<string:id>',
+                type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def catalog_individual(self, id, **params):
+        rec = self._find_record('tmf.product.catalog', id)
+        if not rec:
+            return self._error(404, 'NOT_FOUND', f'Catalog {id} not found')
+
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = self._parse_json_body()
+                vals = {}
+                if 'name' in data:
+                    vals['name'] = data['name']
+                if 'description' in data:
+                    vals['description'] = data['description']
+                if 'version' in data:
+                    vals['version'] = data['version']
+                if 'lifecycleStatus' in data:
+                    vals['lifecycle_status'] = self._OFF_STATUS_IN.get(
+                        str(data['lifecycleStatus']).lower(), 'active'
+                    )
+                if 'category' in data:
+                    category_ids = []
+                    for item in (data.get('category') or []):
+                        ref_id = str((item or {}).get('id') or '').strip()
+                        if not ref_id:
+                            continue
+                        category = request.env['tmf.product.category'].sudo().search(
+                            [('tmf_id', '=', ref_id)], limit=1
+                        )
+                        if category:
+                            category_ids.append(category.id)
+                    vals['category_ids'] = [(6, 0, category_ids)]
+                if vals:
+                    rec.write(vals)
+                return self._json(self._select_fields(self._catalog_to_json(rec), params.get('fields')))
+            except Exception as e:
+                return self._error(400, 'UPDATE_ERROR', str(e))
+
+        if request.httprequest.method == 'DELETE':
+            try:
+                rec.unlink()
+                return Response(status=204)
+            except Exception:
+                return self._error(400, 'DELETE_ERROR', 'Could not delete')
+
+        return self._json(self._select_fields(self._catalog_to_json(rec), params.get('fields')))
+
+    def _catalog_to_json(self, rec):
+        return rec.to_tmf_json()
+
+    # =======================================================
+    # 5. Category API
+    # =======================================================
+
+    @http.route('/tmf-api/productCatalogManagement/v5/category',
+                type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def category_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = self._parse_json_body()
+                vals = {
+                    'name': data.get('name') or 'Category',
+                    'description': data.get('description') or '',
+                    'version': data.get('version') or '1.0',
+                    'lifecycle_status': self._OFF_STATUS_IN.get(
+                        str(data.get('lifecycleStatus') or 'active').lower(), 'active'
+                    ),
+                }
+                parent_id = str(data.get('parentId') or '').strip()
+                if parent_id:
+                    parent = request.env['tmf.product.category'].sudo().search(
+                        [('tmf_id', '=', parent_id)], limit=1
+                    )
+                    if parent:
+                        vals['parent_id'] = parent.id
+                rec = request.env['tmf.product.category'].sudo().create(vals)
+                return self._json(self._category_to_json(rec), status=201)
+            except Exception as e:
+                return self._error(400, 'BAD_REQUEST', str(e))
+
+        env = request.env['tmf.product.category'].sudo()
+        domain = []
+        if params.get('name'):
+            domain.append(('name', '=', params['name']))
+        limit, offset = self._paginate_params(params)
+        recs = env.search(domain, limit=limit, offset=offset)
+        total = env.search_count(domain)
+        data = self._select_fields_list([self._category_to_json(r) for r in recs], params.get('fields'))
+        return self._json(data, headers=[
+            ('X-Total-Count', str(total)),
+            ('X-Result-Count', str(len(data))),
+        ])
+
+    @http.route('/tmf-api/productCatalogManagement/v5/category/<string:id>',
+                type='http', auth='public', methods=['GET', 'PATCH', 'DELETE'], csrf=False)
+    def category_individual(self, id, **params):
+        rec = self._find_record('tmf.product.category', id)
+        if not rec:
+            return self._error(404, 'NOT_FOUND', f'Category {id} not found')
+
+        if request.httprequest.method == 'PATCH':
+            try:
+                data = self._parse_json_body()
+                vals = {}
+                if 'name' in data:
+                    vals['name'] = data['name']
+                if 'description' in data:
+                    vals['description'] = data['description']
+                if 'version' in data:
+                    vals['version'] = data['version']
+                if 'lifecycleStatus' in data:
+                    vals['lifecycle_status'] = self._OFF_STATUS_IN.get(
+                        str(data['lifecycleStatus']).lower(), 'active'
+                    )
+                if 'parentId' in data:
+                    parent_id = str(data.get('parentId') or '').strip()
+                    parent = request.env['tmf.product.category'].sudo().search(
+                        [('tmf_id', '=', parent_id)], limit=1
+                    ) if parent_id else None
+                    vals['parent_id'] = parent.id if parent else False
+                if vals:
+                    rec.write(vals)
+                return self._json(self._select_fields(self._category_to_json(rec), params.get('fields')))
+            except Exception as e:
+                return self._error(400, 'UPDATE_ERROR', str(e))
+
+        if request.httprequest.method == 'DELETE':
+            try:
+                rec.unlink()
+                return Response(status=204)
+            except Exception:
+                return self._error(400, 'DELETE_ERROR', 'Could not delete')
+
+        return self._json(self._select_fields(self._category_to_json(rec), params.get('fields')))
+
+    def _category_to_json(self, rec):
+        return rec.to_tmf_json()
+
+    # =======================================================
+    # 6. Import/Export Job APIs
+    # =======================================================
+
+    @http.route('/tmf-api/productCatalogManagement/v5/importJob',
+                type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def import_job_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = self._parse_json_body()
+                rec = request.env['tmf.product.catalog.import.job'].sudo().create({
+                    'name': data.get('name') or 'ImportJob',
+                    'status': data.get('status') or 'completed',
+                    'url': data.get('url') or '',
+                })
+                return self._json(self._import_job_to_json(rec), status=201)
+            except Exception as e:
+                return self._error(400, 'BAD_REQUEST', str(e))
+
+        env = request.env['tmf.product.catalog.import.job'].sudo()
+        limit, offset = self._paginate_params(params)
+        recs = env.search([], limit=limit, offset=offset)
+        total = env.search_count([])
+        data = self._select_fields_list([self._import_job_to_json(r) for r in recs], params.get('fields'))
+        return self._json(data, headers=[
+            ('X-Total-Count', str(total)),
+            ('X-Result-Count', str(len(data))),
+        ])
+
+    @http.route('/tmf-api/productCatalogManagement/v5/importJob/<string:id>',
+                type='http', auth='public', methods=['GET', 'DELETE'], csrf=False)
+    def import_job_individual(self, id, **params):
+        rec = self._find_record('tmf.product.catalog.import.job', id)
+        if not rec:
+            return self._error(404, 'NOT_FOUND', f'ImportJob {id} not found')
+        if request.httprequest.method == 'DELETE':
+            try:
+                rec.unlink()
+                return Response(status=204)
+            except Exception:
+                return self._error(400, 'DELETE_ERROR', 'Could not delete')
+        return self._json(self._select_fields(self._import_job_to_json(rec), params.get('fields')))
+
+    def _import_job_to_json(self, rec):
+        return rec.to_tmf_json()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/exportJob',
+                type='http', auth='public', methods=['GET', 'POST'], csrf=False)
+    def export_job_collection(self, **params):
+        if request.httprequest.method == 'POST':
+            try:
+                data = self._parse_json_body()
+                rec = request.env['tmf.product.catalog.export.job'].sudo().create({
+                    'name': data.get('name') or 'ExportJob',
+                    'status': data.get('status') or 'completed',
+                    'url': data.get('url') or '',
+                })
+                return self._json(self._export_job_to_json(rec), status=201)
+            except Exception as e:
+                return self._error(400, 'BAD_REQUEST', str(e))
+
+        env = request.env['tmf.product.catalog.export.job'].sudo()
+        limit, offset = self._paginate_params(params)
+        recs = env.search([], limit=limit, offset=offset)
+        total = env.search_count([])
+        data = self._select_fields_list([self._export_job_to_json(r) for r in recs], params.get('fields'))
+        return self._json(data, headers=[
+            ('X-Total-Count', str(total)),
+            ('X-Result-Count', str(len(data))),
+        ])
+
+    @http.route('/tmf-api/productCatalogManagement/v5/exportJob/<string:id>',
+                type='http', auth='public', methods=['GET', 'DELETE'], csrf=False)
+    def export_job_individual(self, id, **params):
+        rec = self._find_record('tmf.product.catalog.export.job', id)
+        if not rec:
+            return self._error(404, 'NOT_FOUND', f'ExportJob {id} not found')
+        if request.httprequest.method == 'DELETE':
+            try:
+                rec.unlink()
+                return Response(status=204)
+            except Exception:
+                return self._error(400, 'DELETE_ERROR', 'Could not delete')
+        return self._json(self._select_fields(self._export_job_to_json(rec), params.get('fields')))
+
+    def _export_job_to_json(self, rec):
+        return rec.to_tmf_json()
+
+    # =======================================================
     # TMF620 Hub + listeners
     # =======================================================
 
@@ -523,6 +815,38 @@ class TMFCatalogController(TMFBaseController):
                 "event_type": "any",
                 "content_type": "application/json",
             },
+            {
+                "name": f"tmf620-catalog-{callback}",
+                "api_name": "catalog",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf620-category-{callback}",
+                "api_name": "category",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf620-import-job-{callback}",
+                "api_name": "importJob",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
+            {
+                "name": f"tmf620-export-job-{callback}",
+                "api_name": "exportJob",
+                "callback": callback,
+                "query": data.get("query", ""),
+                "event_type": "any",
+                "content_type": "application/json",
+            },
         ])
         sub = subs[:1]
         body = {"id": str(sub.id), "callback": sub.callback, "query": sub.query or ""}
@@ -538,7 +862,8 @@ class TMFCatalogController(TMFBaseController):
         siblings = request.env["tmf.hub.subscription"].sudo().search([
             ("callback", "=", rec.callback),
             ("api_name", "in", ["productOffering", "productSpecification",
-                                "productOfferingPrice"]),
+                                "productOfferingPrice", "catalog", "category",
+                                "importJob", "exportJob"]),
         ])
         (siblings or rec).unlink()
         return Response(status=204)
@@ -601,6 +926,51 @@ class TMFCatalogController(TMFBaseController):
     @http.route('/tmf-api/productCatalogManagement/v5/listener/productOfferingPriceDeleteEvent',
                 type='http', auth='public', methods=['POST'], csrf=False)
     def listen_pop_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/catalogCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_catalog_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/catalogAttributeValueChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_catalog_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/catalogDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_catalog_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/categoryCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_category_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/categoryAttributeValueChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_category_attr(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/categoryDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_category_delete(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/importJobCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_import_job_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/exportJobCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_export_job_create(self, **params):
+        return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/exportJobStateChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_export_job_state(self, **params):
         return self._listener_ok()
 
     # =======================================================

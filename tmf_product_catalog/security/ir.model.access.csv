@@ -1,3 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_product_specification,tmf.product.specification,model_tmf_product_specification,base.group_user,1,1,1,1
-access_product_offering_price,tmf.product.offering.price,model_tmf_product_offering_price,base.group_user,1,1,1,1
+access_tmf_product_specification,access.tmf.product.specification,model_tmf_product_specification,,1,1,1,1
+access_tmf_product_offering_price,access.tmf.product.offering.price,model_tmf_product_offering_price,,1,1,1,1
+access_tmf_product_catalog,access.tmf.product.catalog,model_tmf_product_catalog,,1,1,1,1
+access_tmf_product_category,access.tmf.product.category,model_tmf_product_category,,1,1,1,1
+access_tmf_product_catalog_import_job,access.tmf.product.catalog.import.job,model_tmf_product_catalog_import_job,,1,1,1,1
+access_tmf_product_catalog_export_job,access.tmf.product.catalog.export.job,model_tmf_product_catalog_export_job,,1,1,1,1
