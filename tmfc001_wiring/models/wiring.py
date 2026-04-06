@@ -1,3 +1,4 @@
+import json
 from odoo import api, fields, models
 
 
@@ -210,3 +211,155 @@ class ProductSpecificationTMFC001Wiring(models.Model):
             if wiring_keys & set(vals.keys()):
                 self._resolve_tmf_refs()
         return res
+
+
+class TMFC001WiringTools(models.AbstractModel):
+    _name = "tmfc001.wiring.tools"
+    _description = "TMFC001 Wiring Reconciliation Tools"
+
+    def _loads(self, value):
+        if not value:
+            return None
+        if isinstance(value, (dict, list)):
+            return value
+        try:
+            return json.loads(value)
+        except Exception:
+            return None
+
+    def _extract_event_resource(self, payload):
+        if not isinstance(payload, dict):
+            return {}
+        if isinstance(payload.get("event"), dict):
+            event = payload["event"]
+            if isinstance(event.get("resource"), dict):
+                return event["resource"]
+        if isinstance(payload.get("resource"), dict):
+            return payload["resource"]
+        return payload
+
+    def _extract_resource_id(self, payload):
+        resource = self._extract_event_resource(payload)
+        ref_id = str(resource.get("id") or payload.get("id") or "").strip()
+        return ref_id
+
+    def _reconcile_service_specification_refs(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        if not ref_id:
+            return
+        spec = self.env["tmf.service.specification"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+        offering_model = self.env["product.template"].sudo()
+        product_spec_model = self.env["tmf.product.specification"].sudo()
+        if spec:
+            offers = offering_model.search([("service_specification_json", "!=", False)])
+            product_specs = product_spec_model.search([("service_specification_json", "!=", False)])
+            for rec in offers:
+                rec._resolve_tmf_refs()
+            for rec in product_specs:
+                rec._resolve_tmf_refs()
+            return
+        offers = offering_model.search([("service_specification_ids", "in", [spec.id])]) if spec else offering_model.search([])
+        for rec in offers:
+            kept = rec.service_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
+            json_refs = [item for item in (rec.service_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
+            rec.with_context(skip_tmf_wiring=True).write({
+                "service_specification_ids": [(6, 0, kept.ids)],
+                "service_specification_json": json_refs,
+            })
+        product_specs = product_spec_model.search([])
+        for rec in product_specs:
+            if ref_id not in [r.tmf_id or str(r.id) for r in rec.service_specification_ids]:
+                continue
+            kept = rec.service_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
+            json_refs = [item for item in (rec.service_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
+            rec.with_context(skip_tmf_wiring=True).write({
+                "service_specification_ids": [(6, 0, kept.ids)],
+                "service_specification_json": json_refs,
+            })
+
+    def _reconcile_resource_specification_refs(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        if not ref_id:
+            return
+        spec = self.env["tmf.resource.specification"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+        offering_model = self.env["product.template"].sudo()
+        product_spec_model = self.env["tmf.product.specification"].sudo()
+        if spec:
+            offers = offering_model.search([("resource_specification_json", "!=", False)])
+            product_specs = product_spec_model.search([("resource_specification_json", "!=", False)])
+            for rec in offers:
+                rec._resolve_tmf_refs()
+            for rec in product_specs:
+                rec._resolve_tmf_refs()
+            return
+        offers = offering_model.search([])
+        for rec in offers:
+            if ref_id not in [r.tmf_id or str(r.id) for r in rec.resource_specification_ids]:
+                continue
+            kept = rec.resource_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
+            json_refs = [item for item in (rec.resource_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
+            rec.with_context(skip_tmf_wiring=True).write({
+                "resource_specification_ids": [(6, 0, kept.ids)],
+                "resource_specification_json": json_refs,
+            })
+        product_specs = product_spec_model.search([])
+        for rec in product_specs:
+            if ref_id not in [r.tmf_id or str(r.id) for r in rec.resource_specification_ids]:
+                continue
+            kept = rec.resource_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
+            json_refs = [item for item in (rec.resource_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
+            rec.with_context(skip_tmf_wiring=True).write({
+                "resource_specification_ids": [(6, 0, kept.ids)],
+                "resource_specification_json": json_refs,
+            })
+
+    def _reconcile_related_party_refs(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        if not ref_id:
+            return
+        partner = self.env["res.partner"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+        partner_id = partner.id if partner else None
+        for rec in self.env["product.template"].sudo().search([]):
+            current_ids = rec.related_partner_ids.ids
+            if partner_id and partner_id not in current_ids:
+                continue
+            json_refs = [item for item in (rec.related_party_json or [])
+                         if str((item or {}).get("id") or "").strip() != ref_id
+                         or (item or {}).get("@type") in ("PartyRole", "PartyRoleRef")]
+            kept_ids = rec.related_partner_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
+            rec.with_context(skip_tmf_wiring=True).write({
+                "related_partner_ids": [(6, 0, kept_ids)],
+                "related_party_json": json_refs,
+            })
+        for rec in self.env["tmf.product.specification"].sudo().search([]):
+            current_ids = rec.related_partner_ids.ids
+            if partner_id and partner_id not in current_ids:
+                continue
+            json_refs = [item for item in (rec.related_party_json or [])
+                         if str((item or {}).get("id") or "").strip() != ref_id]
+            kept_ids = rec.related_partner_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
+            rec.with_context(skip_tmf_wiring=True).write({
+                "related_partner_ids": [(6, 0, kept_ids)],
+                "related_party_json": json_refs,
+            })
+
+    def _reconcile_party_role_refs(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        if not ref_id:
+            return
+        role = self.env["tmf.party.role"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+        role_id = role.id if role else None
+        for rec in self.env["product.template"].sudo().search([]):
+            current_ids = rec.related_party_role_ids.ids
+            if role_id and role_id not in current_ids:
+                continue
+            json_refs = [item for item in (rec.related_party_json or [])
+                         if not (
+                             str((item or {}).get("id") or "").strip() == ref_id and
+                             (item or {}).get("@type") in ("PartyRole", "PartyRoleRef")
+                         )]
+            kept_ids = rec.related_party_role_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
+            rec.with_context(skip_tmf_wiring=True).write({
+                "related_party_role_ids": [(6, 0, kept_ids)],
+                "related_party_json": json_refs,
+            })

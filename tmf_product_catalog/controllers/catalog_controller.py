@@ -80,6 +80,20 @@ class TMFCatalogController(TMFBaseController):
             return self._error(400, "BAD_REQUEST", "Invalid JSON body")
         return request.make_response("", status=201)
 
+    def _listener_apply(self, handler_name):
+        try:
+            payload = self._parse_json_body()
+        except Exception:
+            payload = None
+        if not isinstance(payload, dict):
+            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
+        try:
+            request.env["tmfc001.wiring.tools"].sudo()[handler_name](payload)
+        except Exception as e:
+            _logger.exception("TMFC001 listener %s failed", handler_name)
+            return self._error(400, "CALLBACK_ERROR", str(e))
+        return request.make_response("", status=201)
+
     # -------------------------------------------------------------------------
     # Status helpers
     # -------------------------------------------------------------------------
@@ -927,6 +941,56 @@ class TMFCatalogController(TMFBaseController):
                 type='http', auth='public', methods=['POST'], csrf=False)
     def listen_pop_delete(self, **params):
         return self._listener_ok()
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_service_spec_create(self, **params):
+        return self._listener_apply('_reconcile_service_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationAttributeValueChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_service_spec_attr(self, **params):
+        return self._listener_apply('_reconcile_service_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationStateChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_service_spec_state(self, **params):
+        return self._listener_apply('_reconcile_service_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_service_spec_delete(self, **params):
+        return self._listener_apply('_reconcile_service_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationCreateEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_resource_spec_create(self, **params):
+        return self._listener_apply('_reconcile_resource_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationChangeEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_resource_spec_change(self, **params):
+        return self._listener_apply('_reconcile_resource_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_resource_spec_delete(self, **params):
+        return self._listener_apply('_reconcile_resource_specification_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/individualDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_individual_delete(self, **params):
+        return self._listener_apply('_reconcile_related_party_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/organizationDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_organization_delete(self, **params):
+        return self._listener_apply('_reconcile_related_party_refs')
+
+    @http.route('/tmf-api/productCatalogManagement/v5/listener/partyRoleDeleteEvent',
+                type='http', auth='public', methods=['POST'], csrf=False)
+    def listen_party_role_delete(self, **params):
+        return self._listener_apply('_reconcile_party_role_refs')
 
     @http.route('/tmf-api/productCatalogManagement/v5/listener/catalogCreateEvent',
                 type='http', auth='public', methods=['POST'], csrf=False)

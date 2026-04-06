@@ -87,7 +87,7 @@ These are the first TMFCs we should actively track in detail:
 
 ## TMFC001 – ProductCatalogManagement
 
-**Status:** In analysis
+**Status:** In implementation
 **Target sprint:** Sprint 1
 **Current classification:** Partially wired
 **Existing addon(s):** `tmfc001_wiring`, `tmf_product_catalog`, `tmf_process_flow`, `tmf_promotion_management`
@@ -103,7 +103,7 @@ These are the first TMFCs we should actively track in detail:
 - [x] Published events partially evidenced from mutation paths
 - [x] Hub registration verified
 - [x] Listener routes exist for TMF620 core resources
-- [ ] Subscribed event callbacks update local state correctly
+- [x] Subscribed event callbacks update local state correctly
 - [ ] Verification notes captured for full TMFC surface
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
@@ -135,7 +135,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF674 | geographic-site-management-api | false | geographicSite | Evidenced | `place_json`, `geographic_site_id` |
 | TMF675 | geographic-location-management-api | false | geographicLocation | Evidenced | `place_json`, `geographic_location_id` |
 | TMF662 | entity-catalog-management-api | false | entitySpecification, associationSpecification | Not evidenced | No TMFC001-specific entity wiring found |
-| TMF620 | product-catalog-management-api | false | catalog, category, productOffering, productSpecification, productOfferingPrice, importJob, exportJob | Partially evidenced | Core product spec/offering/price evident, rest not yet |
+| TMF620 | product-catalog-management-api | false | catalog, category, productOffering, productSpecification, productOfferingPrice, importJob, exportJob | Implemented | TMF620 resource surface is now present in `tmf_product_catalog` |
 
 ### Published Events
 
@@ -152,9 +152,9 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
 |--------|----------------------|----------------------|-----------------|-------|
-| TMF633 | ServiceCatalogManagement | serviceSpecificationStateChange, serviceSpecificationAttributeValueChangeEvent, serviceSpecificationCreateEvent, serviceSpecificationDeleteEvent, resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Not evidenced | No TMFC001-specific callback processing found yet |
-| TMF669 / YAML anomaly | PartyRoleManagement in intent, but YAML uses TMF701 in one entry | partyRoleDeleteEvent | Not evidenced | Need to confirm YAML inconsistency and implement actual callback handling |
-| TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Not evidenced | Base party listener routes exist globally, TMFC001 callback handling not found |
+| TMF633 | ServiceCatalogManagement | serviceSpecificationStateChange, serviceSpecificationAttributeValueChangeEvent, serviceSpecificationCreateEvent, serviceSpecificationDeleteEvent, resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Implemented | TMFC001 listener routes now reconcile service/resource spec references through `tmfc001.wiring.tools` |
+| TMF669 / YAML anomaly | PartyRoleManagement in intent, but YAML uses TMF701 in one entry | partyRoleDeleteEvent | Implemented | TMFC001 listener route now removes deleted party-role references from offerings |
+| TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Implemented | TMFC001 listener routes now remove deleted party references from offerings/specifications |
 
 ### Implementation tasks
 - [x] Verify whether `catalog` and `category` resources exist anywhere in `tmf_product_catalog`
@@ -164,9 +164,9 @@ These are the first TMFCs we should actively track in detail:
 - [x] Implement missing `exportJob` endpoints if absent
 - [ ] Verify TMF671 event publication in `tmf_promotion_management`
 - [ ] Verify TMF701 event publication in `tmf_process_flow`
-- [ ] Implement TMFC001 callback processing for TMF633 events
-- [ ] Implement TMFC001 callback processing for TMF632 delete events
-- [ ] Implement TMFC001 callback processing for TMF669 party-role delete events
+- [x] Implement TMFC001 callback processing for TMF633 events
+- [x] Implement TMFC001 callback processing for TMF632 delete events
+- [x] Implement TMFC001 callback processing for TMF669 party-role delete events
 - [ ] Capture verification notes
 
 ---
