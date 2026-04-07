@@ -62,10 +62,6 @@ class CheckPOQTMFC027Wiring(models.Model):
         "product.template", "tmfc027_check_poq_offering_rel",
         "poq_id", "offering_id", string="Product Offerings (TMF620)"
     )
-    product_order_ids = fields.Many2many(
-        "tmf.product.order", "tmfc027_check_poq_order_rel",
-        "poq_id", "order_id", string="Product Orders (TMF622)"
-    )
     service_qualification_ids = fields.Many2many(
         "tmf.service.qualification", "tmfc027_check_poq_sq_rel",
         "poq_id", "sq_id", string="Service Qualifications (TMF645)"
@@ -155,11 +151,6 @@ class CheckPOQTMFC027Wiring(models.Model):
                 ids = _resolve_ids(self.env, "product.template", effective_offering_json)
                 if ids:
                     updates["product_offering_ids"] = [(6, 0, ids)]
-
-            if not rec.product_order_ids and effective_order_json:
-                ids = _resolve_ids(self.env, "tmf.product.order", effective_order_json)
-                if ids:
-                    updates["product_order_ids"] = [(6, 0, ids)]
 
             if not rec.service_qualification_ids and effective_service_qualification_json:
                 ids = _resolve_ids(self.env, "tmf.service.qualification", effective_service_qualification_json)
