@@ -104,7 +104,7 @@ These are the first TMFCs we should actively track in detail:
 - [x] Hub registration verified
 - [x] Listener routes exist for TMF620 core resources
 - [x] Subscribed event callbacks update local state correctly
-- [ ] Verification notes captured for full TMFC surface
+- [ ] Verification notes captured for full TMFC surface (including TMF671/TMF701)
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
 ### Exposed TMF APIs / Resources
@@ -118,9 +118,9 @@ These are the first TMFCs we should actively track in detail:
 | TMF620 | product-catalog-management-api | productOfferingPrice | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_product_catalog/controllers/catalog_controller.py` |
 | TMF620 | product-catalog-management-api | importJob | POST, GET, GET /id, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
 | TMF620 | product-catalog-management-api | exportJob | POST, GET, GET /id, DELETE | Implemented | Added to `tmf_product_catalog` via `models/catalog_resources.py` + `controllers/catalog_controller.py` |
-| TMF701 | process-flow-management-api | processFlow | POST, GET, GET /id, DELETE | Partially evidenced | Base module exists, route-by-route TMFC fit still to confirm |
-| TMF701 | process-flow-management-api | taskFlow | PATCH, GET, GET /id | Partially evidenced | Base module exists, route-by-route TMFC fit still to confirm |
-| TMF671 | promotion-management-api | promotion | GET, GET /id, POST, PATCH, DELETE | Partially evidenced | Base module exists, full TMFC fit still to confirm |
+| TMF701 | process-flow-management-api | processFlow | POST, GET, GET /id, DELETE | Evidenced | `tmf_process_flow` models emit processFlow* events via `tmf.process.flow.mixin` hooks and `_notify_subscribers`. |
+| TMF701 | process-flow-management-api | taskFlow | PATCH, GET, GET /id | Evidenced | `tmf_process_flow` models emit taskFlow* events, including `taskFlowInformationRequiredEvent`, via mixin hooks and `_notify_subscribers`. |
+| TMF671 | promotion-management-api | promotion | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_promotion_management.models.promotion` publishes Promotion* events from create/write/unlink via `_notify` and `tmf.hub.subscription`. |
 
 ### Dependent TMF APIs / Resources
 
@@ -162,8 +162,8 @@ These are the first TMFCs we should actively track in detail:
 - [x] Implement missing `category` endpoints if absent
 - [x] Implement missing `importJob` endpoints if absent
 - [x] Implement missing `exportJob` endpoints if absent
-- [ ] Verify TMF671 event publication in `tmf_promotion_management`
-- [ ] Verify TMF701 event publication in `tmf_process_flow`
+- [x] Verify TMF671 event publication in `tmf_promotion_management`
+- [x] Verify TMF701 event publication in `tmf_process_flow`
 - [x] Implement TMFC001 callback processing for TMF633 events
 - [x] Implement TMFC001 callback processing for TMF632 delete events
 - [x] Implement TMFC001 callback processing for TMF669 party-role delete events
