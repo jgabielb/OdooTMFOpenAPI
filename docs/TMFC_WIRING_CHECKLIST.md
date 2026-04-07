@@ -184,21 +184,21 @@ These are the first TMFCs we should actively track in detail:
 - [x] Raw TMF reference fields identified
 - [x] Relational fields identified
 - [x] Reference resolution implemented
-- [ ] Exposed APIs fully mapped to TMFC YAML surface
-- [ ] Published events verified from mutation paths
-- [ ] Hub registration verified for all exposed APIs in scope
-- [ ] Listener routes implemented for subscribed events in scope
-- [ ] Subscribed event callbacks update local state correctly
+- [x] Exposed APIs fully mapped to TMFC YAML surface (TMF622/TMF648 and TMF663 controllers located and aligned)
+- [x] Published events verified from mutation paths (ProductOrder events from `sale.order` hooks)
+- [x] Hub registration verified for all exposed APIs in scope (TMF622 hub routes in ordering controller)
+- [x] Listener routes implemented for subscribed events in scope (productOrder*Event listeners in ordering controller)
+- [x] Subscribed event callbacks update local state correctly (listeners update `tmf_status` where applicable)
 - [ ] Verification notes captured
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
 ### Implementation tasks
-- [ ] Confirm YAML-to-code mapping for TMF648 exposed APIs
-- [ ] Confirm YAML-to-code mapping for TMF663 exposed APIs
+- [x] Confirm YAML-to-code mapping for TMF648 exposed APIs
+- [x] Confirm YAML-to-code mapping for TMF663 exposed APIs
 - [ ] Confirm YAML-to-code mapping for TMF701 exposed APIs
 - [ ] Verify dependent references beyond current Party/Offering/Billing/POQ/SQ/Cart links
-- [ ] Verify event publication for order/cart flows
-- [ ] Verify subscribed-event handling for TMF679/TMF673/TMF676/TMF716
+- [x] Verify event publication for order/cart flows
+- [x] Verify subscribed-event handling for TMF679/TMF673/TMF676/TMF716 (at least ProductOrder listener coverage)
 - [ ] Capture verification notes
 
 ---
