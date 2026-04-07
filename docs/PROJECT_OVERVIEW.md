@@ -297,7 +297,115 @@ separate `_inherit` addons that never change controllers or `to_tmf_json`.
   - Wired into `create`/`write` with a `skip_tmf_wiring` guard so we can add
     resolution logic later without touching controllers.
 
-## 9) Next documentation targets
+## 9) TMFC029 – PaymentManagement
+
+TMFC029 is realized by a set of TMF payment-related addons that are already
+CTK-compliant and wired into Odoo accounting. No extra wiring module is
+introduced; instead, these modules form the Payment Management component.
+
+### TMF676 – Payment (`tmf_payment`)
+
+- Core model: `tmf.payment` (`_inherit = ["tmf.model.mixin"]`).
+- Links to Odoo accounting:
+  - `partner_id` → `res.partner` (customer).
+  - `account_payment_id` → `account.payment` (Odoo payment).
+  - `invoice_ids` → Many2many `account.move` (invoices).
+  - `payment_method_line_id` → `account.payment.method.line`.
+  - `journal_id` → `account.journal`.
+- TMF JSON storage:
+  - `account_json` (accountRef), `total_amount_json`, `payment_method_json`,
+    `channel_json`, `payment_item_json`.
+- Resolution logic:
+  - `_resolve_partner_from_account_json()` → derives `res.partner` from
+    `account_json` using TMF ids.
+  - `_resolve_invoices_from_payment_item_json()` → derives invoices from
+    `paymentItem.item.id`.
+  - `_resolve_payment_method_line()` → derives the Odoo payment method line
+    from `paymentMethod` via `tmf.payment.method`.
+- `_sync_account_payment()`:
+  - Ensures an `account.payment` exists and is kept in sync:
+    - Sets partner, invoices, amount, journal, and payment method line based on
+      TMF JSON and native links.
+    - Only updates existing payments while in `draft` state.
+- `to_tmf_json()`:
+  - Builds TMF676 `Payment` payload, ensuring:
+    - `account` and `paymentItem` are populated from native links if JSON is
+      missing.
+    - `status` reflects TMF status or underlying `account.payment.state`.
+    - `fields` projection is supported while always emitting `id`/`href`.
+- Lifecycle:
+  - `create`:
+    - Backfills `account_json` from `partner_id` when missing.
+    - Calls `_sync_account_payment()`.
+    - Emits `PaymentCreateEvent` via `tmf.hub.subscription`.
+  - `write`:
+    - Re-syncs Odoo payment and emits `PaymentAttributeValueChangeEvent`.
+  - `unlink`:
+    - Sends `PaymentDeleteEvent` with preserved payloads.
+
+### TMF670 – PaymentMethod (`tmf_payment_method`)
+
+- Core model: `tmf.payment.method`.
+- TMF fields: `tmf_id`, `href`, `@type`, `@baseType`, `@schemaLocation`, plus
+  `name`, `description`, `is_preferred`, status, `validFor`, and JSON-backed
+  `account`, `relatedParty`, `relatedPlace`, `extra_attrs_json`.
+- Links to Odoo accounting:
+  - `payment_method_line_id` → `account.payment.method.line`.
+  - `journal_id` → `account.journal`.
+- `_sync_account_payment_method()`:
+  - Matches/assigns an `account.payment.method.line` (and journal) based on
+    the TMF payment method name and optional journal.
+  - Falls back to a sensible default bank/cash journal when required.
+- `to_tmf_dict()`:
+  - Builds TMF670 payload and ensures CTK-visible attributes such as
+    `cardNumber`, `brand`, `expirationDate`, `nameOnCard` are always present
+    (as empty strings if necessary) to satisfy CTK list validations.
+- Creation & patching helpers:
+  - `tmf_create_from_payload(payload, api_base_path)` → creates a TMF Payment
+    Method from POST payload and sets `href`.
+  - `tmf_apply_merge_patch` / `tmf_apply_json_patch` → implement PATCH semantics
+    including merge of `extra_attrs_json`.
+- Lifecycle:
+  - `create`:
+    - Auto-generates `tmf_id` and defaults `@baseType`.
+    - Syncs Odoo payment method lines and emits `PaymentMethodCreateEvent`.
+  - `write`:
+    - Re-syncs and emits `PaymentMethodAttributeValueChangeEvent`.
+  - `unlink`:
+    - Emits `PaymentMethodDeleteEvent`.
+
+### TransferBalance (`tmf_transfer_balance`)
+
+- Model: `tmf.transfer.balance` (`_inherit = ["tmf.model.mixin"]`).
+- Fields map TMF TransferBalance attributes (confirmationDate, usageType,
+  amount, bucket, receiver, relatedParty, etc.).
+- Links to Odoo:
+  - `partner_id` → `res.partner`.
+  - `account_payment_id` → `account.payment`.
+  - `account_move_id` → `account.move`.
+- `_resolve_partner()` / `_sync_native_links()`:
+  - Resolve `relatedParty` JSON refs into `res.partner`.
+  - Attach the most recent payment and invoice for that partner for
+    traceability.
+- `to_tmf_json()` returns a CTK-compliant TransferBalance payload.
+- Lifecycle:
+  - `create` → syncs native links and emits `transferBalance/create` events.
+  - `write` → resyncs when relevant fields change and emits `update` events.
+  - `unlink` → emits `delete` events with preserved payloads.
+
+Together, these addons implement **TMFC029 PaymentManagement** on top of Odoo:
+- TMF676 Payment is the orchestration point between TMF payments and
+  `account.payment`/`account.move`.
+- TMF670 PaymentMethod bridges TMF payment methods to Odoo payment method
+  lines and journals.
+- TransferBalance provides TMF-compliant balance transfer operations tied back
+  to partners, payments, and invoices.
+
+All of this is CTK-first: we do not alter controllers or `to_tmf_json` from
+outside these modules, and any future wiring must follow the side-car pattern
+used for other TMFCs.
+
+## 10) Next documentation targets
 
 - Document TMF632 Party mapping to `res.partner` + identity-by-document rules.
 - Document TMF620 Catalog modeling (ProductSpecification vs ProductOffering split).

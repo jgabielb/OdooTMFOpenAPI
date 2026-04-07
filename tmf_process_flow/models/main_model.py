@@ -106,10 +106,27 @@ class TMFProcessFlowMixin(models.AbstractModel):
         return self._tmf_normalize_payload(payload)
 
     def _notify(self, action, rec):
+        event_map = {
+            "processFlow": {
+                "create": "processFlowCreateEvent",
+                "update": "processFlowAttributeValueChangeEvent",
+                "state_change": "processFlowStateChangeEvent",
+                "delete": "processFlowDeleteEvent",
+            },
+            "taskFlow": {
+                "create": "taskFlowCreateEvent",
+                "update": "taskFlowAttributeValueChangeEvent",
+                "state_change": "taskFlowStateChangeEvent",
+                "delete": "taskFlowDeleteEvent",
+                "information_required": "taskFlowInformationRequiredEvent",
+            },
+        }
+        api_name = self._tmf_api_name()
+        mapped = (event_map.get(api_name) or {}).get(action, action)
         try:
             self.env["tmf.hub.subscription"]._notify_subscribers(
-                api_name=self._tmf_api_name(),
-                event_type=action,
+                api_name=api_name,
+                event_type=mapped,
                 resource_json=rec.to_tmf_json(),
             )
         except Exception:
