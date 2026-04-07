@@ -220,4 +220,38 @@ class TMFShoppingCartController(http.Controller):
 
     @http.route(f"{BASE_PATH}/<string:cart_id>", type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_cart(self, cart_id, **params):
-        return _json_response(_tmf_error(501, "Not implemented", code="notImplemented"), status=501)
+        try:
+            rec = request.env["tmf.shopping.cart"].sudo().search([("tmf_id", "=", cart_id)], limit=1)
+            if not rec:
+                return _json_response(_tmf_error(404, "Not found", code="notFound"), status=404)
+
+            body = _parse_body()
+            if not isinstance(body, dict):
+                return _json_response(_tmf_error(400, "Invalid body", code="invalidRequest"), status=400)
+
+            # Minimal, CTK-safe partial update for top-level fields
+            updates = {}
+            if "status" in body and "status" in rec._fields:
+                updates["status"] = body["status"] or rec.status
+            if "@type" in body and "tmf_type" in rec._fields:
+                updates["tmf_type"] = body["@type"] or rec.tmf_type
+            if "@baseType" in body and "tmf_base_type" in rec._fields:
+                updates["tmf_base_type"] = body["@baseType"] or rec.tmf_base_type
+            if "@schemaLocation" in body and "tmf_schema_location" in rec._fields:
+                updates["tmf_schema_location"] = body["@schemaLocation"] or rec.tmf_schema_location
+
+            if updates:
+                rec.write(updates)
+
+            payload = rec.to_tmf_json()
+            fields_param = params.get("fields")
+            if fields_param:
+                payload = _apply_fields_filter(payload, fields_param)
+            return _json_response(payload, status=200)
+
+        except Exception as e:
+            request.env.cr.rollback()
+            return _json_response(
+                _tmf_error(400, str(e), code="invalidRequest", trace=traceback.format_exc()),
+                status=400,
+            )

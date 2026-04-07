@@ -144,11 +144,25 @@ class TMFOrderingController(TMFBaseController):
             return f"{base}/tmf-api/productOrderingManagement/v5/productOrder/{fallback_id}"
         return base
 
-    def _listener_ok(self):
-        payload = self._parse_json_body()
+    def _update_order_from_event(self, payload, update_state=False):
         if not isinstance(payload, dict):
             return self._error(400, "InvalidRequest", "Invalid JSON body")
-        # Keep listener responses lightweight, but include correlation id header.
+        event = payload.get("event") or {}
+        po = event.get("productOrder") or {}
+        po_id = str(po.get("id") or "").strip()
+        if not po_id:
+            return self._error(400, "MissingMandatoryAttribute", "event.productOrder.id is required")
+
+        order = self._find_order(po_id)
+        if not order:
+            return self._error(404, "NotFound", f"ProductOrder {po_id} not found")
+
+        vals = {}
+        if update_state and po.get("state") in self.TMF_ALLOWED_STATES:
+            if "tmf_status" in order._fields:
+                vals["tmf_status"] = po["state"]
+        if vals:
+            order.sudo().write(vals)
         return self._json({}, status=201)
 
     # =======================================================
@@ -395,20 +409,25 @@ class TMFOrderingController(TMFBaseController):
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderCreateEvent', type='http', auth='public', methods=['POST'], csrf=False)
     def listen_product_order_create(self, **params):
-        return self._listener_ok()
+        payload = self._parse_json_body()
+        return self._update_order_from_event(payload, update_state=False)
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderAttributeValueChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
     def listen_product_order_attr(self, **params):
-        return self._listener_ok()
+        payload = self._parse_json_body()
+        return self._update_order_from_event(payload, update_state=False)
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderStateChangeEvent', type='http', auth='public', methods=['POST'], csrf=False)
     def listen_product_order_state(self, **params):
-        return self._listener_ok()
+        payload = self._parse_json_body()
+        return self._update_order_from_event(payload, update_state=True)
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderDeleteEvent', type='http', auth='public', methods=['POST'], csrf=False)
     def listen_product_order_delete(self, **params):
-        return self._listener_ok()
+        payload = self._parse_json_body()
+        return self._update_order_from_event(payload, update_state=False)
 
     @http.route('/tmf-api/productOrderingManagement/v5/listener/productOrderInformationRequiredEvent', type='http', auth='public', methods=['POST'], csrf=False)
     def listen_product_order_info_required(self, **params):
-        return self._listener_ok()
+        payload = self._parse_json_body()
+        return self._update_order_from_event(payload, update_state=False)
