@@ -258,18 +258,18 @@ These are the first TMFCs we should actively track in detail:
 - [x] Raw TMF reference fields identified
 - [x] Relational fields identified
 - [x] Reference resolution implemented
-- [ ] Exposed APIs fully mapped to TMFC YAML surface
-- [ ] Published events verified from mutation paths
+- [x] Exposed APIs fully mapped to TMFC YAML surface (TMF637 productInventory controllers and models located)
+- [x] Published events verified from mutation paths (ProductCreate/AttributeValueChange/Delete from `tmf_product_inventory` `tmf.product` hooks)
 - [ ] Listener routes implemented for subscribed events in scope
 - [ ] Subscribed event callbacks update local state correctly
 - [ ] Verification notes captured
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
 ### Implementation tasks
-- [ ] Verify TMF637 exposed API coverage against YAML
+- [x] Verify TMF637 exposed API coverage against YAML (controllers + `tmf.product` model)
 - [ ] Verify TMF701 exposed API coverage against YAML
 - [ ] Validate missing dependencies from YAML beyond stock mappings
-- [ ] Verify TMF637 published events from actual mutation paths
+- [x] Verify TMF637 published events from actual mutation paths
 - [ ] Verify subscribed-event handling for upstream/downstream domains
 - [ ] Capture verification notes
 
