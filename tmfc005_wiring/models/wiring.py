@@ -124,10 +124,6 @@ class ProductInventoryTMFC005Wiring(models.Model):
         "tmf.product.offering.price", "tmfc005_product_offering_price_rel",
         "product_id", "price_id", string="Product Offering Prices (TMF620)",
     )
-    product_order_ids = fields.Many2many(
-        "tmf.product.order", "tmfc005_product_order_rel",
-        "product_id", "order_id", string="Product Orders (TMF622)",
-    )
     service_ids = fields.Many2many(
         "tmf.service", "tmfc005_product_service_rel",
         "product_id", "service_id", string="Realizing Services (TMF638)",
@@ -288,14 +284,6 @@ class ProductInventoryTMFC005Wiring(models.Model):
                 ids = _resolve_ids(self.env, "tmf.product.offering.price", price_refs)
                 if ids:
                     updates["product_offering_price_ids"] = [(6, 0, ids)]
-
-            order_refs = rec.product_order_ref_json or payload.get("productOrder") or rec.product_order_item or []
-            if isinstance(order_refs, dict):
-                order_refs = [order_refs]
-            if not rec.product_order_ids and order_refs:
-                ids = _resolve_ids(self.env, "tmf.product.order", order_refs)
-                if ids:
-                    updates["product_order_ids"] = [(6, 0, ids)]
 
             agreement_refs = rec.agreement_ref_json or payload.get("agreement") or rec.agreement or []
             if isinstance(agreement_refs, dict):
