@@ -21,7 +21,7 @@
                             <field name="product_offering_ids" widget="many2many_tags" nolabel="1"/>
                         </group>
                         <group string="TMF622 — Product Orders">
-                            <field name="product_order_ids" widget="many2many_tags" nolabel="1"/>
+                            <!-- product_order_ids removed: tmf.product.order model not present -->
                         </group>
                     </group>
                     <group>
