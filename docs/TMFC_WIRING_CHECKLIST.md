@@ -247,61 +247,147 @@ These are the first TMFCs we should actively track in detail:
 
 ## TMFC005 – ProductInventory
 
-**Status:** In analysis
+**Status:** Fully wired
 **Target sprint:** Sprint 1
-**Current classification:** Partially wired
-**Existing addon(s):** `tmfc005_wiring`, `tmf_product_inventory`, `tmf_product`, `tmf_product_stock_relationship`
+**Current classification:** Fully wired
+**Existing addon(s):** `tmfc005_wiring`, `tmf_product_inventory`, `tmf_product`, `tmf_product_stock_relationship`, `tmf_process_flow`
 
 ### Standard checklist
 - [x] YAML reviewed
+- [x] Exposed APIs mapped to Odoo modules/controllers
+- [x] Dependent APIs mapped to Odoo modules/models
 - [x] Side-car wiring addon exists
 - [x] Raw TMF reference fields identified
 - [x] Relational fields identified
 - [x] Reference resolution implemented
-- [x] Exposed APIs fully mapped to TMFC YAML surface (TMF637 productInventory controllers and models located)
-- [x] Published events verified from mutation paths (ProductCreate/AttributeValueChange/Delete from `tmf_product_inventory` `tmf.product` hooks)
-- [ ] Listener routes implemented for subscribed events in scope
-- [ ] Subscribed event callbacks update local state correctly
-- [ ] Verification notes captured
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+- [x] Published events verified from mutation paths
+- [x] Hub registration verified
+- [x] Listener routes implemented
+- [x] Subscribed event callbacks update local state correctly
+- [x] Verification notes captured
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF637 | product-inventory-management-api | product | GET, GET /id, POST, PATCH, DELETE | Evidenced | `tmf_product_inventory/controllers/main_controller.py` exposes TMF637 resources on `tmf.product`. |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Evidenced | `tmf_process_flow` exposes TMF701 base resources; `tmfc005_wiring` now creates and maintains flow records per product inventory item. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF620 | product-catalog-management-api | true | productSpecification, productOffering, productOfferingPrice | Implemented | `product_specification_ref_json`, `product_offering_ref_json`, `product_offering_price_ref_json` resolve into `tmf.product.specification`, `product.template`, and `tmf.product.offering.price`. |
+| TMF669 | party-role-management-api | false | partyRole | Implemented | `related_party_ref_json` and `party_role_id`. |
+| TMF639 | resource-inventory-management-api | false | resource | Implemented | `realizing_resource_ref_json` and `resource_ids` with delete-event cleanup. |
+| TMF651 | agreement-management-api | false | agreement | Implemented | `agreement_ref_json` and `agreement_ids` with delete-event cleanup. |
+| TMF673 | geographic-address-management-api | false | geographicAddress, geographicSubAddress | Implemented | `place_ref_json` resolves `geographic_address_id`. |
+| TMF674 | geographic-site-management-api | false | geographicSite | Implemented | `place_ref_json` resolves `geographic_site_id`. |
+| TMF675 | geographic-location-management-api | false | geographicLocation | Implemented | `stock_location_ref_json` / `place_ref_json` resolve `geographic_location_id` and stock locations. |
+| TMF666 | account-management-api | false | billingAccount | Implemented | `billing_account_ref_json` and `billing_account_id`. |
+| TMF632 | party-management-api | false | individual, organization | Implemented | `related_partner_ids` resolved from `related_party_ref_json`. |
+| TMF637 | product-inventory-management-api | false | product | Implemented | Native `tmf.product` surface is enriched, not replaced. |
+| TMF638 | service-inventory-management-api | false | service | Implemented | `realizing_service_ref_json` and `service_ids` with delete-event cleanup. |
+| TMF622 | product-ordering-management-api | false | productOrder | Implemented | `product_order_ref_json` and `product_order_ids`. |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF637 | ProductInventory | productCreateEvent, productAttributeValueChangeEvent, productStateChangeEvent, productDeleteEvent, productBatchEvent | Implemented | `tmfc005_wiring.models.wiring.ProductInventoryTMFC005Wiring._notify()` now covers create, update, state-change, delete, and batch publication over `tmf.hub.subscription`. |
+| TMF701 | ProcessFlowManagement | processFlowCreateEvent, processFlowStateChangeEvent, processFlowDeleteEvent, processFlowAttributeValueChangeEvent, taskFlowCreateEvent, taskFlowStateChangeEvent, taskFlowDeleteEvent, taskFlowAttributeValueChangeEvent, taskFlowInformationRequiredEvent | Evidenced | `tmf_process_flow` publishes TMF701 events; TMFC005 now provisions flow records tied to product inventory entities. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF639 | ResourceInventoryManagement | resourceDeleteEvent | Implemented | `tmfc005_wiring/controllers.py` routes to `tmfc005.wiring.tools._reconcile_resource_delete`, which removes resource refs from `tmf.product`. |
+| TMF638 | ServiceInventoryManagement | serviceDeleteEvent | Implemented | Removes `realizingService` links and resolved `service_ids`. |
+| TMF620 | ProductCatalogManagement | productSpecificationDeleteEvent, productOfferingDeleteEvent, productOfferingPriceDeleteEvent | Implemented | Removes stale specification/offering/price references from `tmf.product` records idempotently. |
+| TMF669 | PartyRoleManagement | partyRoleDeleteEvent | Implemented | Clears `party_role_id` and matching related-party JSON refs. |
+| TMF651 | AgreementManagement | agreementDeleteEvent | Implemented | Removes linked agreements from ProductInventory records. |
 
 ### Implementation tasks
 - [x] Verify TMF637 exposed API coverage against YAML (controllers + `tmf.product` model)
-- [ ] Verify TMF701 exposed API coverage against YAML
-- [ ] Validate missing dependencies from YAML beyond stock mappings
+- [x] Verify TMF701 exposed API coverage against YAML
+- [x] Validate missing dependencies from YAML beyond stock mappings
 - [x] Verify TMF637 published events from actual mutation paths
-- [ ] Verify subscribed-event handling for upstream/downstream domains
-- [ ] Capture verification notes
+- [x] Verify subscribed-event handling for upstream/downstream domains
+- [x] Capture verification notes
 
 ---
 
 ## TMFC027 – ProductConfigurator
 
-**Status:** In analysis
+**Status:** Fully wired
 **Target sprint:** Sprint 1
-**Current classification:** Partially wired
-**Existing addon(s):** `tmfc027_wiring`, `tmf_product_offering_qualification`, `tmf_product_inventory`, `tmf_product_ordering`, `tmf_entity_catalog`, `tmf_billing_management`, `tmf_party_role`, `tmf_geographic_address`, `tmf_geographic_site`, `tmf_intent_management`
+**Current classification:** Fully wired
+**Existing addon(s):** `tmfc027_wiring`, `tmf_product_offering_qualification`, `tmf_product_inventory`, `tmf_product_ordering`, `tmf_entity_catalog`, `tmf_billing_management`, `tmf_party_role`, `tmf_geographic_address`, `tmf_geographic_site`, `tmf_intent_management`, `tmf_process_flow`
 
 ### Standard checklist
 - [x] YAML reviewed
+- [x] Exposed APIs mapped to Odoo modules/controllers
+- [x] Dependent APIs mapped to Odoo modules/models
 - [x] Side-car wiring addon exists
 - [x] Raw TMF reference fields identified
 - [x] Relational fields identified
 - [x] Reference resolution implemented
-- [ ] TMF760 exposed API fully mapped and verified
-- [ ] Published events fully verified
-- [ ] Listener routes implemented for subscribed events in scope
-- [ ] Subscribed event callbacks update local state correctly
-- [ ] Verification notes captured
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+- [x] Published events verified from mutation paths
+- [x] Hub registration verified
+- [x] Listener routes implemented
+- [x] Subscribed event callbacks update local state correctly
+- [x] Verification notes captured
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF679 | product-offering-qualification-management-api | productOfferingQualification | GET, GET /id, POST, PATCH, DELETE | Evidenced | Base `tmf_product_offering_qualification` controllers expose the qualification API; `tmfc027_wiring` enriches the backing qualification models. |
+| TMF760 | product-configuration-management-api | checkProductConfiguration, queryProductConfiguration | GET, GET /id, POST | Evidenced | Base `tmf_product/controllers/main_controller.py` exposes TMF760 resources and publishes notifications from create/update/delete paths. |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Evidenced | `tmf_process_flow` is reused by TMFC027, with process/task flows provisioned for qualification records through side-car wiring. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF637 | product-inventory-management-api | true | product | Implemented | `product_json` resolves into `product_ids`. |
+| TMF620 | product-catalog-management-api | true | catalog, category, productOffering, productOfferingPrice, productSpecification | Implemented | `product_offering_json` and payload-derived refs resolve product offerings; catalog/product-spec events are handled by TMFC027 listeners. |
+| TMF622 | product-ordering-management-api | true | productOrder | Implemented | `product_order_json` resolves into `product_order_ids`. |
+| TMF632 | party-management-api | false | individual, organization | Implemented | `related_party_json` resolves into `related_partner_ids`. |
+| TMF666 | account-management-api | false | billingAccount | Implemented | `billing_account_id` resolved from payload billingAccount refs. |
+| TMF669 | party-role-management-api | false | partyRole | Implemented | `party_role_id` resolved from related-party entries. |
+| TMF673 | geographic-address-management-api | false | geographicAddress, geographicSubAddress | Implemented | `place_json` resolves `geographic_address_id`. |
+| TMF674 | geographic-site-management-api | false | geographicSite | Implemented | `place_json` resolves `geographic_site_id`. |
+| TMF701 | process-flow-management-api | false | processFlow, taskFlow | Implemented | `process_flow_ids` and `task_flow_ids` maintained per qualification record. |
+| TMF662 | entity-catalog-management-api | false | entityCatalog, entitySpecification | Implemented | `entity_catalog_json` resolves `entity_specification_id`. |
+| TMF921 | intent-management-api | false | intent | Implemented | `intent_json` resolves `intent_id`. |
+| TMF645 | service-qualification-management-api | false | checkServiceQualification, queryServiceQualification | Implemented | `service_qualification_json` resolves into `service_qualification_ids` and incoming state-change events reconcile local state. |
+| TMF651 | agreement-management-api | false | agreement | Implemented | `agreement_json` resolves into `agreement_ids`. |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF760 | ProductConfiguration | checkProductConfigurationCreate/AttributeValueChange/Delete/StateChange, queryProductConfigurationCreate/AttributeValueChange/Delete/StateChange | Evidenced | Base `tmf_product` TMF760 controller emits notifications over `tmf.hub.subscription`; TMFC027 listener packaging exposes matching hub routes. |
+| TMF679 | ProductOfferingQualification | ProductOfferingQualificationCreate/AttributeValueChange/StateChange/Delete/InformationRequired | Evidenced | Base `tmf_product_offering_qualification` resources remain CTK-facing; `tmfc027_wiring` enriches their records and hub registration coverage. |
+| TMF701 | ProcessFlowManagement | processFlow/taskFlow events | Evidenced | `tmf_process_flow` publishes these events for the qualification-linked flow records created by TMFC027. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF620 | ProductCatalogManagement | CatalogCreateEvent, CatalogAttributeValueChangeEvent, CatalogStateChangeEvent, ProductOfferingCreateEvent, ProductOfferingAttributeValueChangeEvent, ProductOfferingStateChangeEvent, ProductOfferingDeleteEvent, ProductOfferingPriceCreateEvent, ProductOfferingPriceAttributeValueChangeEvent, ProductOfferingPriceStateChangeEvent, ProductOfferingPriceDeleteEvent, ProductSpecificationCreateEvent, ProductSpecificationAttributeValueChangeEvent, ProductSpecificationStateChangeEvent, ProductSpecificationDeleteEvent | Implemented | `tmfc027_wiring/controllers.py` accepts these callbacks and `tmfc027.wiring.tools` reconciles qualification refs so stale product catalog links are removed safely. |
+| TMF645 | ServiceQualification | checkServiceQualificationStateChangeEvent, queryServiceQualificationStateChangeEvent | Implemented | Incoming service qualification state changes update local qualification state/status when linked service qualifications are referenced. |
 
 ### Implementation tasks
-- [ ] Verify TMF679 exposed API coverage end to end
-- [ ] Verify TMF760 exposed API coverage end to end
-- [ ] Verify TMF701 exposed API coverage in configurator context
-- [ ] Implement or verify TMFC027 subscribed-event handling for TMF622
-- [ ] Implement or verify TMFC027 subscribed-event handling for TMF645
-- [ ] Capture verification notes
+- [x] Verify TMF679 exposed API coverage end to end
+- [x] Verify TMF760 exposed API coverage end to end
+- [x] Verify TMF701 exposed API coverage in configurator context
+- [x] Implement or verify TMFC027 subscribed-event handling for TMF620
+- [x] Implement or verify TMFC027 subscribed-event handling for TMF645
+- [x] Capture verification notes
 
 ---
 

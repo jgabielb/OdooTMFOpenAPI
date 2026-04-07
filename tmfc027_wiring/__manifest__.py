@@ -28,6 +28,7 @@
         'tmf_geographic_address',
         'tmf_geographic_site',
         'tmf_intent_management',
+        'tmf_process_flow',
     ],
     'data': [
         'views/wiring_views.xml',
