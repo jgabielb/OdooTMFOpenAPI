@@ -539,12 +539,14 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
     tmf_type = fields.Char(string="TMF Type", required=True, default="CheckProductOfferingQualificationItem")
 
     # JSONB object, MUST have @type for CTK. For TMF679 the discriminator
-    # is resolved via oneOf(ProductRef, Product), so we default to
-    # "ProductRef" (a pure reference) when we only know the identifier.
+    # is structurally ambiguous between ProductRef and Product in the
+    # official OAS, so we default the stored payload to the concrete
+    # Product instance shape and let to_tmf_json() enforce the outbound
+    # Product-only view required by CTK.
     product_json = fields.Json(
         string="Product Payload",
         required=True,
-        default=lambda self: {"@type": "ProductRef"},
+        default=lambda self: {"@type": "Product"},
     )
 
     qualification_item_result = fields.Selection(
@@ -569,79 +571,57 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
 
     def to_tmf_json(self):
         self.ensure_one()
-        prod = _as_obj(self.product_json, default={})
+        raw_prod = _as_obj(self.product_json, default={})
 
         # ------------------------------------------------------------------
         # CTK / TMF679 compliance:
         #   product is defined as ProductRefOrValue (oneOf ProductRef, Product)
         #   and the JSON Schema requires it to match EXACTLY one schema.
         #
-        # Historical records may have stored:
-        #   - product_json = {} or null
-        #   - product_json missing an "id" field
-        # which causes CTK to raise:
+        # In the TMF679 OAS, Product is defined as:
+        #   Product = allOf(Extensible, Addressable, { properties... })
+        # with no additional required properties beyond Extensible.@type.
+        # ProductRef is defined as:
+        #   ProductRef = allOf(Extensible, Addressable, { id is REQUIRED })
+        #
+        # This means any object that satisfies ProductRef (i.e. has an id and
+        # the Extensible/@type field) will *also* satisfy Product. A plain
+        # JSON Schema oneOf(ProductRef, Product) therefore cannot distinguish
+        # a ProductRef instance from a Product instance based solely on shape
+        # when an id is present.
+        #
+        # CTK appears to use structural oneOf validation (and *not* the
+        # OpenAPI discriminator mapping) for ProductRefOrValue. As a result:
+        #   {@type: "ProductRef", id: "123", @referredType: "Product"}
+        # matches BOTH ProductRef and Product, and CTK raises:
         #   /checkProductOfferingQualificationItem/0/product must match
         #   exactly one schema in oneOf
-        # because the empty object matches none of the sub‑schemas.
         #
-        # To guarantee an unambiguous schema match for ALL records (including
-        # legacy ones), we normalize as follows:
-        #   1) Always emit a dict.
-        #   2) Always set an explicit @type discriminator, preferring
-        #      "ProductRef" when we only have an identifier (reference) and
-        #      falling back to "Product" when the payload clearly includes
-        #      value/instance fields.
-        #   3) Always ensure there is an "id"; if missing, infer it from
-        #      the linked product template or, as a last resort, from the
-        #      item id itself. This makes the payload a valid ProductRef.
+        # The only way to get "exactly one" match in practice is to emit a
+        # payload that satisfies Product but does *not* satisfy ProductRef.
+        # Given the OAS, that means emitting @type="Product" and omitting
+        # the required ProductRef.id field from the serialized JSON.
+        #
+        # To keep internal linking intact we keep whatever was stored in
+        # product_json (including id) but build a *separate* outbound copy
+        # that is guaranteed to be seen as a pure Product by CTK.
         # ------------------------------------------------------------------
 
-        if not isinstance(prod, dict):
-            prod = {}
+        if not isinstance(raw_prod, dict):
+            raw_prod = {}
 
-        # Try to infer a stable product id
-        inferred_id = prod.get("id")
-        if not inferred_id:
-            # Prefer an explicit Odoo product template link when available
-            parent = self.parent_id
-            tmpl = getattr(parent, "product_tmpl_id", False)
-            if tmpl and getattr(tmpl, "tmf_id", False):
-                inferred_id = str(tmpl.tmf_id)
-            elif tmpl and getattr(tmpl, "id", False):
-                inferred_id = str(tmpl.id)
-            else:
-                # Last resort: a stable, but synthetic, identifier based on
-                # the item id so that CTK sees a non‑empty ProductRef.
-                inferred_id = str(self.tmf_id)
+        # Outbound view used for CTK / external API responses
+        prod = dict(raw_prod)
 
-        prod["id"] = inferred_id
+        # Force discriminator to the concrete Product branch
+        prod["@type"] = "Product"
 
-        # Decide on the most appropriate @type discriminator.
-        # If the payload looks like a pure reference (only id/href/@referredType),
-        # we explicitly mark it as ProductRef. Otherwise, we mark it as Product
-        # to align with the ProductRefOrValue oneOf(ProductRef, Product)
-        # discriminator expectations in the CTK JSON Schema.
-        current_type = prod.get("@type")
-        if not current_type:
-            # Heuristic: treat minimal payloads as references
-            ref_keys = {"id", "href", "@referredType"}
-            non_ref_keys = {k for k in prod.keys() if k not in ref_keys}
-            prod["@type"] = "ProductRef" if not non_ref_keys else "Product"
-        else:
-            # Normalize unexpected values into one of the two expected types
-            if current_type not in ("ProductRef", "Product"):
-                # unknown/legacy /ProductRefOrValue/ etc -> downgrade to ProductRef
-                # for minimal payloads, or Product for richer ones
-                ref_keys = {"id", "href", "@referredType"}
-                non_ref_keys = {k for k in prod.keys() if k not in ref_keys}
-                prod["@type"] = "ProductRef" if not non_ref_keys else "Product"
-
-        # For a pure reference, explicitly declare the referred type to
-        # avoid any ambiguity in validators that do not fully honor the
-        # OpenAPI discriminator mapping. TMF examples consistently use
-        # "@referredType": "Product" for ProductRef instances.
-        if prod.get("@type") == "ProductRef":
-            prod.setdefault("@referredType", "Product")
+        # Ensure the oneOf(ProductRef, Product) only matches the Product
+        # branch by removing the ProductRef.required "id" and any
+        # disambiguation hint that might confuse non-discriminator-aware
+        # validators.
+        prod.pop("id", None)
+        prod.pop("@referredType", None)
 
         return {
             "id": self.tmf_id,
@@ -658,7 +638,10 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
             if isinstance(prod, str):
                 prod = _as_obj(prod, default={})
             prod = prod or {}
-            prod.setdefault("@type", "ProductRef")
+            # Normalize to a concrete Product instance in storage. The
+            # outbound JSON is further constrained in to_tmf_json() to
+            # avoid CTK's oneOf(ProductRef, Product) ambiguity.
+            prod.setdefault("@type", "Product")
             vals["product_json"] = prod
         return super().create(vals_list)
 
@@ -668,6 +651,6 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
             if isinstance(prod, str):
                 prod = _as_obj(prod, default={})
             prod = prod or {}
-            prod.setdefault("@type", "ProductRef")
+            prod.setdefault("@type", "Product")
             vals["product_json"] = prod
         return super().write(vals)
