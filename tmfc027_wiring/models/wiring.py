@@ -226,7 +226,7 @@ class CheckPOQTMFC027Wiring(models.Model):
             if not process_flow:
                 process_flow = ProcessFlow.create({
                     "tmf_id": f"tmfc027-check-{rec.tmf_id or rec.id}",
-                    "name": f"POQ flow {rec.name or rec.tmf_id or rec.id}",
+                    "name": f"POQ flow {getattr(rec, "name", "") or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 process flow for check qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
                 })
@@ -234,7 +234,7 @@ class CheckPOQTMFC027Wiring(models.Model):
             if not task_flow:
                 task_flow = TaskFlow.create({
                     "tmf_id": f"tmfc027-check-task-{rec.tmf_id or rec.id}",
-                    "name": f"POQ task {rec.name or rec.tmf_id or rec.id}",
+                    "name": f"POQ task {getattr(rec, "name", "") or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 task flow for check qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
                     "process_flow_id": process_flow.id,
@@ -387,7 +387,7 @@ class QueryPOQTMFC027Wiring(models.Model):
             if not process_flow:
                 process_flow = ProcessFlow.create({
                     "tmf_id": f"tmfc027-query-{rec.tmf_id or rec.id}",
-                    "name": f"POQ query flow {rec.name or rec.tmf_id or rec.id}",
+                    "name": f"POQ query flow {getattr(rec, "name", "") or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 process flow for query qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
                 })
@@ -395,7 +395,7 @@ class QueryPOQTMFC027Wiring(models.Model):
             if not task_flow:
                 task_flow = TaskFlow.create({
                     "tmf_id": f"tmfc027-query-task-{rec.tmf_id or rec.id}",
-                    "name": f"POQ query task {rec.name or rec.tmf_id or rec.id}",
+                    "name": f"POQ query task {getattr(rec, "name", "") or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 task flow for query qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
                     "process_flow_id": process_flow.id,
