@@ -636,6 +636,13 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
                 non_ref_keys = {k for k in prod.keys() if k not in ref_keys}
                 prod["@type"] = "ProductRef" if not non_ref_keys else "Product"
 
+        # For a pure reference, explicitly declare the referred type to
+        # avoid any ambiguity in validators that do not fully honor the
+        # OpenAPI discriminator mapping. TMF examples consistently use
+        # "@referredType": "Product" for ProductRef instances.
+        if prod.get("@type") == "ProductRef":
+            prod.setdefault("@referredType", "Product")
+
         return {
             "id": self.tmf_id,
             "@type": self.tmf_type,
