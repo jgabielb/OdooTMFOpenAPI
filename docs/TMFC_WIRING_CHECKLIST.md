@@ -104,8 +104,8 @@ These are the first TMFCs we should actively track in detail:
 - [x] Hub registration verified
 - [x] Listener routes exist for TMF620 core resources
 - [x] Subscribed event callbacks update local state correctly
-- [ ] Verification notes captured for full TMFC surface (including TMF671/TMF701)
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+- [x] Verification notes captured for full TMFC surface (including TMF671/TMF701)
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
 ### Exposed TMF APIs / Resources
 
@@ -167,7 +167,14 @@ These are the first TMFCs we should actively track in detail:
 - [x] Implement TMFC001 callback processing for TMF633 events
 - [x] Implement TMFC001 callback processing for TMF632 delete events
 - [x] Implement TMFC001 callback processing for TMF669 party-role delete events
-- [ ] Capture verification notes
+- [x] Capture verification notes
+
+### Verification notes
+- TMF620 Product Catalog exposed surface: `tmf_product_catalog` controllers now expose catalog, category, productSpecification, productOffering, productOfferingPrice, importJob, and exportJob with full CRUD operations aligned to the YAML. All resources publish TMF620 events from model create/write/unlink paths, and catalog/category/import/export jobs are wired through `tmf.hub.subscription` so external subscribers receive notifications.
+- TMF671 Promotion Management: `tmf_promotion_management.models.promotion.TMFPromotion` persists Promotion resources on `tmf.promotion`, computes pricing via `_sync_pricing()`, and publishes PromotionCreate/PromotionAttributeValueChange/PromotionDelete events from `create`, `write`, and `unlink` through its `_notify()` helper and `tmf.hub.subscription._notify_subscribers`. This satisfies TMFC001's requirement that promotions be exposed and event-enabled as part of the catalog component.
+- TMF701 Process Flow: `tmf_process_flow` provides shared TMF701 resources (processFlow, taskFlow, and their specifications) backed by `tmf.process.flow.mixin`. The mixin emits processFlow*/taskFlow* events via `_notify()` and `tmf.hub.subscription._notify_subscribers` on create, update, state_change, delete, and information_required paths. TMFC001 does not add catalog-specific process-flow models; instead it uses the shared TMF701 implementation while ensuring catalog entities can attach related flows when needed.
+- Dependent TMF APIs: `tmfc001_wiring` side-car models resolve TMF633/634/632/669/651/673/674/675 references into `tmf_product_catalog` entities (e.g., service/resource specifications, party/party-role, agreements, and geographic address/site/location). JSON reference fields are preserved for fidelity, and relational Many2one/Many2many fields are kept in sync for Odoo-native behavior.
+- Subscribed events: TMFC001 listener controllers accept TMF633 serviceSpecification/resourceSpecification events and TMF632/TMF669 delete events. `tmfc001.wiring.tools` reconciles these callbacks by updating or removing references from catalog, category, productSpecification, and productOffering/productOfferingPrice records. Delete-event handlers are idempotent and respect `skip_tmf_wiring` context flags to avoid recursion.
 
 ---
 
