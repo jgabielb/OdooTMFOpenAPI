@@ -408,7 +408,7 @@ class ProductInventoryTMFC005Wiring(models.Model):
             "id": f"tmfc005-product-{self.tmf_id or self.id}",
             "name": f"Product flow {self.name or self.tmf_id or self.id}",
             "description": f"Auto-generated TMFC005 process flow for product {self.tmf_id or self.id}",
-            "status": self.status or "acknowledged",
+            "state": self.status or "inProgress",
 
         }
 
@@ -418,7 +418,7 @@ class ProductInventoryTMFC005Wiring(models.Model):
             "id": f"tmfc005-task-{self.tmf_id or self.id}",
             "name": f"Inventory task {self.name or self.tmf_id or self.id}",
             "description": f"Auto-generated TMFC005 task flow for product {self.tmf_id or self.id}",
-            "status": self.status or "acknowledged",
+            "state": self.status or "inProgress",
         }
 
     def _ensure_tmfc005_process_flows(self):
@@ -435,13 +435,13 @@ class ProductInventoryTMFC005Wiring(models.Model):
                     "tmf_id": f"tmfc005-product-{rec.tmf_id or rec.id}",
                     "name": f"Product flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 process flow for product {rec.tmf_id or rec.id}",
-                    "status": rec.status or "acknowledged",
+                    "state": rec.status or "inProgress",
                 })
             else:
                 process_flow.write({
                     "name": f"Product flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 process flow for product {rec.tmf_id or rec.id}",
-                    "status": rec.status or process_flow.status,
+                    "state": rec.status or process_flow.state,
                 })
             task_flow = rec.task_flow_ids[:1]
             if not task_flow:
@@ -451,14 +451,14 @@ class ProductInventoryTMFC005Wiring(models.Model):
                     "tmf_id": f"tmfc005-task-{rec.tmf_id or rec.id}",
                     "name": f"Inventory task {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 task flow for product {rec.tmf_id or rec.id}",
-                    "status": rec.status or "acknowledged",
+                    "state": rec.status or "inProgress",
                     "process_flow_id": process_flow.id,
                 })
             else:
                 task_flow.write({
                     "name": f"Inventory task {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 task flow for product {rec.tmf_id or rec.id}",
-                    "status": rec.status or task_flow.status,
+                    "state": rec.status or task_flow.state,
                     "process_flow_id": process_flow.id,
                 })
             updates["process_flow_ids"] = [(6, 0, [process_flow.id])]
