@@ -70,6 +70,10 @@ class CheckPOQTMFC027Wiring(models.Model):
         "tmf.agreement", "tmfc027_check_poq_agreement_rel",
         "poq_id", "agreement_id", string="Agreements (TMF651)"
     )
+    product_order_ids = fields.Many2many(
+        "sale.order", "tmfc027_check_poq_sale_order_rel",
+        "poq_id", "sale_order_id", string="Product Orders (TMF622)"
+    )
     billing_account_id = fields.Many2one(
         "tmf.billing.account", string="Billing Account (TMF666)",
         index=True, ondelete="set null"
@@ -161,6 +165,11 @@ class CheckPOQTMFC027Wiring(models.Model):
                 ids = _resolve_ids(self.env, "tmf.agreement", effective_agreement_json)
                 if ids:
                     updates["agreement_ids"] = [(6, 0, ids)]
+
+            if not rec.product_order_ids and effective_order_json:
+                ids = _resolve_ids(self.env, "sale.order", effective_order_json, id_field="tmf_id")
+                if ids:
+                    updates["product_order_ids"] = [(6, 0, ids)]
 
             if not rec.billing_account_id:
                 ba = payload.get("billingAccount") or {}
