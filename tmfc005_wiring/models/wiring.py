@@ -409,7 +409,7 @@ class ProductInventoryTMFC005Wiring(models.Model):
             "name": f"Product flow {self.name or self.tmf_id or self.id}",
             "description": f"Auto-generated TMFC005 process flow for product {self.tmf_id or self.id}",
             "status": self.status or "acknowledged",
-            "relatedParty": self.related_party_json or self.related_party or [],
+
         }
 
     def _build_task_flow_resource(self):
@@ -436,14 +436,12 @@ class ProductInventoryTMFC005Wiring(models.Model):
                     "name": f"Product flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 process flow for product {rec.tmf_id or rec.id}",
                     "status": rec.status or "acknowledged",
-                    "related_party": rec.related_party_json or rec.related_party or [],
                 })
             else:
                 process_flow.write({
                     "name": f"Product flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC005 process flow for product {rec.tmf_id or rec.id}",
                     "status": rec.status or process_flow.status,
-                    "related_party": rec.related_party_json or rec.related_party or process_flow.related_party,
                 })
             task_flow = rec.task_flow_ids[:1]
             if not task_flow:

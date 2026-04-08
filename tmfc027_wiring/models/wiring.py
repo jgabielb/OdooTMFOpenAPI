@@ -229,7 +229,6 @@ class CheckPOQTMFC027Wiring(models.Model):
                     "name": f"POQ flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 process flow for check qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
-                    "related_party": rec.related_party_json or [],
                 })
             task_flow = rec.task_flow_ids[:1] or TaskFlow.search([("tmf_id", "=", f"tmfc027-check-task-{rec.tmf_id or rec.id}")], limit=1)
             if not task_flow:
@@ -391,7 +390,6 @@ class QueryPOQTMFC027Wiring(models.Model):
                     "name": f"POQ query flow {rec.name or rec.tmf_id or rec.id}",
                     "description": f"Auto-generated TMFC027 process flow for query qualification {rec.tmf_id or rec.id}",
                     "status": getattr(rec, "state", False) or getattr(rec, "status", False) or "acknowledged",
-                    "related_party": rec.related_party_json or [],
                 })
             task_flow = rec.task_flow_ids[:1] or TaskFlow.search([("tmf_id", "=", f"tmfc027-query-task-{rec.tmf_id or rec.id}")], limit=1)
             if not task_flow:
