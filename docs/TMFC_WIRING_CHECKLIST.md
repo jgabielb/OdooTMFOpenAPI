@@ -173,9 +173,9 @@ These are the first TMFCs we should actively track in detail:
 
 ## TMFC002 – ProductOrderCaptureAndValidation
 
-**Status:** In analysis
+**Status:** Fully wired
 **Target sprint:** Sprint 1
-**Current classification:** Partially wired
+**Current classification:** Fully wired
 **Existing addon(s):** `tmfc002_wiring`, `tmf_product_ordering`, `tmf_shopping_cart`, `tmf_product_offering_qualification`, `tmf_service_qualification`
 
 ### Standard checklist
@@ -189,17 +189,25 @@ These are the first TMFCs we should actively track in detail:
 - [x] Hub registration verified for all exposed APIs in scope (TMF622 hub routes in ordering controller)
 - [x] Listener routes implemented for subscribed events in scope (productOrder*Event listeners in ordering controller)
 - [x] Subscribed event callbacks update local state correctly (listeners update `tmf_status` where applicable)
-- [ ] Verification notes captured
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+- [x] Verification notes captured
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+
+### Verification notes
+- TMF701 ProcessFlow exposed APIs (processFlow, taskFlow and their specifications) are provided by the shared `tmf_process_flow` addon, whose controller (`tmf_process_flow/controllers/main_controller.py`) exposes the full CRUD surface described in the TMF701 YAML. TMFC002 does not add product-order–specific flow provisioning; instead, downstream components (TMFC003/TMFC005/TMFC027) provision TMF701 flows for delivery and inventory. This satisfies the TMFC002 YAML requirement that ProcessFlow be exposed, without introducing duplicate orchestration logic in the capture/validation layer.
+- TMFC002 dependent references beyond Party/Offering/Billing/POQ/SQ/Cart are covered as follows:
+  - TMF620/TMF622/TMF632/TMF666/TMF679/TMF645/TMF663 are wired directly via `tmfc002_wiring` + `tmf_product_ordering`/`tmf_shopping_cart` (JSON refs on the ProductOrder payload with resolved Many2one/Many2many relations for partners, offerings, billing accounts, POQ/SQ/cart).
+  - TMF637 ProductInventory (required) is wired from the inventory side in `tmfc005_wiring`, which links `tmf.product` back to ProductOrder via TMF622 refs; TMFC002 preserves product-related payload so that inventory can reconcile against it.
+  - TMF646 Appointment, TMF673 GeographicAddress, TMF674 GeographicSite, TMF687 StockManagement, TMF669 PartyRole, and TMF676 Payment are provided by their respective TMF addons and wiring components (TMFC005/TMFC027/TMFC031). TMFC002 preserves the corresponding payload fragments but intentionally does not duplicate those resolution rules; reconciliation occurs in the owning components.
+- Event model alignment: ProductOrder events (TMF622) are emitted from `sale.order` create/write/unlink in `tmf_product_ordering.models.sale_order`, and listener callbacks in the ProductOrdering controller update `tmf_status` consistently with TMF622 state semantics. ShoppingCart PATCH (TMF663) is implemented in `tmf_shopping_cart` and participates in the capture/validation surface without additional TMFC002 hooks.
 
 ### Implementation tasks
 - [x] Confirm YAML-to-code mapping for TMF648 exposed APIs
 - [x] Confirm YAML-to-code mapping for TMF663 exposed APIs
-- [ ] Confirm YAML-to-code mapping for TMF701 exposed APIs
-- [ ] Verify dependent references beyond current Party/Offering/Billing/POQ/SQ/Cart links
+- [x] Confirm YAML-to-code mapping for TMF701 exposed APIs
+- [x] Verify dependent references beyond current Party/Offering/Billing/POQ/SQ/Cart links
 - [x] Verify event publication for order/cart flows
 - [x] Verify subscribed-event handling for TMF679/TMF673/TMF676/TMF716 (at least ProductOrder listener coverage)
-- [ ] Capture verification notes
+- [x] Capture verification notes
 
 ---
 
