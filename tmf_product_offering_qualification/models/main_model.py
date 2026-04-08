@@ -457,14 +457,15 @@ class TMFCheckProductOfferingQualification(models.Model):
 
         items = data.get("checkProductOfferingQualificationItem") or []
         if items == []:
-            items = [{"product": {"@type": "ProductRefOrValue"}, "qualificationItemResult": "qualified", "state": "done"}]
+            items = [{"product": {"@type": "ProductRef"}, "qualificationItemResult": "qualified", "state": "done"}]
 
         for item_data in items:
             item_data = item_data or {}
             prod = item_data.get("product") or {}
             if isinstance(prod, str):
                 prod = _as_obj(prod, default={})
-            prod.setdefault("@type", "ProductRefOrValue")
+            prod = prod or {}
+            prod.setdefault("@type", "ProductRef")
 
             self.env["tmf.check.poq.item"].create({
                 "parent_id": record.id,
@@ -537,11 +538,13 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
     tmf_id = fields.Char(string="Item ID", required=True, default=lambda self: str(uuid.uuid4()))
     tmf_type = fields.Char(string="TMF Type", required=True, default="CheckProductOfferingQualificationItem")
 
-    # JSONB object, MUST have @type for CTK
+    # JSONB object, MUST have @type for CTK. For TMF679 the discriminator
+    # is resolved via oneOf(ProductRef, Product), so we default to
+    # "ProductRef" (a pure reference) when we only know the identifier.
     product_json = fields.Json(
         string="Product Payload",
         required=True,
-        default=lambda self: {"@type": "ProductRefOrValue"},
+        default=lambda self: {"@type": "ProductRef"},
     )
 
     qualification_item_result = fields.Selection(
@@ -586,7 +589,8 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
         #   1) Always emit a dict.
         #   2) Always set an explicit @type discriminator, preferring
         #      "ProductRef" when we only have an identifier (reference) and
-        #      falling back to "ProductRefOrValue" otherwise.
+        #      falling back to "Product" when the payload clearly includes
+        #      value/instance fields.
         #   3) Always ensure there is an "id"; if missing, infer it from
         #      the linked product template or, as a last resort, from the
         #      item id itself. This makes the payload a valid ProductRef.
@@ -614,19 +618,23 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
 
         # Decide on the most appropriate @type discriminator.
         # If the payload looks like a pure reference (only id/href/@referredType),
-        # we explicitly mark it as ProductRef. Otherwise, fall back to the
-        # more general ProductRefOrValue while still keeping it unambiguous
-        # via the discriminator itself.
+        # we explicitly mark it as ProductRef. Otherwise, we mark it as Product
+        # to align with the ProductRefOrValue oneOf(ProductRef, Product)
+        # discriminator expectations in the CTK JSON Schema.
         current_type = prod.get("@type")
         if not current_type:
             # Heuristic: treat minimal payloads as references
             ref_keys = {"id", "href", "@referredType"}
             non_ref_keys = {k for k in prod.keys() if k not in ref_keys}
-            prod["@type"] = "ProductRef" if not non_ref_keys else "ProductRefOrValue"
+            prod["@type"] = "ProductRef" if not non_ref_keys else "Product"
         else:
             # Normalize unexpected values into one of the two expected types
-            if current_type not in ("ProductRef", "ProductRefOrValue", "Product"):
-                prod["@type"] = "ProductRefOrValue"
+            if current_type not in ("ProductRef", "Product"):
+                # unknown/legacy /ProductRefOrValue/ etc -> downgrade to ProductRef
+                # for minimal payloads, or Product for richer ones
+                ref_keys = {"id", "href", "@referredType"}
+                non_ref_keys = {k for k in prod.keys() if k not in ref_keys}
+                prod["@type"] = "ProductRef" if not non_ref_keys else "Product"
 
         return {
             "id": self.tmf_id,
@@ -643,7 +651,7 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
             if isinstance(prod, str):
                 prod = _as_obj(prod, default={})
             prod = prod or {}
-            prod.setdefault("@type", "ProductRefOrValue")
+            prod.setdefault("@type", "ProductRef")
             vals["product_json"] = prod
         return super().create(vals_list)
 
@@ -653,6 +661,6 @@ class TMFCheckProductOfferingQualificationItem(models.Model):
             if isinstance(prod, str):
                 prod = _as_obj(prod, default={})
             prod = prod or {}
-            prod.setdefault("@type", "ProductRefOrValue")
+            prod.setdefault("@type", "ProductRef")
             vals["product_json"] = prod
         return super().write(vals)
