@@ -455,6 +455,88 @@ These are the first TMFCs we should actively track in detail:
 
 ---
 
+## TMFC006 – ServiceCatalogManagement
+
+**Status:** In analysis
+**Target sprint:** Sprint 3
+**Current classification:** Missing (no side-car wiring addon yet)
+**Existing addon(s):** `tmf_service_catalog`, `tmf_service_quality_management`, `tmf_process_flow`, `tmf_resource_catalog`, `tmf_entity_catalog`, `tmf_customer`, `tmf_party_role`
+**Expected addon:** `tmfc006_wiring` (Service Catalog ODA wiring side-car)
+
+### Standard checklist
+- [x] YAML reviewed
+- [x] Exposed APIs / dependencies extracted from YAML
+- [x] Baseline exposed APIs mapped to Odoo modules/controllers
+- [ ] Dependent APIs mapped to Odoo modules/models (full coverage)
+- [ ] Side-car wiring addon exists or equivalent wiring approach justified
+- [ ] Raw TMF reference fields identified (ServiceCatalog, ServiceSpecification, ServiceCandidate, ServiceLevel* payloads)
+- [ ] Relational fields identified (links to Party, PartyRole, ResourceSpecification, EntitySpecification, associationSpecification)
+- [ ] Reference resolution implemented
+- [ ] Published events verified from mutation paths (TMF633/TMF657/TMF701)
+- [ ] Hub registration verified for TMF633/TMF657/TMF701
+- [ ] Listener routes implemented for subscribed events (TMF634/TMF662)
+- [ ] Subscribed event callbacks update local state correctly
+- [ ] Verification notes captured
+- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+
+### YAML scope summary
+- Exposed: TMF633, TMF657, TMF701
+- Dependencies: TMF634, TMF669, TMF632, TMF662
+- Published events: TMF633, TMF657, TMF701
+- Subscribed events: TMF634, TMF662
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF633 | service-catalog-management-api | catalog | GET, GET /id, POST, PATCH, DELETE | Implemented | `tmf_service_catalog.controllers.main_controller.TMFServiceCatalogController` exposes catalog CRUD and publishes hub notifications via `tmf.service.catalog._notify()` and `tmf.hub.subscription._notify_subscribers`. |
+| TMF633 | service-catalog-management-api | category | GET, GET /id, POST, PATCH, DELETE | Not evidenced | No `ServiceCategory` model/controller found in `tmf_service_catalog`; TMFC006 wiring will need to introduce category surface (or justify omission). |
+| TMF633 | service-catalog-management-api | serviceSpecification | GET, GET /id, POST, PATCH, DELETE | Implemented | `TMFServiceSpecificationController` + `tmf.service.specification` model provide CTK-facing serviceSpecification CRUD with JSON fields for `relatedParty` and `validFor`. |
+| TMF633 | service-catalog-management-api | serviceCandidate | GET, GET /id, POST, PATCH, DELETE | Not evidenced | No serviceCandidate controller/model was found; only catalog + serviceSpecification are implemented. |
+| TMF633 | service-catalog-management-api | exportJob | POST, GET, GET /id, DELETE | Not evidenced | No import/export job controllers found in `tmf_service_catalog`; jobs currently unimplemented. |
+| TMF633 | service-catalog-management-api | importJob | POST, GET, GET /id, DELETE | Not evidenced | Same as exportJob; YAML surface exists without implementation. |
+| TMF657 | service-quality-management-api | serviceLevelSpecification | GET, GET/id, POST, PATCH, DELETE | Implemented | `tmf_service_quality_management.controllers.service_level_specification_controller` + `tmf_service_quality_management.models.service_level_specification` expose CRUD and publish events via `_notify()` and `tmf.hub.subscription`. |
+| TMF657 | service-quality-management-api | serviceLevelObjective | GET, GET/id, POST, PATCH, DELETE | Implemented | `service_level_objective_controller` + `service_level_objective` model expose CRUD; hub wiring present via `hub_subscription` model. |
+| TMF657 | service-quality-management-api | serviceLevelSpecParameter | GET, GET/id, POST, PATCH, DELETE | Implemented | Parameter entities handled together with service-level spec/objective models; exposed via `service_level_specification_controller`. |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Evidenced (shared) | Base TMF701 surface is provided by `tmf_process_flow` (controllers + models). TMFC006 does not yet attach service catalog records to specific process/task flows. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF634 | resource-catalog-management-api | false | resourceSpecification | Evidenced (base) | `tmf_resource_catalog` module exposes TMF634 CRUD for `resourceSpecification`; no TMFC006-specific wiring was found to store or reconcile resourceSpecification refs from service catalog records. |
+| TMF669 | party-role-management-api | false | partyRole | Evidenced (base) | `tmf_party_role` module exposes TMF669; service catalog models store `relatedParty` as JSON only, without resolving partyRole relations yet. |
+| TMF632 | party-management-api | false | individual, organization | Evidenced (base) | `tmf_customer` / `tmf_party` stack exposes TMF632; service catalog records currently keep raw `relatedParty` JSON and do not map it to `res.partner` or Party/PartyRole models in a TMFC006-specific way. |
+| TMF662 | entity-catalog-management-api | false | entitySpecification, associationSpecification | Evidenced (base) | `tmf_entity_catalog` module exposes TMF662; TMFC006 does not yet link service specifications to entity/association specifications per YAML intent.
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF633 | ServiceCatalogManagement | serviceSpecificationCreate/Change/Delete, serviceCategoryCreate/Change/Delete, serviceCandidateCreate/Change/Delete, serviceCatalogCreate/Change/Delete, serviceCatalogBatchEvent | Partially evidenced | `tmf.service.catalog` and `tmf.service.specification` models call `_notify()` on create/update/delete, which delegates to `tmf.hub.subscription._notify_subscribers` for `serviceCatalog` and `serviceSpecification`. However, there is no category/serviceCandidate model and no explicit implementation of `serviceCatalogBatchEvent`, so the full event catalogue is not yet covered. |
+| TMF657 | ServiceQualityManagement | serviceLevelObjectiveCreate/Change/AttributeValueChange, serviceLevelSpecificationCreate/Delete/AttributeValueChange | Partially evidenced | `tmf_service_quality_management` models publish events via `_notify()` on create/write/unlink; attribute-value change vs generic change events are not yet separately modeled, but overall notification flow exists through `tmf.hub.subscription`. |
+| TMF701 | ProcessFlowManagement | processFlow/taskFlow create/stateChange/delete/attributeValueChange/informationRequired | Evidenced (shared) | `tmf_process_flow` mixin publishes TMF701 events for process/task flows. TMFC006 reuses this, but no catalog-specific provisioning or correlation to catalog/specification entities is implemented yet. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF634 | ResourceCatalogManagement | resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Not evidenced | TMFC006 YAML requires listening to TMF634 events, but no `tmfc006_*` listener controllers or tools exist; `tmf_service_catalog` does not currently process resourceSpecification callbacks. |
+| TMF662 | EntityCatalogManagement | entitySpecificationCreate/AttributeValueChange/Change/Delete events | Not evidenced | `tmf_entity_catalog` exposes TMF662, but there is no TMFC006-side listener surface at `/tmf-api/EntityCatalog/call-back` or equivalent to reconcile entity/association specs into service catalog structures. |
+
+### Implementation tasks
+- [x] Confirm YAML-to-code mapping for TMF633, TMF657, TMF701 exposed APIs (baseline add-ons)
+- [ ] Create `tmfc006_wiring` addon skeleton following the established side-car pattern (models, controllers, security, data).
+- [ ] Introduce raw JSON reference fields for key YAML dependencies (TMF634/TMF632/TMF669/TMF662) on service catalog/specification/candidate entities (or in side-car models).
+- [ ] Add relational fields and reference resolution logic to map those JSON refs into Odoo models (resourceSpecification, entitySpecification/associationSpecification, Party/PartyRole).
+- [ ] Implement TMF633 hub registration routes and ensure `tmf.hub.subscription` lifecycle is covered for ServiceCatalog and ServiceSpecification events (including any batch events we choose to support).
+- [ ] Decide and implement strategy for `serviceCategory`, `serviceCandidate`, `importJob`, and `exportJob` resources (native models vs thin wrappers vs explicit out-of-scope justification).
+- [ ] Wire TMF701 processFlow/taskFlow records to service catalog entities where lifecycle workflows are required (reusing `tmf_process_flow` mixin patterns from TMFC001/TMFC003/TMFC005/TMFC027).
+- [ ] Design and implement listener endpoints for TMF634 ResourceCatalog events, including reconciliation of resourceSpecification references into service specifications and candidates.
+- [ ] Design and implement listener endpoints for TMF662 EntityCatalog events, including reconciliation of entity/association specifications used in service models.
+- [ ] Capture verification notes summarizing cross-component interactions with TMFC001/TMFC005/TMFC027 and with underlying TMF634/TMF662 domains.
+- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the first wiring pass is complete.
+
 ## TMFC007 – ServiceOrderManagement
 
 **Status:** In analysis
@@ -551,7 +633,6 @@ These are the first TMFCs we should actively track in detail:
 ## Backlog TMFCs to expand next
 
 These still need to be converted from YAML summaries into execution checklists:
-- TMFC006
 - TMFC008
 - TMFC009
 - TMFC010
