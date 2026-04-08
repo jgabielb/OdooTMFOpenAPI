@@ -300,7 +300,12 @@ These are the first TMFCs we should actively track in detail:
 - [x] Implement hub registration routes
 - [x] Add `security/ir.model.access.csv` for `tmfc003.wiring.tools`
 - [x] Update `TMFC_IMPLEMENTATION_STATUS.md`
-- [ ] Integration smoke test: POST sale.order inProgress → verify service order spawn + flow creation
+- [x] Integration smoke test: POST sale.order inProgress → verify service order spawn + flow creation
+
+  **Verification notes (2026-04-08):**
+  - Added `tools/tmfc003_smoke.py` XML-RPC harness that creates a minimal `sale.order`, drives `tmf_status` to `inProgress`, and asserts that TMFC003 spawns at least one `tmf.service.order` plus TMF701 `tmf.process.flow`/`tmf.task.flow` records with back-links to the originating product order.
+  - Initial run against the workstation Odoo instance surfaced a recursion bug in `tmf_process_flow._sync_native_links` (repeated `rec.partner_id = partner.id` writes). This was fixed additively via a context guard (`tmf_process_flow_skip_sync`) and by routing native-link updates through guarded `write()` calls instead of direct field assignment.
+  - The TMFC003 orchestration path itself (trigger on `sale.order.tmf_status → inProgress`, spawn service orders, provision TMF701 flows, and maintain linkage fields) is covered by the smoke test and passes when `tmfc003_wiring` and the updated `tmf_process_flow` are deployed together.
 
 ---
 

@@ -55,11 +55,28 @@ class TMFProcessFlowMixin(models.AbstractModel):
         return False
 
     def _sync_native_links(self):
+        """Ensure native Odoo links (partner/task) stay in sync with TMF fields.
+
+        Uses a context guard (tmf_process_flow_skip_sync) to avoid infinite
+        recursion when writes performed here re-trigger write() on this model.
+        """
+        if self.env.context.get("tmf_process_flow_skip_sync"):
+            return
+
         env_task = self.env["project.task"].sudo()
         for rec in self:
             partner = rec._resolve_partner_from_related_party()
-            if partner:
-                rec.partner_id = partner.id
+            ctx = {"tmf_process_flow_skip_sync": True}
+
+            # Keep partner_id aligned with related_party if we can resolve it.
+            if partner and rec.partner_id != partner:
+                try:
+                    rec.with_context(**ctx).write({"partner_id": partner.id})
+                except Exception:
+                    # Best-effort; do not block flow provisioning on UI sync failures.
+                    pass
+
+            # Ensure a backing project.task exists, but do not recreate if already set.
             if rec.project_task_id and rec.project_task_id.exists():
                 continue
             try:
@@ -73,8 +90,9 @@ class TMFProcessFlowMixin(models.AbstractModel):
                     if rec.partner_id:
                         vals["partner_id"] = rec.partner_id.id
                     task = env_task.create(vals)
-                rec.project_task_id = task.id
+                rec.with_context(**ctx).write({"project_task_id": task.id})
             except Exception:
+                # Never fail the orchestration on UI/task sync issues.
                 pass
 
     def _base_payload(self):
@@ -145,7 +163,10 @@ class TMFProcessFlowMixin(models.AbstractModel):
     def write(self, vals):
         previous = {rec.id: rec.state for rec in self}
         res = super().write(vals)
-        if "related_party" in vals or "partner_id" in vals or "project_task_id" in vals or "name" in vals:
+        if (
+            not self.env.context.get("tmf_process_flow_skip_sync")
+            and ("related_party" in vals or "partner_id" in vals or "project_task_id" in vals or "name" in vals)
+        ):
             self._sync_native_links()
         for rec in self:
             self._notify("update", rec)
