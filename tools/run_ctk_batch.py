@@ -34,7 +34,7 @@ LOCAL_HOST_BASE_URL = "http://127.0.0.1:8069"
 
 # These TMF IDs have newer CTK versions that don't reliably write reports to the host mount.
 # Force the runner to prefer the last known-working (older) version for them.
-PREFER_OLDER_CTKS = {"TMF638", "TMF679"}
+PREFER_OLDER_CTKS = {"TMF638"}
 
 # When multiple launchers exist at the same TMF+version, prefer a specific ctk dir name substring.
 # Key: TMF ID, Value: preferred dir name substring (matched case-insensitively).
