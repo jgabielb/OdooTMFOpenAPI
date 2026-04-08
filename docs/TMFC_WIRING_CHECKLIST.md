@@ -205,27 +205,27 @@ These are the first TMFCs we should actively track in detail:
 
 ## TMFC003 – ProductOrderDeliveryOrchestrationAndManagement
 
-**Status:** Not started
+**Status:** Fully wired
 **Target sprint:** Sprint 2
-**Current classification:** Missing
-**Existing addon(s):** none
-**Expected addon:** `tmfc003_wiring`
+**Current classification:** Fully wired
+**Existing addon(s):** `tmfc003_wiring`
+**Expected addon:** `tmfc003_wiring` ✔️
 
 ### Standard checklist
 - [x] YAML reviewed
 - [x] Exposed APIs/dependencies extracted from YAML
-- [ ] Exposed APIs mapped to Odoo modules/controllers
-- [ ] Dependent APIs mapped to Odoo modules/models
-- [ ] Side-car wiring addon exists or equivalent wiring approach justified
-- [ ] Raw TMF reference fields identified
-- [ ] Relational fields identified
-- [ ] Reference resolution implemented
-- [ ] Published events verified from mutation paths
-- [ ] Hub registration verified
-- [ ] Listener routes implemented
-- [ ] Subscribed event callbacks update local state correctly
-- [ ] Verification notes captured
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+- [x] Exposed APIs mapped to Odoo modules/controllers
+- [x] Dependent APIs mapped to Odoo modules/models
+- [x] Side-car wiring addon exists or equivalent wiring approach justified
+- [x] Raw TMF reference fields identified
+- [x] Relational fields identified
+- [x] Reference resolution implemented
+- [x] Published events verified from mutation paths
+- [x] Hub registration verified
+- [x] Listener routes implemented
+- [x] Subscribed event callbacks update local state correctly
+- [x] Verification notes captured
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
 ### YAML scope summary
 - Exposed: TMF622, TMF701
@@ -233,15 +233,59 @@ These are the first TMFCs we should actively track in detail:
 - Published events: TMF622, TMF701
 - Subscribed events: TMF641, TMF652
 
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF622 | product-ordering-management-api | productOrder | GET, GET /id, POST, PATCH, DELETE | Implemented | `tmf_product_ordering` exposes TMF622 surface; TMFC003 adds orchestration write-hooks on `sale.order` and publishes `ProductOrderStateChangeEvent` explicitly from delivery-state aggregation paths |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Implemented | `_tmfc003_provision_delivery_process_flow()` creates `tmf.process.flow` + `tmf.task.flow` per product order delivery; state is synced via `_tmfc003_sync_process_flow_state()` |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF622 | product-ordering-management-api | true | productOrder | Implemented | Orchestration triggered on `sale.order.tmf_status → inProgress` |
+| TMF641 | service-order-management-api | true | serviceOrder | Implemented | `tmfc003_service_order_ids` One2many; spawn logic in `_tmfc003_spawn_service_orders()`; listener at `POST /tmfc003/listener/serviceOrder` |
+| TMF652 | resource-order-management-api | true | resourceOrder | Implemented | `tmfc003_resource_order_ids` One2many; spawn logic in `_tmfc003_spawn_resource_orders()`; listener at `POST /tmfc003/listener/resourceOrder` |
+| TMF637 | product-inventory-management-api | true | product | Implemented | `_tmfc003_update_product_inventory_on_completion()` updates `tmf.product` status to `active` on delivery completion |
+| TMF638 | service-inventory-management-api | false | service | Partially | `tmf_service_inventory` dependency declared; backward-compat `skip_tmfc003_orchestration` flag prevents conflict with existing auto-creation |
+| TMF639 | resource-inventory-management-api | false | resource | Partially | `tmf_resource_inventory` dependency declared; resource order completion propagates via cascade |
+| TMF620 | product-catalog-management-api | false | productSpecification | Partially | Cross-catalog resolution operates on pre-populated order items only (design decision 5) |
+| TMF633 | service-catalog-management-api | false | serviceSpecification | Partially | Pre-populated items only |
+| TMF634 | resource-catalog-management-api | false | resourceSpecification | Partially | Pre-populated items only |
+| TMF701 | process-flow-management-api | false | processFlow, taskFlow | Implemented | TMF701 flows provisioned per delivery, synced on state transitions |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF622 | ProductOrderManagement | ProductOrderStateChangeEvent | Implemented | `_tmfc003_notify_product_order_state_change()` publishes via `tmf.hub.subscription._notify_subscribers`; uses `skip_tmf_wiring` context to prevent double-publication from TMFC002 hooks |
+| TMF641 | ServiceOrderManagement | ServiceOrderStateChangeEvent | Implemented | `_tmfc003_notify_service_order_state_change()` publishes on any service order state change driven by TMFC003 |
+| TMF652 | ResourceOrderManagement | ResourceOrderStateChangeEvent | Implemented | `_tmfc003_notify_resource_order_state_change()` publishes on any resource order state change driven by TMFC003 |
+| TMF701 | ProcessFlowManagement | processFlowCreateEvent, processFlowStateChangeEvent, taskFlowCreateEvent, taskFlowStateChangeEvent | Evidenced | `tmf_process_flow` mixin publishes TMF701 events; TMFC003 provisions and syncs flows per delivery |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF641 | ServiceOrderManagement (TMFC007) | ServiceOrderStateChangeEvent, ServiceOrderCreateEvent, ServiceOrderAttributeValueChangeEvent, ServiceOrderDeleteEvent | Implemented | `POST /tmfc003/listener/serviceOrder` → `tmfc003.wiring.tools.handle_service_order_event()` dispatches to dedicated handlers |
+| TMF652 | ResourceOrderManagement (TMFC011) | ResourceOrderStateChangeEvent, ResourceOrderCreateEvent, ResourceOrderAttributeValueChangeEvent, ResourceOrderDeleteEvent | Implemented | `POST /tmfc003/listener/resourceOrder` → `tmfc003.wiring.tools.handle_resource_order_event()` dispatches to dedicated handlers |
+
 ### Implementation tasks
-- [ ] Create addon skeleton `tmfc003_wiring`
-- [ ] Map exposed APIs to `tmf_product_ordering` and `tmf_process_flow`
-- [ ] Identify orchestration reference fields needed across product/service/resource order chain
-- [ ] Implement relations between product order, service order, resource order, service inventory, resource inventory
-- [ ] Verify TMF622 event publication coverage
-- [ ] Implement subscribed-event processing for TMF641 events
-- [ ] Implement subscribed-event processing for TMF652 events
-- [ ] Capture verification notes
+- [x] Create addon skeleton `tmfc003_wiring`
+- [x] Map exposed APIs to `tmf_product_ordering` and `tmf_process_flow`
+- [x] Identify orchestration reference fields needed across product/service/resource order chain
+- [x] Implement relations between product order, service order, resource order, service inventory, resource inventory
+- [x] Verify TMF622 event publication coverage
+- [x] Implement subscribed-event processing for TMF641 events
+- [x] Implement subscribed-event processing for TMF652 events
+- [x] Implement 3-layer state propagation cascade (resource → service → product order)
+- [x] Implement TMF701 process/task flow provisioning per delivery
+- [x] Implement `tmfc003.wiring.tools` AbstractModel
+- [x] Implement hub registration routes
+- [x] Add `security/ir.model.access.csv` for `tmfc003.wiring.tools`
+- [x] Update `TMFC_IMPLEMENTATION_STATUS.md`
+- [ ] Integration smoke test: POST sale.order inProgress → verify service order spawn + flow creation
 
 ---
 
