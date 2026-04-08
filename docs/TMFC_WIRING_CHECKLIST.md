@@ -450,11 +450,103 @@ These are the first TMFCs we should actively track in detail:
 
 ---
 
+## TMFC007 – ServiceOrderManagement
+
+**Status:** In analysis
+**Target sprint:** Sprint 2
+**Current classification:** Missing (no side-car wiring addon yet)
+**Existing addon(s):** `tmf_service_order`, `tmf_service_inventory`, `tmf_resource_inventory`, `tmf_appointment`, `tmf_geographic_address`, `tmf_geographic_site`, `tmf_geographic_location`, `tmf_communication_message`, `tmf_work_management`, `tmf_process_flow`
+**Expected addon:** `tmfc007_wiring` (Service Order ODA wiring side-car)
+
+### Standard checklist
+- [x] YAML reviewed
+- [x] Exposed APIs / dependencies extracted from YAML
+- [x] Exposed APIs mapped to Odoo modules/controllers (baseline)
+- [ ] Dependent APIs mapped to Odoo modules/models (full coverage)
+- [ ] Side-car wiring addon exists or equivalent wiring approach justified
+- [ ] Raw TMF reference fields identified (ServiceOrder payload, cancelServiceOrder, related entities)
+- [ ] Relational fields identified (links to Party, Service, Resource, Appointment, WorkOrder, etc.)
+- [ ] Reference resolution implemented
+- [ ] Published events verified from mutation paths (including stateChange, informationRequired, jeopardy, milestone, cancelServiceOrder*)
+- [ ] Hub registration verified for TMF641/TMF701
+- [ ] Listener routes implemented for subscribed events (TMF652, TMF645, TMF681, TMF697)
+- [ ] Subscribed event callbacks update local state correctly and reconcile with TMFC003/TMFC011 orchestration
+- [ ] Verification notes captured
+- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
+
+### YAML scope summary
+- Exposed: TMF641, TMF701
+- Dependencies: TMF632, TMF633, TMF634, TMF638, TMF639, TMF640, TMF641, TMF645, TMF646, TMF652, TMF653, TMF669, TMF673, TMF674, TMF675, TMF681, TMF697, TMF701
+- Published events: TMF641, TMF701
+- Subscribed events: TMF652, TMF645, TMF681, TMF697
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF641 | service-ordering-management-api | serviceOrder | GET, GET /id, POST, PATCH, DELETE | Implemented | `tmf_service_order/controllers/main_controller.py` exposes TMF641 serviceOrder endpoints on `/tmf-api/serviceOrdering/v4/serviceOrder`. |
+| TMF641 | service-ordering-management-api | cancelServiceOrder | GET, GET /id, POST | Not evidenced | No dedicated cancelServiceOrder model/controller found in `tmf_service_order`; cancellation is currently expressed via `state`, `cancellationDate`, and `cancellationReason` fields on `tmf.service.order` only. |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | GET, GET /id, POST, DELETE /id, PATCH /id | Evidenced (shared) | TMF701 base exposure is provided by `tmf_process_flow` as used already in TMFC003/TMFC005/TMFC027. TMFC007 does not yet have explicit wiring tying specific ServiceOrders to TMF701 flows. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF632 | party-management-api | false | individual, organization | Partially evidenced | `tmf_service_order/models/main_model.py` resolves `relatedParty` into `res.partner` records using `tmf_id`; underlying TMF632 exposure is via `tmf_customer` / `tmf_party` stack, but there is no dedicated TMFC007 side-car wiring yet. |
+| TMF633 | service-catalog-management-api | true | serviceSpecification | Not evidenced | `tmf_service_catalog` module exists, but no TMFC007-specific wiring layer was found to reconcile serviceSpecification refs from ServiceOrders. |
+| TMF634 | resource-catalog-management-api | false | resourceSpecification | Not evidenced | `tmf_resource_catalog` exists; no TMFC007 wiring to map ServiceOrder items to resourceSpecification. |
+| TMF638 | service-inventory-management-api | true | service | Not evidenced | `tmf_service_inventory` exists and is used by other TMFCs, but ServiceOrder JSON (`serviceOrderItem.service`) is not yet resolved into `tmf.service` relations. |
+| TMF639 | resource-inventory-management-api | false | resource | Not evidenced | `tmf_resource_inventory` exists; there is no explicit TMFC007 wiring from ServiceOrders to underlying resource inventory. |
+| TMF640 | service-activation-management-api | false | monitor | Not evidenced | No `tmf_service_activation` wiring discovered from ServiceOrders. |
+| TMF641 | service-ordering-management-api | false | serviceOrder, cancelServiceOrder | Implemented (self) | ServiceOrder base API is implemented in `tmf_service_order`; cancelServiceOrder remains missing as a first-class resource. |
+| TMF645 | service-qualification-management-api | false | checkServiceQualification, queryServiceQualification | Not evidenced | `tmf_service_qualification` exists; no TMFC007 wiring for pre-checking/recording service qualification context on ServiceOrders. |
+| TMF646 | appointment-management-api | false | appointment, searchTimeSlot | Not evidenced | `tmf_appointment` exists; ServiceOrders do not yet hold explicit appointment/searchTimeSlot refs. |
+| TMF652 | resource-order-management-api | false | resourceOrder, cancelResourceOrder | Not evidenced | TMF652 is implemented in `tmf_resource_order`; TMFC003 currently consumes ResourceOrder events, but TMFC007 does not yet model or call TMF652 directly. |
+| TMF653 | service-test-management-api | false | serviceTest, serviceTestSpecification | Not evidenced | `tmf_service_test` exists; no direct ServiceOrder wiring found. |
+| TMF669 | party-role-management-api | false | partyRole | Not evidenced | TMF669 is available via `tmf_party_role`; ServiceOrder currently resolves only `res.partner`, not partyRole-specific refs. |
+| TMF673 | geographic-address-management-api | false | geographicAddress, geographicSubAddress, geographicAddressValidation | Not evidenced | Geographic modules exist; ServiceOrders currently do not persist or resolve TMF673 place refs. |
+| TMF674 | geographic-site-management-api | false | geographicLocation | Not evidenced | No ServiceOrder wiring to TMF674 site/location entities. |
+| TMF675 | geographic-location-management-api | false | geographicSite | Not evidenced | No ServiceOrder wiring to TMF675 location entities. |
+| TMF681 | communication-management-api | false | communicationMessage | Not evidenced | `tmf_communication_message` exists; ServiceOrders do not yet link to communicationMessage records. |
+| TMF697 | work-order-management-api | false | workOrder | Not evidenced | `tmf_work_management` / WorkOrder APIs exist; ServiceOrders have a `project_task_id` bridge but no TMF697-specific workOrder linkage. |
+| TMF701 | process-flow-management-api | false | processFlow | Partially evidenced | `tmf_process_flow` provides TMF701; TMFC003 wires ProcessFlows for orchestration, but there is no dedicated TMFC007 association between ServiceOrders and processFlow/taskFlow instances. |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF641 | ServiceOrderingManagement | serviceOrderCreateEvent, serviceOrderAttributeValueChangeEvent, serviceOrderDeleteEvent | Implemented (subset) | `tmf.service.order._notify()` publishes `ServiceOrderCreateEvent`, `ServiceOrderAttributeValueChangeEvent`, and `ServiceOrderDeleteEvent` via `tmf.hub.subscription._notify_subscribers("serviceOrder", ...)`. |
+| TMF641 | ServiceOrderingManagement | serviceOrderStateChangeEvent, serviceOrderInformationRequiredEvent, serviceOrderMilestoneEvent, serviceOrderJeopardyEvent, cancelServiceOrderCreateEvent, cancelServiceOrderStateChangeEvent, cancelServiceOrderInformationRequiredEvent | Not evidenced | No explicit state machine or event emission for these event types was found in `tmf_service_order`; state is stored as a simple `state` Char field and cancellations are implicit. |
+| TMF701 | ProcessFlowManagement | processFlowCreateEvent, processFlowStateChangeEvent, processFlowDeleteEvent, processFlowAttributeValueChangeEvent, taskFlowCreateEvent, taskFlowStateChangeEvent, taskFlowDeleteEvent, taskFlowAttributeValueChangeEvent, taskFlowInformationRequiredEvent | Evidenced (shared) | `tmf_process_flow` mixin publishes TMF701 events; TMFC007 does not yet provision or own these flows, but they are available for future wiring. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF652 | ResourceOrderManagement | resourceOrderStateChange, resourceOrderAttributeValueChangeEvent, resourceOrderInformationRequiredEvent, cancelResourceOrderStateChange, cancelResourceOrderInformationRequiredEvent | Not evidenced | YAML lists TMF652 as an event source, but no TMFC007-specific listener routes or tools were found; TMFC003 currently consumes ResourceOrder events instead. |
+| TMF645 | ServiceQualification | checkServiceQualificationStateChangeEvent, queryServiceQualificationStateChangeEvent | Not evidenced | No ServiceOrder listener endpoints were found for TMF645 events; qualification linkage currently lives in TMFC027. |
+| TMF681 | Communication | communicationMessageStateChangeEvent | Not evidenced | No TMFC007 listener routes for Communication events were located. |
+| TMF697 | WorkOrder | workOrderStateChange | Not evidenced | WorkOrder events are not yet wired into ServiceOrders; state sync currently uses Odoo Project tasks only. |
+
+### Implementation tasks
+- [ ] Create `tmfc007_wiring` addon skeleton following the established side-car pattern (models, controllers, security, data).
+- [ ] Document and implement the ServiceOrder state model (including jeopardy/milestone/infoRequired semantics) and map to TMF641 `state` and event types.
+- [ ] Implement or justify handling for `cancelServiceOrder` as a first-class TMF641 resource (or explicitly document why cancellation will be modeled as a PATCH-only flow).
+- [ ] Introduce raw JSON reference fields for key YAML dependencies (TMF633/634/638/639/640/645/646/652/669/673/674/675/681/697) on `tmf.service.order` or its side-car model.
+- [ ] Add relational fields and reference resolution logic to map those JSON refs into Odoo models (service, resource, party, appointment, work order, geography, communication).
+- [ ] Implement TMF641 hub registration routes and ensure `tmf.hub.subscription` subscription lifecycle is covered for ServiceOrder events.
+- [ ] Wire TMF701 processFlow/taskFlow records to ServiceOrders where orchestration requires explicit flows (re-using `tmf_process_flow` mixin patterns from TMFC003/TMFC005/TMFC027).
+- [ ] Design and implement listener endpoints for TMF652 ResourceOrder events, including reconciliation of resourceOrder outcomes back into ServiceOrder state, coordinated with TMFC003/TMFC011 responsibilities.
+- [ ] Design and implement listener endpoints for TMF645, TMF681, and TMF697 events, with clear rules for when ServiceOrders should update state or metadata in response.
+- [ ] Capture verification notes summarizing cross-component interactions with TMFC003 (product-order orchestration) and TMFC011 (resource orders).
+- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the first wiring pass is complete.
+
+---
+
 ## Backlog TMFCs to expand next
 
 These still need to be converted from YAML summaries into execution checklists:
 - TMFC006
-- TMFC007
 - TMFC008
 - TMFC009
 - TMFC010
