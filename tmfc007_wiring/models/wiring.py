@@ -375,6 +375,79 @@ class TMFC007WiringTools(models.AbstractModel):
             return
         self._log_received_event("communication", event_name, payload)
 
+        # Safe, additive reconciliation:
+        # - update local CommunicationMessage ``state`` when record exists;
+        # - attach ServiceOrder links when the event payload carries
+        #   ``serviceOrder`` references.
+
+        ref_id = self._extract_resource_id(payload)
+        if not ref_id:
+            return
+
+        Communication = self.env["tmf.communication.message"].sudo()
+        msg = Communication.search([("tmf_id", "=", ref_id)], limit=1)
+        if not msg:
+            # Fallback: numeric database identifier
+            if ref_id.isdigit():
+                msg = Communication.browse(int(ref_id))
+                if not msg.exists():
+                    return
+            else:
+                return
+
+        resource = self._extract_event_resource(payload)
+
+        # 1) State reconciliation
+        new_state = str(resource.get("state") or "").strip()
+        if new_state and new_state != (msg.state or ""):
+            try:
+                msg.with_context(skip_tmf_wiring=True).write({"state": new_state})
+            except Exception as exc:  # pragma: no cover - best-effort
+                _logger.exception(
+                    "TMFC007: failed to update CommunicationMessage %s state: %s",
+                    ref_id,
+                    exc,
+                )
+
+        # 2) ServiceOrder dependency wiring (TMF641)
+        svc_refs = resource.get("serviceOrder") or []
+        if isinstance(svc_refs, dict):
+            svc_refs = [svc_refs]
+        if not isinstance(svc_refs, list):
+            svc_refs = []
+
+        service_ids = []
+        service_ref_json = []
+        if svc_refs:
+            ServiceOrder = self.env["tmf.service.order"].sudo()
+            for ref in svc_refs:
+                if not isinstance(ref, dict):
+                    continue
+                sid = str(ref.get("id") or "").strip()
+                if not sid:
+                    continue
+                service_ref_json.append(ref)
+                so = ServiceOrder.search([("tmf_id", "=", sid)], limit=1)
+                if not so and sid.isdigit():
+                    so = ServiceOrder.browse(int(sid))
+                if so and so.exists():
+                    service_ids.append(so.id)
+
+        if service_ids or service_ref_json:
+            try:
+                msg.with_context(skip_tmf_wiring=True).write(
+                    {
+                        "tmfc007_service_order_ref_json": service_ref_json,
+                        "tmfc007_service_order_ids": [(6, 0, service_ids)],
+                    }
+                )
+            except Exception as exc:  # pragma: no cover - best-effort
+                _logger.exception(
+                    "TMFC007: failed to update CommunicationMessage %s service order links: %s",
+                    ref_id,
+                    exc,
+                )
+
     # ------------------------------------------------------------------
     # TMF697 WorkOrder events
     # ------------------------------------------------------------------
@@ -383,4 +456,141 @@ class TMFC007WiringTools(models.AbstractModel):
         if event_name not in TMFC007_WORK_ORDER_EVENTS:
             return
         self._log_received_event("workOrder", event_name, payload)
+
+        # Safe, additive reconciliation for TMF713 Work records that are
+        # acting as WorkOrders in the TMFC007 context:
+        # - update ``state`` when the work record exists;
+        # - wire any ServiceOrder references carried in the payload.
+
+        ref_id = self._extract_resource_id(payload)
+        if not ref_id:
+            return
+
+        Work = self.env["tmf.work"].sudo()
+        work = Work.search([("tmf_id", "=", ref_id)], limit=1)
+        if not work:
+            if ref_id.isdigit():
+                work = Work.browse(int(ref_id))
+                if not work.exists():
+                    return
+            else:
+                return
+
+        resource = self._extract_event_resource(payload)
+
+        # 1) State reconciliation
+        new_state = str(resource.get("state") or "").strip()
+        if new_state and new_state != (work.state or ""):
+            try:
+                work.with_context(skip_tmf_wiring=True).write({"state": new_state})
+            except Exception as exc:  # pragma: no cover - best-effort
+                _logger.exception(
+                    "TMFC007: failed to update Work %s state from WorkOrder event: %s",
+                    ref_id,
+                    exc,
+                )
+
+        # 2) ServiceOrder dependency wiring (TMF641)
+        svc_refs = resource.get("serviceOrder") or []
+        if isinstance(svc_refs, dict):
+            svc_refs = [svc_refs]
+        if not isinstance(svc_refs, list):
+            svc_refs = []
+
+        service_ids = []
+        service_ref_json = []
+        if svc_refs:
+            ServiceOrder = self.env["tmf.service.order"].sudo()
+            for ref in svc_refs:
+                if not isinstance(ref, dict):
+                    continue
+                sid = str(ref.get("id") or "").strip()
+                if not sid:
+                    continue
+                service_ref_json.append(ref)
+                so = ServiceOrder.search([("tmf_id", "=", sid)], limit=1)
+                if not so and sid.isdigit():
+                    so = ServiceOrder.browse(int(sid))
+                if so and so.exists():
+                    service_ids.append(so.id)
+
+        if service_ids or service_ref_json:
+            try:
+                work.with_context(skip_tmf_wiring=True).write(
+                    {
+                        "tmfc007_service_order_ref_json": service_ref_json,
+                        "tmfc007_service_order_ids": [(6, 0, service_ids)],
+                    }
+                )
+            except Exception as exc:  # pragma: no cover - best-effort
+                _logger.exception(
+                    "TMFC007: failed to update Work %s service order links from WorkOrder event: %s",
+                    ref_id,
+                    exc,
+                )
+
+
+class TMFC007CommunicationWiring(models.Model):
+    """TMFC007 dependency wiring for TMF681 CommunicationMessage.
+
+    Adds JSON + relational links from communication messages back to
+    ServiceOrders (TMF641) whenever the TMFC007 listeners see
+    serviceOrder references inside CommunicationMessage events.
+    """
+
+    _inherit = "tmf.communication.message"
+
+    tmfc007_service_order_ref_json = fields.Json(
+        default=list,
+        string="ServiceOrder refs JSON (TMF641)",
+        help=(
+            "Raw TMF641 ServiceOrder references observed in CommunicationMessage "
+            "events. Kept for traceability; relational links below are the "
+            "authoritative navigation surface inside Odoo."
+        ),
+    )
+
+    tmfc007_service_order_ids = fields.Many2many(
+        "tmf.service.order",
+        "tmfc007_comm_message_service_order_rel",
+        "communication_id",
+        "service_order_id",
+        string="Service Orders (TMF641)",
+        help=(
+            "Resolved TMF641 ServiceOrder records referenced from CommunicationMessage "
+            "events.")
+    )
+
+
+class TMFC007WorkWiring(models.Model):
+    """TMFC007 dependency wiring for TMF713 Work / TMF697 WorkOrder.
+
+    TMFC007 treats TMF713 Work records as the local representation of
+    TMF697 WorkOrders. This extension adds JSON + relational links from
+    Work records back to ServiceOrders when TMFC007 listener callbacks
+    observe serviceOrder references in incoming WorkOrder events.
+    """
+
+    _inherit = "tmf.work"
+
+    tmfc007_service_order_ref_json = fields.Json(
+        default=list,
+        string="ServiceOrder refs JSON (TMF641)",
+        help=(
+            "Raw TMF641 ServiceOrder references observed in WorkOrder events. "
+            "Kept for traceability; relational links below are the authoritative "
+            "navigation surface inside Odoo."
+        ),
+    )
+
+    tmfc007_service_order_ids = fields.Many2many(
+        "tmf.service.order",
+        "tmfc007_work_service_order_rel",
+        "work_id",
+        "service_order_id",
+        string="Service Orders (TMF641)",
+        help=(
+            "Resolved TMF641 ServiceOrder records referenced from WorkOrder events."
+        ),
+    )
 

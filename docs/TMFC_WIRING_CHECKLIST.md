@@ -256,4 +256,83 @@ These are the first TMFCs we should actively track in detail:
 
 ---
 
-[... remaining sections (TMFC007, backlog, verification strategy) unchanged ...]
+## TMFC007 – ServiceOrderExecutionAndManagement
+
+**Status:** Partially wired (second wiring pass)
+**Target sprint:** Sprint 4
+**Current classification:** Partially wired (state-change + dependent wiring)
+**Existing addon(s):** `tmf_service_order`, `tmf_service_inventory`, `tmf_resource_order`, `tmf_communication_message`, `tmf_work_management`, `tmfc003_wiring`
+**New addon:** `tmfc007_wiring` (Service Order ODA wiring side-car)
+
+### Standard checklist
+- [x] YAML reviewed
+- [x] Exposed APIs / dependencies extracted from YAML
+- [x] Baseline exposed APIs mapped to Odoo modules/controllers (TMF641/TMF701)
+- [x] Side-car wiring addon exists or equivalent wiring approach justified (`tmfc007_wiring`)
+- [x] Raw TMF reference fields identified for foundational dependencies (TMF638/TMF681/TMF697)
+- [x] Relational fields identified for foundational dependencies (ServiceInventory/CommunicationMessage/Work↔ServiceOrder)
+- [x] Reference resolution implemented for TMF638 (ServiceInventory) and for TMF681/TMF697 when events carry ServiceOrder refs
+- [x] Published events verified from mutation paths (TMF641 create/update/delete + state-change/cancel)
+- [x] Hub registration verified for TMFC007-specific façade (`/tmfc007/hub`)
+- [x] Listener routes implemented for subscribed events (TMF652/TMF645/TMF681/TMF697)
+- [x] Subscribed event callbacks update local state correctly where safe (TMF652 via TMFC003 delegation; TMF645/TMF681/TMF697 state reconcile + dependency wiring)
+- [ ] Verification notes captured
+- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader TMFC007 wiring pass
+
+### YAML scope summary
+- Exposed: TMF641, TMF701
+- Dependencies: TMF638, TMF652, TMF645, TMF681, TMF697, TMF632, TMF669
+- Published events: TMF641, TMF701
+- Subscribed events: TMF652, TMF645, TMF681, TMF697
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF641 | service-ordering-management-api | serviceOrder | GET, GET /id, POST, PATCH, DELETE | Implemented | `tmf_service_order.controllers.main_controller.TMFServiceOrderController` exposes CTK-facing TMF641 routes backed by `tmf.service.order`. Base model publishes create/update/delete events via `_notify()` and syncs `project.task` links via `_sync_project_task()`. |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Evidenced (shared) | `tmf_process_flow` provides the shared TMF701 API surface. TMFC007 reuses process/task flows linked from `tmfc003_wiring` and optional `process_flow_ids`/`task_flow_ids` on `tmf.service.order` without provisioning new flows in this pass. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF638 | service-inventory-management-api | false | service | Evidenced (wiring) | `TMFC007ServiceOrderWiring` adds `service_ref_json` (raw TMF638 ServiceRefOrValue from `serviceOrderItem.service`) and `service_ids` (Many2many to `tmf.service`). `_tmfc007_resolve_tmf_refs()` keeps JSON + relational links in sync on create/write without changing TMF641 payloads. |
+| TMF652 | resource-order-management-api | false | resourceOrder | Evidenced (delegated) | TMF652 CRUD is provided by `tmf_resource_order`. TMFC007 listener `/tmfc007/listener/resourceOrder` accepts ResourceOrder events and forwards them to `tmfc003.wiring.tools.handle_resource_order_event()`, reusing the orchestration and state aggregation implemented by TMFC003. No additional state is held in TMFC007. |
+| TMF645 | service-qualification-management-api | false | serviceQualification | Evidenced (wiring) | `tmf_service_qualification` provides TMF645 CRUD. TMFC007 listener `/tmfc007/listener/serviceQualification` invokes `TMFC007WiringTools.handle_service_qualification_event()`, which reconciles the local `tmf.service.qualification.state` field from incoming Check/QueryServiceQualification events when a matching `tmf_id` exists. |
+| TMF681 | communication-management-api | false | communicationMessage | Evidenced (wiring) | `tmf_communication_message` implements TMF681. `TMFC007CommunicationWiring` extends `tmf.communication.message` with `tmfc007_service_order_ref_json` (raw ServiceOrder refs) and `tmfc007_service_order_ids` (Many2many to `tmf.service.order`). `handle_communication_event()` updates `state` and wires ServiceOrder links when TMF681 events carry `serviceOrder` references. |
+| TMF697 | work-order-management-api | false | workOrder | Evidenced (wiring) | TMF713 Work/WorkSpecification are provided by `tmf_work_management`. TMFC007 treats `tmf.work` records as the local representation of TMF697 WorkOrders. `TMFC007WorkWiring` adds `tmfc007_service_order_ref_json` + `tmfc007_service_order_ids` and `handle_work_order_event()` updates `tmf.work.state` and ServiceOrder links when WorkOrder events contain `serviceOrder` refs. |
+| TMF632 | party-management-api | false | individual, organization | Evidenced (base) | Party/Customer APIs are provided by the `tmf_customer` / `tmf_party` stack. `tmf.service.order` already resolves `partner_id` from `related_party` via `_resolve_partner_from_related_party()` and `_sync_project_task()`. TMFC007 does not yet add extra Party reconciliation beyond this base behaviour. |
+| TMF669 | party-role-management-api | false | partyRole | Not yet wired | TMF669 base API is available through `tmf_party_role`. TMFC007 YAML lists PartyRole as a dependency, but no ServiceOrder↔PartyRole-specific wiring has been implemented in this pass to avoid guessing detailed role semantics. |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF641 | ServiceOrderingManagement | serviceOrderCreateEvent, serviceOrderAttributeValueChangeEvent, serviceOrderDeleteEvent | Evidenced (base) | `tmf.service.order` calls `_notify("create"/"update"/"delete")`, which publishes TMF641 events via `tmf.hub.subscription._notify_subscribers(api_name="serviceOrder", event_type=...)`. |
+| TMF641 | ServiceOrderingManagement | serviceOrderStateChangeEvent, cancelServiceOrderStateChangeEvent | Evidenced (TMFC007) | `TMFC007ServiceOrderWiring` extends `tmf.service.order.write()` to detect `state` transitions and first-time `cancellation_date` assignments. `_tmfc007_notify_state_transitions()` publishes `ServiceOrderStateChangeEvent` and `CancelServiceOrderStateChangeEvent` with the latest `to_tmf_json()` payloads, without altering existing create/update/delete notifications. |
+| TMF701 | ProcessFlowManagement | processFlow/taskFlow create/stateChange/delete/attributeValueChange/informationRequired | Evidenced (shared) | `tmf_process_flow` mixin publishes TMF701 events for all flows. TMFC007 reuses these events for any flows linked to service orders via `process_flow_ids`/`task_flow_ids` and/or TMFC003 wiring, but does not add new publishers. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF652 | ResourceOrderManagement | ResourceOrderStateChangeEvent, ResourceOrderAttributeValueChangeEvent, ResourceOrderInformationRequiredEvent, CancelResourceOrderStateChangeEvent, CancelResourceOrderInformationRequiredEvent | Partially wired (delegated) | `/tmfc007/listener/resourceOrder` validates `eventType` against `TMFC007_RESOURCE_ORDER_EVENTS` and forwards accepted events to `tmfc003.wiring.tools.handle_resource_order_event()`. TMFC003 owns the orchestration logic and state propagation for ResourceOrder↔ServiceOrder↔ProductOrder. |
+| TMF645 | ServiceQualificationManagement | CheckServiceQualificationStateChangeEvent, QueryServiceQualificationStateChangeEvent | Wired | `/tmfc007/listener/serviceQualification` routes events to `handle_service_qualification_event()`, which updates local `tmf.service.qualification.state` when a matching `tmf_id` exists, using `skip_tmf_wiring` to avoid recursive notifications. |
+| TMF681 | CommunicationManagement | CommunicationMessageStateChangeEvent | Wired | `/tmfc007/listener/communicationMessage` accepts TMF681 events and `handle_communication_event()` reconciles `tmf.communication.message.state` plus ServiceOrder dependency links (`tmfc007_service_order_ref_json`/`tmfc007_service_order_ids`) when `serviceOrder` references are present. |
+| TMF697 | WorkOrderManagement | WorkOrderStateChangeEvent | Wired | `/tmfc007/listener/workOrder` accepts TMF697 events and `handle_work_order_event()` reconciles `tmf.work.state` and ServiceOrder links (`tmfc007_service_order_ref_json`/`tmfc007_service_order_ids`) based on `serviceOrder` references in the WorkOrder payload. |
+
+### Implementation tasks (pass 2)
+- [x] Confirm YAML-to-code mapping for TMF641/TMF701 exposed APIs and dependent TMF638/TMF652/TMF645/TMF681/TMF697 resources.
+- [x] Extend `tmf.service.order` with TMFC007-specific TMF638 dependency wiring (`service_ref_json`/`service_ids`) and idempotent `_tmfc007_resolve_tmf_refs()` resolution.
+- [x] Add TMFC007-safe TMF641 state-change publication on `tmf.service.order.write()` covering ServiceOrderStateChangeEvent and CancelServiceOrderStateChangeEvent without altering existing create/update/delete notifications.
+- [x] Implement TMFC007 listener endpoints for TMF652/TMF645/TMF681/TMF697 (`/tmfc007/listener/*`) with envelope validation and 4xx/5xx handling.
+- [x] Implement `TMFC007WiringTools.handle_service_qualification_event()` with state reconciliation for `tmf.service.qualification`.
+- [x] Implement `TMFC007WiringTools.handle_communication_event()` and `TMFC007CommunicationWiring` to reconcile `tmf.communication.message.state` and wire CommunicationMessage↔ServiceOrder links from TMF681 events.
+- [x] Implement `TMFC007WiringTools.handle_work_order_event()` and `TMFC007WorkWiring` to reconcile `tmf.work.state` and wire Work↔ServiceOrder links from TMF697 events.
+- [x] Keep TMF652 orchestration delegated to TMFC003 (`tmfc003.wiring.tools`) to avoid duplicate or conflicting state propagation.
+- [ ] Capture verification notes summarizing cross-component interactions between TMFC003/TMFC005/TMFC006/TMFC007 and underlying TMF638/TMF652/TMF681/TMF697 domains.
+- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once TMFC007 wiring matures beyond this pass.
+
+---
+
+[... remaining sections (backlog, verification strategy) unchanged ...]
