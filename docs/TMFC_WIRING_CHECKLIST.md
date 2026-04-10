@@ -196,7 +196,7 @@ These are the first TMFCs we should actively track in detail:
 
 ### YAML scope summary
 - Exposed: TMF638, TMF701
-- Dependencies: TMF633, TMF669, TMF639, TMF638, TMF673, TMF674, TMF675, TMF641, TMF632
+- Dependencies: TMF633, TMF669, TMF639, TMF638, TMF673, TMF674, TMF675, TMF641, TMF632, TMF672
 - Published events: TMF638, TMF701
 - Subscribed events: TMF639, TMF638, TMF633, TMF669, TMF674, TMF675, TMF632, TMF641
 
@@ -220,6 +220,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF675 | geographic-location-management-api | false | geographicLocation | Not evidenced | No `geographicLocation` references or relations are present on `tmf.service`. |
 | TMF641 | service-ordering-management-api | false | serviceOrder | Partially evidenced | `tmf_service_inventory.models.sale_order.SaleOrder.action_confirm` creates `tmf.service` records from `sale.order` lines, giving TMFC003/TMFC007 a path to link ServiceOrder → Service. TMFC008 does not yet have explicit `serviceOrder` reference fields or listeners for ServiceOrder delete events. |
 | TMF632 | party-management-api | false | individual, organization | Evidenced (base) | Party/Customer APIs are provided by the `tmf_customer` / `tmf_party` stack. `tmf.service.partner_id` references `res.partner`, and `to_tmf_json()` optionally emits TMF632-style PartyRef when v4 routes are used, but there is no TMFC008-specific delete-event reconciliation yet. |
+| TMF672 | permission-management-api | false | permission | Not evidenced | TMFC008 YAML lists Permission as a dependency for read access control. No explicit TMF672 wiring has been identified in `tmf_service_inventory`; permission checks are currently handled by core Odoo ACLs rather than TMF672 resources. |
 
 ### Published Events
 
