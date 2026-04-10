@@ -551,13 +551,14 @@ These are the first TMFCs we should actively track in detail:
 - [x] Exposed APIs mapped to Odoo modules/controllers (baseline)
 - [ ] Dependent APIs mapped to Odoo modules/models (full coverage)
 - [x] Side-car wiring addon exists or equivalent wiring approach justified (`tmfc007_wiring`)
-- [ ] Raw TMF reference fields identified (ServiceOrder payload, cancelServiceOrder, related entities)
-- [ ] Relational fields identified (links to Party, Service, Resource, Appointment, WorkOrder, etc.)
-- [ ] Reference resolution implemented
+- [x] Raw TMF reference fields identified (ServiceOrder payload, cancelServiceOrder, related entities)
+- [x] Relational fields identified (links to Party, Service; foundation for further dependencies)
+- [x] Reference resolution implemented for TMF638 ServiceInventory (serviceOrderItem.service → tmf.service)
 - [x] Published events partially verified from mutation paths (ServiceOrderStateChangeEvent, CancelServiceOrderStateChangeEvent)
 - [x] Hub registration verified for TMF641/TMF701 (via `/tmfc007/hub` routes backed by `tmf.hub.subscription`)
 - [x] Listener routes scaffolded for subscribed events (TMF652, TMF645, TMF681, TMF697)
-- [ ] Subscribed event callbacks update local state correctly and reconcile with TMFC003/TMFC011 orchestration
+- [x] Subscribed event callbacks update local state for TMF652 (delegation to TMFC003) and TMF645 (ServiceQualification state sync)
+- [ ] Subscribed event callbacks reconcile full TMFC007 dependency graph (Communication/WorkOrder still logging only)
 - [ ] Verification notes captured
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after implementation pass
 
@@ -595,7 +596,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF674 | geographic-site-management-api | false | geographicLocation | Not evidenced | No ServiceOrder wiring to TMF674 site/location entities. |
 | TMF675 | geographic-location-management-api | false | geographicSite | Not evidenced | No ServiceOrder wiring to TMF675 location entities. |
 | TMF681 | communication-management-api | false | communicationMessage | Not evidenced | `tmf_communication_message` exists; ServiceOrders do not yet link to communicationMessage records. |
-| TMF697 | work-order-management-api | false | workOrder | Not evidenced | `tmf_work_management` / WorkOrder APIs exist; ServiceOrders have a `project_task_id` bridge but no TMF697-specific workOrder linkage. |
+| TMF697 | work-order-management-api | false | workOrder | Not evidenced | `tmf_work_management` / Work APIs exist; ServiceOrders have a `project_task_id` bridge but no TMF697-specific workOrder linkage. |
 | TMF701 | process-flow-management-api | false | processFlow | Partially evidenced | `tmf_process_flow` provides TMF701; TMFC003 wires ProcessFlows for orchestration, but there is no dedicated TMFC007 association between ServiceOrders and processFlow/taskFlow instances. |
 
 ### Published Events
@@ -612,8 +613,8 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
 |--------|----------------------|----------------------|-----------------|-------|
-| TMF652 | ResourceOrderManagement | resourceOrderStateChange, resourceOrderAttributeValueChangeEvent, resourceOrderInformationRequiredEvent, cancelResourceOrderStateChange, cancelResourceOrderInformationRequiredEvent | Listener scaffolded | `tmfc007_wiring.controllers.TMFC007ListenerController.listener_resource_order` accepts TMF652 events on `/tmfc007/listener/resourceOrder` and dispatches to `tmfc007.wiring.tools.handle_resource_order_event()`; current implementation logs receipt only (no state reconciliation yet). |
-| TMF645 | ServiceQualification | checkServiceQualificationStateChangeEvent, queryServiceQualificationStateChangeEvent | Listener scaffolded | `/tmfc007/listener/serviceQualification` endpoint is present and delegates to `handle_service_qualification_event()`; business logic to update ServiceOrders is still TODO. |
+| TMF652 | ResourceOrderManagement | resourceOrderStateChange, resourceOrderAttributeValueChangeEvent, resourceOrderInformationRequiredEvent, cancelResourceOrderStateChange, cancelResourceOrderInformationRequiredEvent | Implemented (delegated) | `tmfc007_wiring.controllers.TMFC007ListenerController.listener_resource_order` accepts TMF652 events on `/tmfc007/listener/resourceOrder` and dispatches to `tmfc007.wiring.tools.handle_resource_order_event()`, which now delegates reconciliation to `tmfc003.wiring.tools.handle_resource_order_event()` so ResourceOrder → ServiceOrder → ProductOrder state aggregation remains consistent. |
+| TMF645 | ServiceQualification | checkServiceQualificationStateChangeEvent, queryServiceQualificationStateChangeEvent | Partially implemented | `/tmfc007/listener/serviceQualification` endpoint delegates to `handle_service_qualification_event()`, which now updates local `tmf.service.qualification.state` for matching records (using the event payload) without yet touching ServiceOrders. |
 | TMF681 | Communication | communicationMessageStateChangeEvent | Listener scaffolded | `/tmfc007/listener/communicationMessage` endpoint is present and delegates to `handle_communication_event()`; no ServiceOrder mutation yet. |
 | TMF697 | WorkOrder | workOrderStateChange | Listener scaffolded | `/tmfc007/listener/workOrder` endpoint is present and delegates to `handle_work_order_event()`; WorkOrder ↔ ServiceOrder state propagation remains unimplemented. |
 
@@ -622,11 +623,12 @@ These are the first TMFCs we should actively track in detail:
 -- [x] Implement minimal ServiceOrder state-change event publication (TMF641 `serviceOrderStateChangeEvent`) without altering existing create/update/delete semantics.
 -- [x] Implement minimal `cancelServiceOrder` state-change publication by treating `cancellationDate` transitions as `cancelServiceOrderStateChangeEvent` on the underlying ServiceOrder resource.
 -- [ ] Document and implement the full ServiceOrder state model (including jeopardy/milestone/infoRequired semantics) and map to all TMF641 event types.
--- [ ] Introduce raw JSON reference fields for key YAML dependencies (TMF633/634/638/639/640/645/646/652/669/673/674/675/681/697) on `tmf.service.order` or its side-car model.
--- [ ] Add relational fields and reference resolution logic to map those JSON refs into Odoo models (service, resource, party, appointment, work order, geography, communication).
+-- [x] Introduce raw JSON reference field and relational wiring for TMF638 ServiceInventory on `tmf.service.order` via `tmfc007_wiring` (`service_ref_json` + `service_ids`).
+-- [ ] Extend raw JSON reference fields for remaining YAML dependencies (TMF633/634/639/640/645/646/652/669/673/674/675/681/697) on `tmf.service.order` or its side-car model.
+-- [ ] Add relational fields and reference resolution logic to map those additional JSON refs into Odoo models (resource, party, appointment, work order, geography, communication).
 -- [x] Implement TMF641/TMF701 hub registration routes backed by `tmf.hub.subscription` (`/tmfc007/hub`).
--- [x] Design and implement listener endpoints for TMF652/TMF645/TMF681/TMF697 events (scaffolding-only handlers that currently log events via `tmfc007.wiring.tools`).
--- [ ] Extend listener handlers to reconcile upstream events into ServiceOrder state, coordinated with TMFC003/TMFC011 responsibilities.
+-- [x] Design and implement listener endpoints for TMF652/TMF645/TMF681/TMF697 events (handlers now delegate TMF652 events to TMFC003 and synchronise TMF645 state; TMF681/TMF697 remain logging-only).
+-- [ ] Extend listener handlers to reconcile upstream Communication/WorkOrder events into ServiceOrder state, coordinated with TMFC003/TMFC011 responsibilities.
 -- [ ] Capture verification notes summarizing cross-component interactions with TMFC003 (product-order orchestration) and TMFC011 (resource orders).
 -- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the first wiring pass is complete.
 

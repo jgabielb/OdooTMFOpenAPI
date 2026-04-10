@@ -48,6 +48,10 @@ class TMFC007ServiceOrderWiring(models.Model):
 
     _inherit = "tmf.service.order"
 
+    # ------------------------------------------------------------------
+    # TMF701 linkage (shared with other TMFCs)
+    # ------------------------------------------------------------------
+
     process_flow_ids = fields.Many2many(
         "tmf.process.flow",
         "tmfc007_service_order_process_flow_rel",
@@ -70,6 +74,32 @@ class TMFC007ServiceOrderWiring(models.Model):
         help=(
             "Optional linkage to TMF701 taskFlow records spawned as part "
             "of ServiceOrder fulfilment."
+        ),
+    )
+
+    # ------------------------------------------------------------------
+    # TMF638 ServiceInventory dependency wiring
+    # ------------------------------------------------------------------
+
+    service_ref_json = fields.Json(
+        default=list,
+        string="Service refs JSON (TMF638)",
+        help=(
+            "Raw TMF638 Service references extracted from serviceOrderItem.service "
+            "payloads. Kept for CTK-level fidelity; relational links below are the "
+            "authoritative navigation surface inside Odoo."
+        ),
+    )
+
+    service_ids = fields.Many2many(
+        "tmf.service",
+        "tmfc007_service_order_service_rel",
+        "service_order_id",
+        "service_id",
+        string="Services (TMF638)",
+        help=(
+            "Resolved TMF638 Service records referenced from serviceOrderItem.service. "
+            "Resolution is best-effort and never alters TMF641 payloads or URLs."
         ),
     )
 
@@ -128,6 +158,13 @@ class TMFC007ServiceOrderWiring(models.Model):
         recs = super().create(vals_list)
         # No special state handling on initial create: the core model already
         # emits ServiceOrderCreateEvent and AttributeValueChangeEvent.
+
+        # Best-effort dependency resolution (kept additive and idempotent).
+        try:
+            recs._tmfc007_resolve_tmf_refs()
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception("TMFC007: TMF638 ref resolution on create failed: %s", exc)
+
         return recs
 
     def write(self, vals):
@@ -144,7 +181,73 @@ class TMFC007ServiceOrderWiring(models.Model):
         except Exception as exc:  # pragma: no cover - defensive
             _logger.exception("TMFC007: state transition notification failed: %s", exc)
 
+        # Refresh TMF638 dependency wiring when relevant payload fields change.
+        if any(k in vals for k in ("service_order_item",)):
+            try:
+                self._tmfc007_resolve_tmf_refs()
+            except Exception as exc:  # pragma: no cover - defensive
+                _logger.exception("TMFC007: TMF638 ref resolution on write failed: %s", exc)
+
         return res
+
+    # ------------------------------------------------------------------
+    # Dependency resolution helpers (TMF638)
+    # ------------------------------------------------------------------
+
+    def _tmfc007_resolve_tmf_refs(self):
+        """Resolve TMF638 Service references from serviceOrderItem.
+
+        Evidence-backed mapping (from TMF641/TMF638):
+        - serviceOrderItem[*].service → ServiceRefOrValue (id, href, name,…)
+
+        We treat serviceOrderItem as the single source of truth and:
+        - store the raw list of service refs in ``service_ref_json``;
+        - resolve ``service_ids`` by looking up ``tmf.service`` by ``tmf_id``
+          (falling back to numeric record IDs when appropriate).
+
+        This method never mutates the underlying TMF641 JSON fields or URLs
+        and is safe to call repeatedly (idempotent).
+        """
+
+        Service = self.env["tmf.service"].sudo()
+        ctx = {"skip_tmf_wiring": True}
+
+        for rec in self:
+            items = rec.service_order_item or []
+            if isinstance(items, dict):
+                items = [items]
+
+            service_refs = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                svc = item.get("service") or {}
+                if isinstance(svc, dict) and (svc.get("id") or svc.get("href")):
+                    service_refs.append(svc)
+
+            # Persist raw refs for traceability
+            updates = {"service_ref_json": service_refs}
+
+            # Resolve relational links
+            ref_ids = []
+            for ref in service_refs:
+                sid = str(ref.get("id") or "").strip()
+                if not sid:
+                    continue
+                ref_ids.append(sid)
+
+            resolved_ids = []
+            if ref_ids:
+                # Primary: tmf_id lookup
+                resolved_ids = Service.search([("tmf_id", "in", ref_ids)]).ids
+                # Fallback: direct record IDs when numeric
+                missing = {rid for rid in ref_ids if rid not in {str(s.tmf_id) for s in Service.browse(resolved_ids)}}
+                numeric_ids = [int(mid) for mid in missing if mid.isdigit()]
+                if numeric_ids:
+                    resolved_ids.extend(Service.browse(numeric_ids).ids)
+
+            updates["service_ids"] = [(6, 0, resolved_ids)] if resolved_ids else [(5, 0, 0)]
+            rec.with_context(**ctx).write(updates)
 
 
 class TMFC007WiringTools(models.AbstractModel):
@@ -171,7 +274,35 @@ class TMFC007WiringTools(models.AbstractModel):
         _logger.info("TMFC007: received %s event %s", source, event_name)
         # Keep logs compact to avoid noise; callers can enable debug logging
         # to inspect full payloads during integration.
-        _logger.debug("TMFC007 payload for %s/%s: %s", source, event_name, json.dumps(payload))
+        _logger.debug(
+            "TMFC007 payload for %s/%s: %s",
+            source,
+            event_name,
+            json.dumps(payload),
+        )
+
+    def _extract_event_resource(self, payload):
+        """Extract nested resource dict from a TMF event envelope.
+
+        Mirrors the helper used in TMFC003 so that TMFC007 can reuse
+        the same reconciliation patterns where appropriate.
+        """
+
+        if not isinstance(payload, dict):
+            return {}
+        event = payload.get("event")
+        if isinstance(event, dict):
+            for key in ("resourceOrder", "serviceQualification", "communicationMessage", "workOrder"):
+                if isinstance(event.get(key), dict):
+                    return event[key]
+        # Fallback: treat payload as the resource itself
+        return payload
+
+    def _extract_resource_id(self, payload):
+        if not isinstance(payload, dict):
+            return ""
+        resource = self._extract_event_resource(payload)
+        return str(resource.get("id") or payload.get("id") or "").strip()
 
     # ------------------------------------------------------------------
     # TMF652 ResourceOrder events
@@ -180,7 +311,26 @@ class TMFC007WiringTools(models.AbstractModel):
     def handle_resource_order_event(self, event_name, payload):
         if event_name not in TMFC007_RESOURCE_ORDER_EVENTS:
             return
+
         self._log_received_event("resourceOrder", event_name, payload)
+
+        # Delegate core reconciliation to TMFC003 wiring tools when present,
+        # so that state aggregation between ResourceOrder → ServiceOrder →
+        # ProductOrder stays consistent across TMFCs.
+        try:
+            tools = self.env["tmfc003.wiring.tools"].sudo()
+        except Exception:  # pragma: no cover - defensive
+            tools = None
+
+        if tools and hasattr(tools, "handle_resource_order_event"):
+            try:
+                tools.handle_resource_order_event(event_name, payload)
+            except Exception as exc:  # pragma: no cover - best-effort
+                _logger.exception(
+                    "TMFC007: delegation to TMFC003 for ResourceOrder event %s failed: %s",
+                    event_name,
+                    exc,
+                )
 
     # ------------------------------------------------------------------
     # TMF645 ServiceQualification events
@@ -190,6 +340,31 @@ class TMFC007WiringTools(models.AbstractModel):
         if event_name not in TMFC007_SERVICE_QUALIFICATION_EVENTS:
             return
         self._log_received_event("serviceQualification", event_name, payload)
+
+        # Minimal, safe reconciliation: update local ServiceQualification
+        # state when the referenced record exists. We deliberately avoid
+        # mutating ServiceOrders here; TMFC027 owns deeper POQ/SQ logic.
+        ref_id = self._extract_resource_id(payload)
+        if not ref_id:
+            return
+
+        sq = (
+            self.env["tmf.service.qualification"].sudo().search([
+                ("tmf_id", "=", ref_id),
+            ], limit=1)
+        )
+        if not sq:
+            return
+
+        resource = self._extract_event_resource(payload)
+        new_state = str(resource.get("state") or "").strip()
+        if not new_state or new_state == (sq.state or ""):
+            return
+
+        try:
+            sq.with_context(skip_tmf_wiring=True).write({"state": new_state})
+        except Exception as exc:  # pragma: no cover - best-effort
+            _logger.exception("TMFC007: failed to update ServiceQualification %s state: %s", ref_id, exc)
 
     # ------------------------------------------------------------------
     # TMF681 Communication events
@@ -208,5 +383,4 @@ class TMFC007WiringTools(models.AbstractModel):
         if event_name not in TMFC007_WORK_ORDER_EVENTS:
             return
         self._log_received_event("workOrder", event_name, payload)
-
 
