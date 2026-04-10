@@ -245,10 +245,11 @@ Complete the shared catalog and inventory components that many other TMFCs depen
 ### Tasks
 
 #### TMFC006
-- [ ] Create `tmfc006_wiring`
-- [ ] Wire TMF633/TMF657 exposed resources to dependent TMF634/TMF632/TMF669/TMF662 refs
-- [ ] Implement missing subscribed-event handling from TMF634/TMF662
-- [ ] Update docs
+- [x] Create `tmfc006_wiring`
+- [x] Wire TMF633/TMF657 exposed resources to dependent TMF634/TMF632/TMF669/TMF662 refs at foundational level (abstract model + ServiceSpecification inheritance)
+- [x] Implement initial subscribed-event handling scaffolding from TMF634/TMF662 (listener endpoints + no-op reconciliation hooks)
+- [ ] Extend reference resolution and reconciliation beyond scaffolding once sample payloads and orchestration rules are available
+- [ ] Update docs again after the broader TMFC006 wiring pass (including TMF701 linkage and non-foundational dependencies)
 
 #### TMFC008
 - [ ] Create `tmfc008_wiring`

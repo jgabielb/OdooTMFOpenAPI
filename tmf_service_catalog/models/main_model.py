@@ -122,7 +122,9 @@ class TMFServiceCatalog(models.Model):
 class TMFServiceSpecification(models.Model):
     _name = 'tmf.service.specification'
     _description = 'TMF633 ServiceSpecification'
-    _inherit = ['tmf.model.mixin']
+    # TMFC006: extend ServiceSpecification with foundational wiring helpers
+    # for TMF634/TMF632/TMF669/TMF662 without changing CTK-visible behaviour.
+    _inherit = ['tmf.model.mixin', 'tmfc006.wiring.tools']
 
     name = fields.Char(required=True)
     description = fields.Char()
