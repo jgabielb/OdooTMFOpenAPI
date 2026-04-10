@@ -170,4 +170,89 @@ These are the first TMFCs we should actively track in detail:
 
 ---
 
+## TMFC008 – ServiceInventory
+
+**Status:** In analysis
+**Target sprint:** Sprint 3
+**Current classification:** Missing (no `tmfc008_*` wiring addon; base TMF638 module exists)
+**Existing addon(s):** `tmf_service_inventory`, `tmf_process_flow`, `tmf_resource_inventory`, `tmf_resource_catalog`, `tmf_geographic_address`, `tmf_geographic_site`, `tmf_geographic_location`, `tmf_customer`, `tmf_party_role`, `tmf_service_order`
+**New addon:** `tmfc008_wiring` (Service Inventory ODA wiring side-car)
+
+### Standard checklist
+- [x] YAML reviewed
+- [x] Exposed APIs / dependencies extracted from YAML
+- [x] Baseline exposed APIs mapped to Odoo modules/controllers (TMF638/TMF701)
+- [ ] Dependent APIs mapped to Odoo modules/models (full coverage)
+- [ ] Side-car wiring addon exists or equivalent wiring approach justified (`tmfc008_wiring`)
+- [ ] Raw TMF reference fields identified (ServiceInventory ↔ ServiceCatalog/ResourceInventory/Party/Geo/ServiceOrder)
+- [ ] Relational fields identified (links to serviceSpecification, resource, party/partyRole, geographicSite/location, serviceOrder)
+- [ ] Reference resolution implemented
+- [ ] Published events verified from mutation paths (TMF638/TMF701)
+- [ ] Hub registration verified for TMFC008-specific façade (if added on top of base `tmf_service_inventory`)
+- [ ] Listener routes implemented for subscribed events (TMF639/TMF638/TMF633/TMF669/TMF674/TMF675/TMF632/TMF641)
+- [ ] Subscribed event callbacks update local state correctly
+- [ ] Verification notes captured
+- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader wiring pass
+
+### YAML scope summary
+- Exposed: TMF638, TMF701
+- Dependencies: TMF633, TMF669, TMF639, TMF638, TMF673, TMF674, TMF675, TMF641, TMF632
+- Published events: TMF638, TMF701
+- Subscribed events: TMF639, TMF638, TMF633, TMF669, TMF674, TMF675, TMF632, TMF641
+
+### Exposed TMF APIs / Resources
+
+| TMF ID | API Name | Resource(s) | YAML operations | Evidence status | Notes |
+|--------|----------|-------------|-----------------|-----------------|-------|
+| TMF638 | service-inventory-management-api | service | GET, GET /id, POST, PATCH, DELETE | Implemented | `tmf_service_inventory.controllers.service_controller.TMFServiceController` exposes CTK-facing TMF638 routes for listing, retrieving, creating, patching, and deleting Service records (`tmf.service`). |
+| TMF701 | process-flow-management-api | processFlow, taskFlow | POST, GET, GET /id, DELETE, PATCH | Evidenced (shared) | Base TMF701 ProcessFlow/TaskFlow surface is provided by `tmf_process_flow`. TMFC008 does not yet provision or link flows to Service Inventory records; this will be introduced in `tmfc008_wiring`. |
+
+### Dependent TMF APIs / Resources
+
+| TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
+|--------|----------|-----------|-------------|-----------------|-------|
+| TMF633 | service-catalog-management-api | true | serviceSpecification | Partially evidenced | `tmf.service` currently links to `tmf.product.specification` via `product_specification_id` and exposes this as `serviceSpecification` in `to_tmf_json()`. True ServiceSpecification (`tmf.service.specification`) is provided by `tmf_service_catalog`, but TMFC008-specific reconciliation between ServiceInventory and ServiceCatalog is not yet implemented. |
+| TMF669 | party-role-management-api | false | partyRole | Not evidenced | `tmf.service` relates to `res.partner` (`partner_id`) and, for v4 responses, exposes relatedParty/PartyRef in `to_tmf_json()`. No explicit TMF669 PartyRole wiring or side-car relations are present yet. |
+| TMF639 | resource-inventory-management-api | false | resource | Evidenced (base) | `tmf.service` links to `stock.lot` as `resource_id`, and `to_tmf_json()` exposes this as `supportingResource` with TMF639-style `ResourceRef`. TMF639 CRUD and events are provided by `tmf_resource_inventory`. TMFC008-specific reconciliation for resource delete/change events is not yet present. |
+| TMF638 | service-inventory-management-api | false | service | Evidenced | Self-dependency (read paths) is covered by the TMF638 controllers in `tmf_service_inventory`. |
+| TMF673 | geographic-address-management-api | false | geographicAddress, geographicSubAddress | Not evidenced | No `place`/geographic address fields or relations are present on `tmf.service` in the current codebase. |
+| TMF674 | geographic-site-management-api | false | geographicSite | Not evidenced | No explicit geographicSite linkage exists on `tmf.service`; geo wiring is currently done on Product/Resource inventory components instead. |
+| TMF675 | geographic-location-management-api | false | geographicLocation | Not evidenced | No `geographicLocation` references or relations are present on `tmf.service`. |
+| TMF641 | service-ordering-management-api | false | serviceOrder | Partially evidenced | `tmf_service_inventory.models.sale_order.SaleOrder.action_confirm` creates `tmf.service` records from `sale.order` lines, giving TMFC003/TMFC007 a path to link ServiceOrder → Service. TMFC008 does not yet have explicit `serviceOrder` reference fields or listeners for ServiceOrder delete events. |
+| TMF632 | party-management-api | false | individual, organization | Evidenced (base) | Party/Customer APIs are provided by the `tmf_customer` / `tmf_party` stack. `tmf.service.partner_id` references `res.partner`, and `to_tmf_json()` optionally emits TMF632-style PartyRef when v4 routes are used, but there is no TMFC008-specific delete-event reconciliation yet. |
+
+### Published Events
+
+| TMF ID | Hub/API | Event/resource names | Evidence status | Notes |
+|--------|---------|----------------------|-----------------|-------|
+| TMF638 | ServiceInventoryManagement | serviceCreateEvent, serviceAttributeValueChangeEvent, serviceStateChangeEvent, serviceDeleteEvent | Partially evidenced | `tmf.service.create/write/unlink` call `tmf.hub.subscription._notify_subscribers` with `api_name='service'` and `event_type` set to `create`, `update`, or `delete`. This provides notification coverage for create/update/delete, but does not yet distinguish state-change vs attribute-change events or publish explicit TMF638 event names. |
+| TMF701 | ProcessFlowManagement | processFlowCreateEvent, processFlowStateChangeEvent, processFlowDeleteEvent, processFlowAttributeValueChangeEvent, taskFlowCreateEvent, taskFlowStateChangeEvent, taskFlowDeleteEvent, taskFlowAttributeValueChangeEvent, taskFlowInformationRequiredEvent | Evidenced (shared) | `tmf_process_flow` publishes TMF701 events for all flows. TMFC008 will need to provision and link suitable flows for service lifecycle management once `tmfc008_wiring` is introduced. |
+
+### Subscribed Events
+
+| TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
+|--------|----------------------|----------------------|-----------------|-------|
+| TMF639 | ResourceInventoryManagement | resourceDeleteEvent | Not evidenced (TMFC008) | No ServiceInventory-specific listener endpoints exist for ResourceInventory events. `tmfc005_wiring` currently handles resourceDeleteEvent for ProductInventory; TMFC008 will need its own callbacks to remove or update `supportingResource` links on `tmf.service`. |
+| TMF638 | ServiceInventoryManagement | serviceCreateEvent, serviceAttributeValueChangeEvent, serviceStateChangeEvent, serviceDeleteEvent | Not evidenced (self-listener) | TMFC008 YAML models self-subscriptions for Service events (for cross-component sync). No corresponding listener routes or callback handlers exist yet in Odoo; existing code only publishes events. |
+| TMF633 | ServiceCatalogManagement | serviceSpecificationDeleteEvent | Not evidenced | No ServiceInventory listener for ServiceCatalog events is present. Catalog delete events are currently handled in ProductInventory and Configurator wiring; TMFC008 should eventually reconcile `serviceSpecification` links when a serviceSpecification is removed. |
+| TMF669 | PartyRoleManagement | partyRoleDeleteEvent | Not evidenced | No TMFC008-specific listener exists for PartyRole delete events; related party/role cleanup is handled in other TMFCs (e.g., TMFC001/TMFC005/TMFC027) but not for ServiceInventory records. |
+| TMF674 | GeographicSiteManagement | geographicSiteDeleteEvent | Not evidenced | No ServiceInventory listener or geo linkage exists; any future `place` references on `tmf.service` will need delete-event reconciliation. |
+| TMF675 | GeographicLocation | geographicLocationDeleteEvent | Not evidenced | As above; no current geographicLocation wiring on ServiceInventory. |
+| TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Not evidenced | There is no TMFC008 listener for Party delete events; if a `res.partner` is deleted, `tmf.service` linkage is not explicitly reconciled by a ServiceInventory component. |
+| TMF641 | ServiceOrderingManagement | serviceOrderDeleteEvent | Not evidenced | No ServiceInventory listener exists for ServiceOrder delete events. Downstream orchestration components (TMFC003/TMFC007) handle most ServiceOrder state changes, but TMFC008 does not yet respond to deletes. |
+
+### Implementation tasks (pass 1)
+- [x] Confirm YAML-to-code mapping for TMF638/TMF701 exposed APIs (baseline `tmf_service_inventory` + shared `tmf_process_flow`).
+- [x] Capture current dependent API evidence from existing modules (`tmf_service_inventory`, `tmf_resource_inventory`, `tmf_service_catalog`, `tmf_customer`, `tmf_party_role`, `tmf_geographic_*`, `tmf_service_order`).
+- [ ] Create `tmfc008_wiring` addon skeleton following the established side-car pattern (models, controllers, security, data).
+- [ ] Introduce raw TMF reference fields on `tmf.service` or a shared `tmfc008.wiring.tools` model for ServiceCatalog, ResourceInventory, Party/PartyRole, GeographicSite/Location, and ServiceOrder references.
+- [ ] Add relational fields to represent resolved dependencies (serviceSpecification/serviceSpecificationRef, supportingResource/resourceRefs, Party/PartyRole, geographicSite/geographicLocation, serviceOrder) without altering CTK payload shapes.
+- [ ] Implement TMFC008-specific hub façade routes if needed (for example, `/tmfc008/hub/serviceInventory`) backed by `tmf.hub.subscription`.
+- [ ] Design and implement listener endpoints for TMF639, TMF633, TMF669, TMF674, TMF675, TMF632, TMF641 (and any self-subscriptions) with idempotent reconciliation logic.
+- [ ] Refine TMF638 event publication so that state-change vs attribute-change events are distinguishable where required by the YAML.
+- [ ] Capture verification notes summarizing the ServiceInventory role in the product/service/resource chain (interactions with TMFC003, TMFC005, TMFC006, TMFC007).
+- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the initial TMFC008 wiring pass is complete.
+
+---
+
 [... remaining sections (TMFC007, backlog, verification strategy) unchanged ...]
