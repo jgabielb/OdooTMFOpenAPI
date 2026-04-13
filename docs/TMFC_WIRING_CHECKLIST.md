@@ -330,8 +330,14 @@ These are the first TMFCs we should actively track in detail:
 - [x] Implement `TMFC007WiringTools.handle_communication_event()` and `TMFC007CommunicationWiring` to reconcile `tmf.communication.message.state` and wire CommunicationMessage↔ServiceOrder links from TMF681 events.
 - [x] Implement `TMFC007WiringTools.handle_work_order_event()` and `TMFC007WorkWiring` to reconcile `tmf.work.state` and wire Work↔ServiceOrder links from TMF697 events.
 - [x] Keep TMF652 orchestration delegated to TMFC003 (`tmfc003.wiring.tools`) to avoid duplicate or conflicting state propagation.
-- [ ] Capture verification notes summarizing cross-component interactions between TMFC003/TMFC005/TMFC006/TMFC007 and underlying TMF638/TMF652/TMF681/TMF697 domains.
-- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once TMFC007 wiring matures beyond this pass.
+- [x] Capture verification notes summarizing cross-component interactions between TMFC003/TMFC005/TMFC006/TMFC007 and underlying TMF638/TMF652/TMF681/TMF697 domains.
+- [x] Update `TMFC_IMPLEMENTATION_STATUS.md` once TMFC007 wiring matures beyond this pass.
+
+#### Verification notes (TMFC003/TMFC005/TMFC006/TMFC007 over TMF638/652/681/697)
+- TMF638 ServiceInventory: `tmf.service` instances created from `sale.order` (TMFC005/TMFC006) are linked back to ServiceOrders via `TMFC007ServiceOrderWiring.service_ids`, giving TMFC003/TMFC007 a shared ServiceInventory surface for orchestration without changing TMF641 payloads.
+- TMF652 ResourceOrder: TMFC003 owns ResourceOrder↔ServiceOrder↔ProductOrder orchestration; TMFC007 listeners simply validate envelopes and forward events into `tmfc003.wiring.tools.handle_resource_order_event()`, so there is a single aggregation path for ResourceOrder state.
+- TMF681 CommunicationMessage: TMFC007 extends `tmf.communication.message` with JSON + relational ServiceOrder links and reconciles `state` from TMF681 events; Product/Service orchestration components can traverse Communication→ServiceOrder→Service without duplicating wiring.
+- TMF697 Work/WorkOrder: `tmf.work` acts as the local WorkOrder representation. TMFC007 wiring attaches ServiceOrder refs and reconciles `tmf.work.state` from WorkOrder events, so any TMF701 flows or workforce processes can navigate Work→ServiceOrder consistently.
 
 ---
 

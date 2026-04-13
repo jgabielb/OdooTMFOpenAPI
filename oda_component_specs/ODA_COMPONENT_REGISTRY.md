@@ -80,7 +80,7 @@
   - TMF641 serviceOrder/cancelServiceOrder GET+POST+PATCH+DELETE
   - TMF645 checkServiceQualification/queryServiceQualification GET+POST+PATCH
   - TMF646 appointment/searchTimeSlot GET+POST+PATCH
-- **Odoo wiring module:** `tmfc007_wiring` ❌ MISSING
+- **Odoo wiring module:** `tmfc007_wiring` ⚠️ PARTIAL (TMF641/TMF701 exposed, TMF638/TMF652/TMF645/TMF681/TMF697 dependencies wired; TMF632/TMF669 left at base behaviour)
 
 ---
 
