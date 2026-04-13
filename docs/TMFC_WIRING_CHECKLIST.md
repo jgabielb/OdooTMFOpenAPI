@@ -276,8 +276,8 @@ These are the first TMFCs we should actively track in detail:
 - [x] Hub registration verified for TMFC007-specific façade (`/tmfc007/hub`)
 - [x] Listener routes implemented for subscribed events (TMF652/TMF645/TMF681/TMF697)
 - [x] Subscribed event callbacks update local state correctly where safe (TMF652 via TMFC003 delegation; TMF645/TMF681/TMF697 state reconcile + dependency wiring)
-- [ ] Verification notes captured
-- [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader TMFC007 wiring pass
+- [x] Verification notes captured
+- [x] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader TMFC007 wiring pass
 
 ### YAML scope summary
 - Exposed: TMF641, TMF701
