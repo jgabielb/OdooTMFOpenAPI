@@ -124,14 +124,28 @@ class TMFServiceCatalogController(http.Controller):
             data = self._parse_body_json()
             vals = {}
 
-            if "name" in data: vals["name"] = data.get("name")
-            if "description" in data: vals["description"] = data.get("description")
-            if "version" in data: vals["version"] = data.get("version")
-            if "lifecycleStatus" in data: vals["lifecycle_status"] = data.get("lifecycleStatus")
-            if "lastUpdate" in data: vals["last_update"] = data.get("lastUpdate")
-            if "category" in data: vals["category"] = data.get("category") or []
-            if "relatedParty" in data: vals["related_party"] = data.get("relatedParty") or []
-            if "validFor" in data: vals["valid_for"] = data.get("validFor")
+            if "name" in data:
+                vals["name"] = data.get("name")
+            if "description" in data:
+                vals["description"] = data.get("description")
+            if "version" in data:
+                vals["version"] = data.get("version")
+            if "lifecycleStatus" in data:
+                vals["lifecycle_status"] = data.get("lifecycleStatus")
+            if "lastUpdate" in data:
+                vals["last_update"] = data.get("lastUpdate")
+            if "category" in data:
+                vals["category"] = data.get("category") or []
+            if "relatedParty" in data:
+                vals["related_party"] = data.get("relatedParty") or []
+                # TMFC006: keep JSON mirror in sync when clients send relatedParty
+                vals["service_spec_related_party_json"] = data.get("relatedParty") or []
+            if "validFor" in data:
+                vals["valid_for"] = data.get("validFor")
+            if "resourceSpecification" in data:
+                vals["service_spec_resource_spec_json"] = data.get("resourceSpecification") or []
+            if "entitySpecification" in data:
+                vals["service_spec_entity_spec_json"] = data.get("entitySpecification") or []
 
             rec.write(vals)
             return self._json_response(rec.to_tmf_json(), status=200)
@@ -254,6 +268,10 @@ class TMFServiceSpecificationController(http.Controller):
                 "related_party": data.get("relatedParty") or [],
                 "valid_for": data.get("validFor"),
                 "last_update": fields.Datetime.now(),
+                # TMFC006: capture foundational dependency refs for side-car wiring.
+                "service_spec_related_party_json": data.get("relatedParty") or [],
+                "service_spec_resource_spec_json": data.get("resourceSpecification") or [],
+                "service_spec_entity_spec_json": data.get("entitySpecification") or [],
             }
 
             rec = request.env["tmf.service.specification"].sudo().create(vals)

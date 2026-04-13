@@ -103,11 +103,11 @@ These are the first TMFCs we should actively track in detail:
 - [x] Raw TMF reference fields identified for foundational dependencies (TMF634/TMF632/TMF669/TMF662)
 - [x] Relational fields identified for foundational dependencies (Party/PartyRole/ResourceSpecification/EntitySpecification)
 - [ ] Dependent APIs mapped to Odoo modules/models (full coverage)
-- [ ] Reference resolution implemented (beyond scaffolding helpers)
+- [x] Reference resolution implemented (foundational TMF632/TMF669/TMF634/TMF662 for ServiceSpecification)
 - [ ] Published events verified from mutation paths (TMF633/TMF657/TMF701)
 - [x] Hub registration verified for TMFC006-specific façade (`/tmfc006/hub/*`)
 - [x] Listener routes implemented for subscribed events (TMF634/TMF662)
-- [ ] Subscribed event callbacks update local state correctly (reconciliation still a no-op)
+- [x] Subscribed event callbacks update local state for TMF634/TMF662 where safe (best-effort reconciliation)
 - [ ] Verification notes captured
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader wiring pass
 
@@ -156,7 +156,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF634 | ResourceCatalogManagement | resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Partially wired (scaffolding) | `/tmfc006/listener/resourceSpecification` JSON endpoint implemented in `tmfc006_wiring.controllers.listeners`. Pass 1 delegates to `tmfc006.wiring.tools._handle_resource_catalog_event(payload)`, which currently returns `True` without mutating state. URLs and basic listener surface are now stable for future reconciliation work. |
 | TMF662 | EntityCatalogManagement | entitySpecificationCreate/AttributeValueChange/Change/Delete events | Partially wired (scaffolding) | `/tmfc006/listener/entitySpecification` JSON endpoint implemented in `tmfc006_wiring.controllers.listeners` and delegated to `tmfc006.wiring.tools._handle_entity_catalog_event(payload)`. This provides a safe, no-op listener surface for TMF662 while we design reconciliation rules. |
 
-### Implementation tasks (pass 1)
+### Implementation tasks (pass 1+2)
 - [x] Confirm YAML-to-code mapping for TMF633, TMF657, TMF701 exposed APIs (baseline add-ons).
 - [x] Create `tmfc006_wiring` addon skeleton following the established side-car pattern (models, controllers, security, data).
 - [x] Introduce raw JSON reference fields for key YAML dependencies (TMF634/TMF632/TMF669/TMF662) on a shared `tmfc006.wiring.tools` abstract model, without altering TMF633 baseline models.
@@ -242,7 +242,7 @@ These are the first TMFCs we should actively track in detail:
 | TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/party` exists and delegates to `tmfc008.wiring.tools.handle_party_event()`. Handler is currently non-mutating; future passes may reconcile `tmfc008_related_partner_ids` on `tmf.service`. |
 | TMF641 | ServiceOrderingManagement | serviceOrderDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/serviceOrder` exists and delegates to `tmfc008.wiring.tools.handle_service_order_event()`. Handler is currently log-only; reconciliation of ServiceOrder links on `tmf.service` is deferred to a later pass. |
 
-### Implementation tasks (pass 1)
+### Implementation tasks (pass 1+2)
 - [x] Confirm YAML-to-code mapping for TMF638/TMF701 exposed APIs (baseline `tmf_service_inventory` + shared `tmf_process_flow`).
 - [x] Capture current dependent API evidence from existing modules (`tmf_service_inventory`, `tmf_resource_inventory`, `tmf_service_catalog`, `tmf_customer`, `tmf_party_role`, `tmf_geographic_*`, `tmf_service_order`).
 - [x] Create `tmfc008_wiring` addon skeleton following the established side-car pattern (models, controllers, security, data).
