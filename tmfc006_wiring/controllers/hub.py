@@ -16,12 +16,13 @@ class TMFC006HubController(http.Controller):
             "/tmfc006/hub/serviceCatalog",
             "/tmfc006/hub/serviceQuality",
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def register_hub(self, **payload):
+    def register_hub(self):
+        payload = request.jsonrequest or {}
         subscription_model = request.env["tmf.hub.subscription"].sudo()
         # Pass 1: trust payload to contain at least callback and query fields; we do not
         # enforce schema beyond what `tmf.hub.subscription` already validates.

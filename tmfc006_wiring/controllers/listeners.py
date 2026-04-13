@@ -15,12 +15,13 @@ class TMFC006ListenerController(http.Controller):
         [
             "/tmfc006/listener/resourceSpecification",  # TMF634 ResourceCatalogManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_resource_specification(self, **payload):
+    def listener_resource_specification(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc006.wiring.tools"].sudo()
         tools._handle_resource_catalog_event(payload)
         return {"status": "accepted"}
@@ -29,12 +30,13 @@ class TMFC006ListenerController(http.Controller):
         [
             "/tmfc006/listener/entitySpecification",  # TMF662 EntityCatalogManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_entity_specification(self, **payload):
+    def listener_entity_specification(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc006.wiring.tools"].sudo()
         tools._handle_entity_catalog_event(payload)
         return {"status": "accepted"}

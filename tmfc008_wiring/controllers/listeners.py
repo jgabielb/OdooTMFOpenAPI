@@ -17,12 +17,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/resourceInventory",  # TMF639 ResourceInventoryManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_resource_inventory(self, **payload):
+    def listener_resource_inventory(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_resource_event(payload)
         return {"status": "accepted"}
@@ -31,12 +32,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/serviceInventory",  # TMF638 self-subscriptions
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_service_inventory(self, **payload):
+    def listener_service_inventory(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_service_event(payload)
         return {"status": "accepted"}
@@ -45,12 +47,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/serviceCatalog",  # TMF633 ServiceCatalogManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_service_catalog(self, **payload):
+    def listener_service_catalog(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_service_spec_event(payload)
         return {"status": "accepted"}
@@ -59,12 +62,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/party",  # TMF632 PartyManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_party(self, **payload):
+    def listener_party(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_party_event(payload)
         return {"status": "accepted"}
@@ -73,12 +77,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/partyRole",  # TMF669 PartyRoleManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_party_role(self, **payload):
+    def listener_party_role(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_party_role_event(payload)
         return {"status": "accepted"}
@@ -87,12 +92,13 @@ class TMFC008ListenerController(http.Controller):
         [
             "/tmfc008/listener/serviceOrder",  # TMF641 ServiceOrderingManagement
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def listener_service_order(self, **payload):
+    def listener_service_order(self):
+        payload = request.jsonrequest or {}
         tools = request.env["tmfc008.wiring.tools"].sudo()
         tools.handle_service_order_event(payload)
         return {"status": "accepted"}

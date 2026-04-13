@@ -16,12 +16,13 @@ class TMFC008HubController(http.Controller):
         [
             "/tmfc008/hub/serviceInventory",
         ],
-        type="json",
+        type="http",
         auth="none",
         methods=["POST"],
         csrf=False,
     )
-    def register_hub(self, **payload):
+    def register_hub(self):
+        payload = request.jsonrequest or {}
         subscription_model = request.env["tmf.hub.subscription"].sudo()
         # Pass 1: rely on tmf.hub.subscription to validate schema; we only
         # need a stable URL and basic create behaviour.
