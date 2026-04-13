@@ -123,6 +123,7 @@ class TMFServiceCatalogController(http.Controller):
 
             data = self._parse_body_json()
             vals = {}
+            tmfc006_fields = self._tmfc006_supported_fields()
 
             if "name" in data:
                 vals["name"] = data.get("name")
@@ -138,13 +139,13 @@ class TMFServiceCatalogController(http.Controller):
                 vals["category"] = data.get("category") or []
             if "relatedParty" in data:
                 vals["related_party"] = data.get("relatedParty") or []
-                # TMFC006: keep JSON mirror in sync when clients send relatedParty
-                vals["service_spec_related_party_json"] = data.get("relatedParty") or []
+                if tmfc006_fields["service_spec_related_party_json"]:
+                    vals["service_spec_related_party_json"] = data.get("relatedParty") or []
             if "validFor" in data:
                 vals["valid_for"] = data.get("validFor")
-            if "resourceSpecification" in data:
+            if "resourceSpecification" in data and tmfc006_fields["service_spec_resource_spec_json"]:
                 vals["service_spec_resource_spec_json"] = data.get("resourceSpecification") or []
-            if "entitySpecification" in data:
+            if "entitySpecification" in data and tmfc006_fields["service_spec_entity_spec_json"]:
                 vals["service_spec_entity_spec_json"] = data.get("entitySpecification") or []
 
             rec.write(vals)
@@ -165,6 +166,14 @@ class TMFServiceCatalogController(http.Controller):
 
 class TMFServiceSpecificationController(http.Controller):
     BASE = "/tmf-api/serviceCatalogManagement/v4/serviceSpecification"
+
+    def _tmfc006_supported_fields(self):
+        fields_map = request.env["tmf.service.specification"].sudo()._fields
+        return {
+            "service_spec_related_party_json": "service_spec_related_party_json" in fields_map,
+            "service_spec_resource_spec_json": "service_spec_resource_spec_json" in fields_map,
+            "service_spec_entity_spec_json": "service_spec_entity_spec_json" in fields_map,
+        }
 
     def _json_response(self, payload, status=200, extra_headers=None):
         headers = [("Content-Type", "application/json")]
@@ -268,11 +277,14 @@ class TMFServiceSpecificationController(http.Controller):
                 "related_party": data.get("relatedParty") or [],
                 "valid_for": data.get("validFor"),
                 "last_update": fields.Datetime.now(),
-                # TMFC006: capture foundational dependency refs for side-car wiring.
-                "service_spec_related_party_json": data.get("relatedParty") or [],
-                "service_spec_resource_spec_json": data.get("resourceSpecification") or [],
-                "service_spec_entity_spec_json": data.get("entitySpecification") or [],
             }
+            tmfc006_fields = self._tmfc006_supported_fields()
+            if tmfc006_fields["service_spec_related_party_json"]:
+                vals["service_spec_related_party_json"] = data.get("relatedParty") or []
+            if tmfc006_fields["service_spec_resource_spec_json"]:
+                vals["service_spec_resource_spec_json"] = data.get("resourceSpecification") or []
+            if tmfc006_fields["service_spec_entity_spec_json"]:
+                vals["service_spec_entity_spec_json"] = data.get("entitySpecification") or []
 
             rec = request.env["tmf.service.specification"].sudo().create(vals)
             payload = rec.to_tmf_json()
