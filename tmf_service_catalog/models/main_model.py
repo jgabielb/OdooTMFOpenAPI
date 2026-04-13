@@ -203,6 +203,9 @@ class TMFServiceSpecification(models.Model):
         recs = super().create(vals_list)
         if not self.env.context.get("skip_tmf_catalog_sync"):
             recs._sync_product_template_link()
+            # TMFC006: resolve foundational TMF632/TMF669/TMF634/TMF662
+            # dependencies as soon as JSON refs are captured.
+            recs._resolve_service_spec_references()
         return recs
 
     def write(self, vals):
@@ -210,6 +213,15 @@ class TMFServiceSpecification(models.Model):
         res = super().write(vals)
         if not self.env.context.get("skip_tmf_catalog_sync"):
             self._sync_product_template_link()
+            wiring_keys = {
+                "service_spec_related_party_json",
+                "service_spec_resource_spec_json",
+                "service_spec_entity_spec_json",
+                "related_party",
+            }
+            if wiring_keys & set(vals.keys()):
+                # TMFC006: refresh dependency wiring when JSON refs change.
+                self._resolve_service_spec_references(self)
         for rec in self:
             rec._notify('serviceSpecification', 'update', rec)
         return res
