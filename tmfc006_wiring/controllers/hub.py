@@ -4,7 +4,7 @@ from odoo.http import request
 
 
 class TMFC006HubController(http.Controller):
-    """Minimal hub-registration façade for TMFC006.
+    """Minimal hub registration facade for TMFC006.
 
     We keep TMF API URLs stable and reuse the generic `tmf.hub.subscription`
     model used by other TMFC wiring addons. This controller exists mainly to
