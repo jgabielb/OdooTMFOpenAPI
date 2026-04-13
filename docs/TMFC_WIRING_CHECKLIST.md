@@ -172,9 +172,9 @@ These are the first TMFCs we should actively track in detail:
 
 ## TMFC008 – ServiceInventory
 
-**Status:** In analysis
+**Status:** Partially wired (second wiring pass)
 **Target sprint:** Sprint 3
-**Current classification:** Missing (no `tmfc008_*` wiring addon; base TMF638 module exists)
+**Current classification:** Partially wired (dependency wiring + listeners)
 **Existing addon(s):** `tmf_service_inventory`, `tmf_process_flow`, `tmf_resource_inventory`, `tmf_resource_catalog`, `tmf_geographic_address`, `tmf_geographic_site`, `tmf_geographic_location`, `tmf_customer`, `tmf_party_role`, `tmf_service_order`
 **New addon:** `tmfc008_wiring` (Service Inventory ODA wiring side-car)
 
@@ -186,11 +186,11 @@ These are the first TMFCs we should actively track in detail:
 - [x] Side-car wiring addon exists or equivalent wiring approach justified (`tmfc008_wiring`)
 - [x] Raw TMF reference fields identified (ServiceInventory ↔ ServiceCatalog/ResourceInventory/Party/ServiceOrder)
 - [x] Relational fields identified (links to serviceSpecification, resource, party/partyRole, serviceOrder; TMF701 process/task flows provisioned as optional Many2many)
-- [ ] Reference resolution implemented
+- [x] Reference resolution implemented for TMF633/TMF639/TMF632/TMF669/TMF641 where local records already exist
 - [ ] Published events verified from mutation paths (TMF638/TMF701)
 - [x] Hub registration verified for TMFC008-specific façade (`/tmfc008/hub/serviceInventory`)
 - [x] Listener routes implemented for subscribed events (TMF639/TMF638/TMF633/TMF669/TMF632/TMF641; geo and permission listeners deferred)
-- [ ] Subscribed event callbacks update local state correctly (current handlers are log-only scaffolding)
+- [x] Subscribed event callbacks update local state correctly for TMF633/TMF639/TMF632/TMF669/TMF641 where safe (additive wiring only)
 - [ ] Verification notes captured
 - [ ] `TMFC_IMPLEMENTATION_STATUS.md` updated after broader wiring pass
 
@@ -211,15 +211,15 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
 |--------|----------|-----------|-------------|-----------------|-------|
-| TMF633 | service-catalog-management-api | true | serviceSpecification | Partially wired | `tmf.service` currently links to `tmf.product.specification` via `product_specification_id` and exposes this as `serviceSpecification` in `to_tmf_json()`. True ServiceSpecification (`tmf.service.specification`) is provided by `tmf_service_catalog`, and `tmfc008_wiring` adds JSON + relational stubs (`tmfc008_service_spec_ref_json`, `tmfc008_service_specification_ids`) for future reconciliation between ServiceInventory and ServiceCatalog. |
-| TMF669 | party-role-management-api | false | partyRole | Partially wired | `tmf.service` relates to `res.partner` (`partner_id`) and, for v4 responses, exposes relatedParty/PartyRef in `to_tmf_json()`. `tmfc008_wiring` introduces `tmfc008_related_party_json` and `tmfc008_party_role_ids` to carry TMF669 role information once reconciliation rules are available. |
-| TMF639 | resource-inventory-management-api | false | resource | Partially wired | `tmf.service` links to `stock.lot` as `resource_id`, and `to_tmf_json()` exposes this as `supportingResource` with TMF639-style `ResourceRef`. TMF639 CRUD and events are provided by `tmf_resource_inventory`. `tmfc008_wiring` adds additive JSON + relational fields (`tmfc008_supporting_resource_ref_json`, `tmfc008_supporting_resource_ids`) for future reconciliation based on TMF639 events. |
+| TMF633 | service-catalog-management-api | true | serviceSpecification | Partially wired (with dependency reconciliation) | `tmf.service` links to `tmf.product.specification` via `product_specification_id` and exposes this as `serviceSpecification` in `to_tmf_json()`. `tmf_service_catalog` provides true ServiceSpecification (`tmf.service.specification`), and `tmfc008_wiring` adds JSON + relational fields (`tmfc008_service_spec_ref_json`, `tmfc008_service_specification_ids`) plus listener-driven reconciliation so that ServiceSpecification events populate those fields for services already linked via `product_specification_id`. |
+| TMF669 | party-role-management-api | false | partyRole | Partially wired (with conservative linkage) | `tmf.service` relates to `res.partner` (`partner_id`) and, for v4 responses, exposes relatedParty/PartyRef in `to_tmf_json()`. `tmfc008_wiring` introduces `tmfc008_related_party_json`, `tmfc008_related_partner_ids`, and `tmfc008_party_role_ids`, and listener callbacks keep these fields in sync with TMF632/TMF669 events without changing base partner/partyRole behaviour. |
+| TMF639 | resource-inventory-management-api | false | resource | Partially wired (with dependency reconciliation) | `tmf.service` links to `stock.lot` as `resource_id`, and `to_tmf_json()` exposes this as `supportingResource` with TMF639-style `ResourceRef`. TMF639 CRUD and events are provided by `tmf_resource_inventory`. `tmfc008_wiring` adds additive JSON + relational fields (`tmfc008_supporting_resource_ref_json`, `tmfc008_supporting_resource_ids`) and the TMFC008 listener now keeps them in sync for Services that already point at a given Resource. |
 | TMF638 | service-inventory-management-api | false | service | Evidenced | Self-dependency (read paths) is covered by the TMF638 controllers in `tmf_service_inventory`. |
 | TMF673 | geographic-address-management-api | false | geographicAddress, geographicSubAddress | Not evidenced | No `place`/geographic address fields or relations are present on `tmf.service` in the current codebase. |
 | TMF674 | geographic-site-management-api | false | geographicSite | Not evidenced | No explicit geographicSite linkage exists on `tmf.service`; geo wiring is currently done on Product/Resource inventory components instead. |
 | TMF675 | geographic-location-management-api | false | geographicLocation | Not evidenced | No `geographicLocation` references or relations are present on `tmf.service`. |
-| TMF641 | service-ordering-management-api | false | serviceOrder | Partially wired | `tmf_service_inventory.models.sale_order.SaleOrder.action_confirm` creates `tmf.service` records from `sale.order` lines, giving TMFC003/TMFC007 a path to link ServiceOrder → Service. `tmfc008_wiring` introduces JSON + relational stubs (`tmfc008_service_order_ref_json`, `tmfc008_service_order_ids`) and a listener endpoint for TMF641 events; concrete reconciliation rules are deferred to a later pass. |
-| TMF632 | party-management-api | false | individual, organization | Evidenced (base) | Party/Customer APIs are provided by the `tmf_customer` / `tmf_party` stack. `tmf.service.partner_id` references `res.partner`, and `to_tmf_json()` optionally emits TMF632-style PartyRef when v4 routes are used, but there is no TMFC008-specific delete-event reconciliation yet. |
+| TMF641 | service-ordering-management-api | false | serviceOrder | Partially wired (with dependency reconciliation) | `tmf_service_inventory.models.sale_order.SaleOrder.action_confirm` creates `tmf.service` records from `sale.order` lines, giving TMFC003/TMFC007 a path to link ServiceOrder → Service. `tmfc008_wiring` introduces JSON + relational fields (`tmfc008_service_order_ref_json`, `tmfc008_service_order_ids`) and the TMFC008 listener now attaches ServiceOrders to Services based on `serviceOrderItem[*].service` references observed in TMF641 events. |
+| TMF632 | party-management-api | false | individual, organization | Evidenced (base + dependency reconciliation) | Party/Customer APIs are provided by the `tmf_customer` / `tmf_party` stack. `tmf.service.partner_id` references `res.partner`, and `to_tmf_json()` optionally emits TMF632-style PartyRef when v4 routes are used. `tmfc008_wiring` enriches this with `tmfc008_related_party_json` and `tmfc008_related_partner_ids`, updated from TMF632 listener callbacks. |
 | TMF672 | permission-management-api | false | permission | Not evidenced (out of scope for pass 1) | TMFC008 YAML lists Permission as a dependency for read access control. No explicit TMF672 wiring has been identified in `tmf_service_inventory` or `tmfc008_wiring`; permission checks are currently handled by core Odoo ACLs rather than TMF672 resources. |
 
 ### Published Events
@@ -233,14 +233,14 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
 |--------|----------------------|----------------------|-----------------|-------|
-| TMF639 | ResourceInventoryManagement | resourceDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/resourceInventory` JSON endpoint implemented in `tmfc008_wiring.controllers.listeners` and delegated to `tmfc008.wiring.tools.handle_resource_event()`. Current implementation logs and returns 202-style acknowledgements without mutating ServiceInventory state. |
-| TMF638 | ServiceInventoryManagement | serviceCreateEvent, serviceAttributeValueChangeEvent, serviceStateChangeEvent, serviceDeleteEvent | Partially wired (self-listener scaffolding) | `/tmfc008/listener/serviceInventory` accepts TMF638 self-events and routes them to `tmfc008.wiring.tools.handle_service_event()`. Handler is log-only in this pass; reconciliation will be added once cross-component rules are agreed. |
-| TMF633 | ServiceCatalogManagement | serviceSpecificationDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/serviceCatalog` exists and delegates to `tmfc008.wiring.tools.handle_service_spec_event()`. The handler currently logs the payload; future passes will reconcile `serviceSpecification` links on `tmf.service`. |
-| TMF669 | PartyRoleManagement | partyRoleDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/partyRole` delegates to `tmfc008.wiring.tools.handle_party_role_event()`. Handler is currently non-mutating, providing a stable entry point for TMF669 events while we design reconciliation rules. |
-| TMF674 | GeographicSiteManagement | geographicSiteDeleteEvent | Not evidenced | No ServiceInventory listener or geo linkage exists; any future `place` references on `tmf.service` will need delete-event reconciliation. Geo wiring remains out of scope for TMFC008 pass 1. |
-| TMF675 | GeographicLocation | geographicLocationDeleteEvent | Not evidenced | As above; no current geographicLocation wiring on ServiceInventory. Geo wiring remains out of scope for TMFC008 pass 1. |
-| TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/party` exists and delegates to `tmfc008.wiring.tools.handle_party_event()`. Handler is currently non-mutating; future passes may reconcile `tmfc008_related_partner_ids` on `tmf.service`. |
-| TMF641 | ServiceOrderingManagement | serviceOrderDeleteEvent | Partially wired (scaffolding) | `/tmfc008/listener/serviceOrder` exists and delegates to `tmfc008.wiring.tools.handle_service_order_event()`. Handler is currently log-only; reconciliation of ServiceOrder links on `tmf.service` is deferred to a later pass. |
+| TMF639 | ResourceInventoryManagement | resourceDeleteEvent | Wired (dependency linkage) | `/tmfc008/listener/resourceInventory` JSON endpoint delegates to `tmfc008.wiring.tools.handle_resource_event()`, which resolves the referenced `stock.lot` by `tmf_id`/ID and, when found, ensures any `tmf.service` records that already point at it via `resource_id` also record it in `tmfc008_supporting_resource_ref_json` and `tmfc008_supporting_resource_ids`. No new resources are created and the primary `resource_id` linkage remains unchanged. |
+| TMF638 | ServiceInventoryManagement | serviceCreateEvent, serviceAttributeValueChangeEvent, serviceStateChangeEvent, serviceDeleteEvent | Partially wired (self-listener scaffolding) | `/tmfc008/listener/serviceInventory` accepts TMF638 self-events and routes them to `tmfc008.wiring.tools.handle_service_event()`. Handler remains log-only; core TMF638 publication is handled by `tmf.service`. |
+| TMF633 | ServiceCatalogManagement | serviceSpecificationDeleteEvent | Wired (dependency linkage) | `/tmfc008/listener/serviceCatalog` delegates to `tmfc008.wiring.tools.handle_service_spec_event()`, which resolves the referenced `tmf.service.specification` and, where `tmf.service.product_specification_id` already points at that spec, records a ServiceSpecificationRef in `tmfc008_service_spec_ref_json` and adds the spec to `tmfc008_service_specification_ids`. No master data is created or deleted. |
+| TMF669 | PartyRoleManagement | partyRoleDeleteEvent | Partially wired (conservative linkage) | `/tmfc008/listener/partyRole` delegates to `tmfc008.wiring.tools.handle_party_role_event()`, which, when the PartyRole and underlying Party can be resolved, links the role into `tmfc008_party_role_ids` for Services whose `partner_id` matches the Party. Behaviour is additive and does not alter base Party/PartyRole models. |
+| TMF674 | GeographicSiteManagement | geographicSiteDeleteEvent | Not evidenced | No ServiceInventory listener or geo linkage exists; any future `place` references on `tmf.service` will need delete-event reconciliation. Geo wiring remains out of scope for TMFC008 pass 2. |
+| TMF675 | GeographicLocation | geographicLocationDeleteEvent | Not evidenced | As above; no current geographicLocation wiring on ServiceInventory. Geo wiring remains out of scope for TMFC008 pass 2. |
+| TMF632 | PartyManagement | individualDeleteEvent, organizationDeleteEvent | Wired (dependency linkage) | `/tmfc008/listener/party` delegates to `tmfc008.wiring.tools.handle_party_event()`, which resolves the Party to `res.partner` and, for any `tmf.service` records already owned by that partner, appends a RelatedPartyRef into `tmfc008_related_party_json` and links the partner in `tmfc008_related_partner_ids`. Underlying `partner_id` behaviour is unchanged. |
+| TMF641 | ServiceOrderingManagement | serviceOrderDeleteEvent | Wired (dependency linkage) | `/tmfc008/listener/serviceOrder` delegates to `tmfc008.wiring.tools.handle_service_order_event()`, which resolves the ServiceOrder, inspects `serviceOrderItem[*].service` references, and for any matching `tmf.service` records records a ServiceOrderRef in `tmfc008_service_order_ref_json` and links the order in `tmfc008_service_order_ids`. |
 
 ### Implementation tasks (pass 1+2)
 - [x] Confirm YAML-to-code mapping for TMF638/TMF701 exposed APIs (baseline `tmf_service_inventory` + shared `tmf_process_flow`).
@@ -249,10 +249,10 @@ These are the first TMFCs we should actively track in detail:
 - [x] Introduce raw TMF reference fields on `tmf.service` via `TMFC008ServiceWiring` for ServiceCatalog, ResourceInventory, Party/PartyRole, and ServiceOrder references.
 - [x] Add relational fields to represent resolved dependencies (serviceSpecification/serviceSpecificationRef, supportingResource/resourceRefs, Party/PartyRole, serviceOrder) and optional TMF701 process/task-flow links without altering CTK payload shapes.
 - [x] Implement TMFC008-specific hub façade route (`/tmfc008/hub/serviceInventory`) backed by `tmf.hub.subscription`.
-- [x] Design and implement listener endpoints for TMF639, TMF633, TMF669, TMF632, TMF641 (and self-subscriptions) with conservative, log-only reconciliation logic.
+- [x] Design and implement listener endpoints for TMF639, TMF633, TMF669, TMF632, TMF641 (and self-subscriptions) and wire `tmfc008.wiring.tools` to perform additive, best-effort reconciliation for ServiceCatalog/ResourceInventory/Party/PartyRole/ServiceOrder dependencies where local records already exist.
 - [ ] Refine TMF638 event publication so that state-change vs attribute-change events are distinguishable where required by the YAML.
 - [ ] Capture verification notes summarizing the ServiceInventory role in the product/service/resource chain (interactions with TMFC003, TMFC005, TMFC006, TMFC007).
-- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the initial TMFC008 wiring pass is complete.
+- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the TMFC008 pass 2 wiring is fully verified.
 
 ---
 
