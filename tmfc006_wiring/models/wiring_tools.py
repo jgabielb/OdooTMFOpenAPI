@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-from odoo import api, fields, models
+from odoo import api, models
 
 
 def _loads(value):
@@ -60,41 +60,9 @@ class TMFC006WiringTools(models.AbstractModel):
     _name = "tmfc006.wiring.tools"
     _description = "TMFC006 Wiring Tools - Service Catalog foundational wiring"
 
-    # Minimal JSON reference fields for TMF634/TMF632/TMF669/TMF662 payload fragments
-    service_spec_related_party_json = fields.Json(
-        string="Service Spec RelatedParty (raw)",
-        help="Raw TMF632/TMF669 relatedParty fragment from TMF633 serviceSpecification payload.",
-    )
-    service_spec_resource_spec_json = fields.Json(
-        string="Service Spec ResourceSpecification (raw)",
-        help="Raw TMF634 resourceSpecification fragment from TMF633 serviceSpecification payload.",
-    )
-    service_spec_entity_spec_json = fields.Json(
-        string="Service Spec EntitySpecification (raw)",
-        help="Raw TMF662 entitySpecification/associationSpecification fragment from TMF633 serviceSpecification payload.",
-    )
-
-    # Relational stubs: we only add these where base models exist and are already TMF-backed
-    related_partner_ids = fields.Many2many(
-        comodel_name="res.partner",
-        string="Related Partners",
-        help="Resolved TMF632 individuals/organizations referenced from serviceSpecification.relatedParty.",
-    )
-    party_role_ids = fields.Many2many(
-        comodel_name="tmf.party.role",
-        string="Party Roles",
-        help="Resolved TMF669 partyRoles linked to the service specification.",
-    )
-    resource_specification_ids = fields.Many2many(
-        comodel_name="tmf.resource.specification",
-        string="Resource Specifications",
-        help="Resolved TMF634 resourceSpecification records used by this service specification.",
-    )
-    entity_specification_ids = fields.Many2many(
-        comodel_name="tmf.entity.specification",
-        string="Entity Specifications",
-        help="Resolved TMF662 entitySpecification records used by this service specification.",
-    )
+    # NOTE: TMFC006 side-car fields now live on ``tmf.service.specification``
+    # via ``tmfc006_wiring/models/service_specification.py``. This AbstractModel
+    # only hosts the reconciliation helpers.
 
     @api.model
     def _resolve_service_spec_references(self, specs=None):
