@@ -91,7 +91,7 @@ These are the first TMFCs we should actively track in detail:
 
 **Status:** Partially wired
 **Target sprint:** Sprint 3
-**Current classification:** Partially wired (first wiring pass)
+**Current classification:** Partially wired (CTK-safe foundational wiring)
 **Existing addon(s):** `tmf_service_catalog`, `tmf_service_quality_management`, `tmf_process_flow`, `tmf_resource_catalog`, `tmf_entity_catalog`, `tmf_customer`, `tmf_party_role`
 **New addon:** `tmfc006_wiring` (Service Catalog ODA wiring side-car)
 
@@ -136,10 +136,10 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | API Name | Required? | Resource(s) | Evidence status | Notes |
 |--------|----------|-----------|-------------|-----------------|-------|
-| TMF634 | resource-catalog-management-api | false | resourceSpecification | Evidenced (base) | `tmf_resource_catalog` module exposes TMF634 CRUD for `resourceSpecification`. TMFC006 pass 1 adds JSON + relational fields on `tmfc006.wiring.tools` to carry resourceSpecification references, but does not yet implement reconciliation logic. |
-| TMF669 | party-role-management-api | false | partyRole | Evidenced (base) | `tmf_party_role` module exposes TMF669. TMFC006 pass 1 introduces `party_role_ids` on `tmfc006.wiring.tools` for future mapping from serviceSpecification-relatedParty payloads. |
-| TMF632 | party-management-api | false | individual, organization | Evidenced (base) | `tmf_customer` / `tmf_party` stack exposes TMF632. TMFC006 pass 1 adds `related_partner_ids` on `tmfc006.wiring.tools`, but keeps existing `relatedParty` JSON on `tmf.service.catalog` / `tmf.service.specification` unchanged. |
-| TMF662 | entity-catalog-management-api | false | entitySpecification, associationSpecification | Evidenced (base) | `tmf_entity_catalog` module exposes TMF662. TMFC006 pass 1 adds `entity_specification_ids` and JSON scaffolding fields on `tmfc006.wiring.tools` for future association, but does not yet perform reconciliation.
+| TMF634 | resource-catalog-management-api | false | resourceSpecification | Partially wired | `tmf_resource_catalog` module exposes TMF634 CRUD for `resourceSpecification`. `tmfc006_wiring` adds JSON + relational fields plus best-effort reconciliation in `/tmfc006/listener/resourceSpecification`, but this wiring now depends on the side-car extension being present on `tmf.service.specification`; the base TMF633 controller feature-detects these fields before writing them to stay CTK-safe. |
+| TMF669 | party-role-management-api | false | partyRole | Partially wired | `tmf_party_role` module exposes TMF669. `tmfc006.wiring.tools` defines `party_role_ids` and resolution logic for PartyRole-shaped entries in `relatedParty`, but the side-car extension must own those fields; no base-module inheritance to TMFC006 helpers remains. |
+| TMF632 | party-management-api | false | individual, organization | Partially wired | `tmf_customer` / `tmf_party` stack exposes TMF632. `tmfc006.wiring.tools` defines `related_partner_ids` and resolution logic for non-PartyRole `relatedParty` entries, while the base TMF633 controller now only mirrors TMFC006-specific JSON when those side-car fields are available. |
+| TMF662 | entity-catalog-management-api | false | entitySpecification, associationSpecification | Partially wired | `tmf_entity_catalog` module exposes TMF662. `tmfc006.wiring.tools` provides `entity_specification_ids`, JSON scaffolding, and best-effort listener reconciliation through `/tmfc006/listener/entitySpecification`, but broader entity-catalog orchestration is still pending.
 
 ### Published Events
 
@@ -153,8 +153,8 @@ These are the first TMFCs we should actively track in detail:
 
 | TMF ID | Source component/API | Event/resource names | Evidence status | Notes |
 |--------|----------------------|----------------------|-----------------|-------|
-| TMF634 | ResourceCatalogManagement | resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Partially wired (scaffolding) | `/tmfc006/listener/resourceSpecification` JSON endpoint implemented in `tmfc006_wiring.controllers.listeners`. Pass 1 delegates to `tmfc006.wiring.tools._handle_resource_catalog_event(payload)`, which currently returns `True` without mutating state. URLs and basic listener surface are now stable for future reconciliation work. |
-| TMF662 | EntityCatalogManagement | entitySpecificationCreate/AttributeValueChange/Change/Delete events | Partially wired (scaffolding) | `/tmfc006/listener/entitySpecification` JSON endpoint implemented in `tmfc006_wiring.controllers.listeners` and delegated to `tmfc006.wiring.tools._handle_entity_catalog_event(payload)`. This provides a safe, no-op listener surface for TMF662 while we design reconciliation rules. |
+| TMF634 | ResourceCatalogManagement | resourceSpecificationCreateEvent, resourceSpecificationChangeEvent, resourceSpecificationDeleteEvent | Partially wired (best-effort reconciliation) | `/tmfc006/listener/resourceSpecification` delegates to `tmfc006.wiring.tools._handle_resource_catalog_event(payload)`, which now re-runs reference resolution when the referenced ResourceSpecification exists and prunes TMFC006 JSON + relational links when it no longer does. Route declaration was also updated for Odoo 19 compatibility without changing the URL surface. |
+| TMF662 | EntityCatalogManagement | entitySpecificationCreate/AttributeValueChange/Change/Delete events | Partially wired (best-effort reconciliation) | `/tmfc006/listener/entitySpecification` delegates to `tmfc006.wiring.tools._handle_entity_catalog_event(payload)`, which mirrors the TMF634 reconciliation pattern for EntitySpecification links. Route declaration was updated for Odoo 19 compatibility without changing the URL surface. |
 
 ### Implementation tasks (pass 1+2)
 - [x] Confirm YAML-to-code mapping for TMF633, TMF657, TMF701 exposed APIs (baseline add-ons).
@@ -163,10 +163,13 @@ These are the first TMFCs we should actively track in detail:
 - [x] Add relational fields for foundational dependencies (`related_partner_ids`, `party_role_ids`, `resource_specification_ids`, `entity_specification_ids`) aligned with existing TMF modules.
 - [x] Implement TMFC006-specific hub façade routes backed by `tmf.hub.subscription` (`/tmfc006/hub/serviceCatalog`, `/tmfc006/hub/serviceQuality`).
 - [x] Design and implement listener endpoints for TMF634 ResourceCatalog events (scaffolding only) and TMF662 EntityCatalog events (scaffolding only).
-- [ ] Extend `_resolve_service_spec_references` to perform concrete mapping from TMF633 payloads into TMF632/TMF669/TMF634/TMF662 relations once sample payloads are available.
+- [x] Extend `_resolve_service_spec_references` to perform concrete mapping from TMF633 payloads into TMF632/TMF669/TMF634/TMF662 relations once sample payloads are available.
+- [x] Harden TMF633 ServiceSpecification create/patch to stay CTK-safe by feature-detecting TMFC006 side-car fields before writing them from the base controller.
+- [x] Update TMFC006 route declarations for Odoo 19 compatibility without changing URL/auth/method semantics.
+- [ ] Rework TMFC006 side-car model extension so the resolver fields/method hooks are owned entirely by `tmfc006_wiring` without any unsafe base-module assumptions.
 - [ ] Wire TMF701 processFlow/taskFlow records to service catalog entities where lifecycle workflows are required (reusing `tmf_process_flow` mixin patterns from TMFC001/TMFC003/TMFC005/TMFC027).
 - [ ] Capture verification notes summarizing cross-component interactions with TMFC001/TMFC005/TMFC027 and with underlying TMF634/TMF662 domains.
-- [ ] Update `TMFC_IMPLEMENTATION_STATUS.md` once the broader TMFC006 wiring pass is complete.
+- [ ] Re-run TMF633 CTK create/patch verification after the controller gating fix and record the result.
 
 ---
 

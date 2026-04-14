@@ -246,16 +246,22 @@ Complete the shared catalog and inventory components that many other TMFCs depen
 
 #### TMFC006
 - [x] Create `tmfc006_wiring`
-- [x] Wire TMF633/TMF657 exposed resources to dependent TMF634/TMF632/TMF669/TMF662 refs at foundational level (abstract model + ServiceSpecification inheritance)
-- [x] Implement initial subscribed-event handling scaffolding from TMF634/TMF662 (listener endpoints + no-op reconciliation hooks)
-- [ ] Extend reference resolution and reconciliation beyond scaffolding once sample payloads and orchestration rules are available
-- [ ] Update docs again after the broader TMFC006 wiring pass (including TMF701 linkage and non-foundational dependencies)
+- [x] Wire TMF633/TMF657 exposed resources to dependent TMF634/TMF632/TMF669/TMF662 refs at foundational level
+- [x] Implement TMF634/TMF662 listener routes with best-effort reconciliation
+- [x] Extend reference resolution and reconciliation beyond scaffolding for ServiceSpecification-level TMF632/TMF669/TMF634/TMF662 links
+- [x] Harden TMF633 controller flows so CTK-facing create/patch only write TMFC006 side-car fields when those fields exist
+- [x] Clean up TMFC006 route declarations for Odoo 19 deprecation compatibility
+- [ ] Rework TMFC006 side-car ownership so fields/hooks live entirely in `tmfc006_wiring` without base-module assumptions
+- [ ] Re-run TMFC006 CTK verification and capture evidence after the gating fix
+- [ ] Implement TMF701 linkage and broader TMF633 resource coverage (serviceCategory, serviceCandidate, importJob/exportJob) if required for stricter completion
 
 #### TMFC008
-- [ ] Create `tmfc008_wiring`
-- [ ] Wire service inventory to service specification, resource inventory, party, geography, and service-order refs
-- [ ] Implement delete/change subscriptions required by YAML
-- [ ] Update docs
+- [x] Create `tmfc008_wiring`
+- [x] Wire service inventory to service specification, resource inventory, party, party role, and service-order refs where local records already exist
+- [x] Implement listener endpoints / additive reconciliation for TMF639/TMF633/TMF632/TMF669/TMF641 and keep TMF638 self-listener log-only
+- [x] Clean up TMFC008 route declarations for Odoo 19 deprecation compatibility
+- [ ] Re-run TMFC008 verification notes and published-event checks (TMF638/TMF701)
+- [ ] Decide whether any additional TMFC008 pass is warranted beyond current additive wiring, excluding unsupported TMF672 and geo semantics
 
 #### TMFC010
 - [ ] Create `tmfc010_wiring`
