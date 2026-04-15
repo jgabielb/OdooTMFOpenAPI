@@ -52,6 +52,7 @@ Write-Host "Starting Odoo Server..." -ForegroundColor Green
 
 & $Py $Bin `
     -c $Conf `
+    --logfile="C:\Users\Joao Gabriel\OneDrive\work_area\OdooTMFOpenAPI\logs\odoo.log" `
     --addons-path="$BaseAddons,$MyAddons" `
     --log-handler=odoo.addons.rpc.controllers.xmlrpc:ERROR `
     --db_port=5433 `

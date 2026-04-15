@@ -570,13 +570,6 @@ def run_one(
         )
         assert process.stdout is not None
         for line in process.stdout:
-            try:
-                sys.stdout.write(line)
-            except UnicodeEncodeError:
-                safe = line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(
-                    sys.stdout.encoding or "utf-8", errors="replace"
-                )
-                sys.stdout.write(safe)
             f.write(line)
         exit_code = process.wait()
 
@@ -808,7 +801,36 @@ def main() -> int:
 
     write_outputs(run_out_dir, results)
 
+    totals = {
+        "count": len(results),
+        "pass": sum(1 for r in results if r["status"] == "PASS"),
+        "fail": sum(1 for r in results if r["status"] == "FAIL"),
+        "unknown": sum(1 for r in results if r["status"] == "UNKNOWN"),
+    }
+    print("")
+    print("=" * 60)
+    print("CTK Batch Summary")
+    print("=" * 60)
+    print(
+        f"Total: {totals['count']}   Pass: {totals['pass']}   "
+        f"Fail: {totals['fail']}   Unknown: {totals['unknown']}"
+    )
     failures = [r for r in results if r["status"] == "FAIL"]
+    unknowns = [r for r in results if r["status"] == "UNKNOWN"]
+    if failures:
+        print("")
+        print("Failures:")
+        for r in failures:
+            print(f"  - {r['tmf_id']:8s} {r['verification_note']}  (exit={r['exit_code']})")
+    if unknowns:
+        print("")
+        print("Unknown:")
+        for r in unknowns:
+            print(f"  - {r['tmf_id']:8s} {r['verification_note']}")
+    print("")
+    print(f"Report dir: {run_out_dir}")
+    print("=" * 60)
+
     return 1 if failures else 0
 
 
