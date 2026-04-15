@@ -49,20 +49,64 @@ class PartyInteractionTMFC023Wiring(models.Model):
     )
 
     def _resolve_tmf_refs(self):
-        """Placeholder for future TMF-based reference resolution.
+        """Resolve DigitalIdentity / PrivacyAgreement refs from related_party.
 
-        Current TMF683 implementation does not expose explicit identity or
-        privacy agreement refs; this hook allows safe future wiring once such
-        fields are introduced, without touching CTK-facing behavior.
+        TMF683 carries related entities inside ``related_party`` with a
+        ``@referredType`` discriminator; we extract the identity and
+        privacy-agreement entries and resolve them by ``tmf_id``. This is
+        idempotent and never alters CTK-visible behavior.
         """
 
+        Identity = self.env["tmf.digital.identity"].sudo()
+        Agreement = self.env["tmf.party.privacy.agreement"].sudo()
         ctx = {"skip_tmf_wiring": True}
+
         for rec in self:
+            items = _as_list(rec.related_party)
+            identity_refs = [
+                i for i in items
+                if isinstance(i, dict)
+                and (i.get("@referredType") == "DigitalIdentity"
+                     or i.get("@type") in ("DigitalIdentityRef",))
+            ]
+            agreement_refs = [
+                i for i in items
+                if isinstance(i, dict)
+                and (i.get("@referredType") == "PartyPrivacyAgreement"
+                     or i.get("@type") in ("PartyPrivacyAgreementRef",))
+            ]
+
             updates = {}
 
-            # Future extension point: e.g., resolve relatedEntity/relatedParty
-            # entries into digital_identity_ids / privacy_agreement_ids.
-            # For now, we keep this as a no-op to avoid changing behavior.
+            ident_ids = []
+            for ref in identity_refs:
+                rid = str(ref.get("id") or "").strip()
+                if not rid:
+                    continue
+                hit = Identity.search([("tmf_id", "=", rid)], limit=1)
+                if not hit and rid.isdigit():
+                    hit = Identity.browse(int(rid))
+                    if not hit.exists():
+                        hit = Identity.browse([])
+                if hit:
+                    ident_ids.append(hit.id)
+            if ident_ids:
+                updates["digital_identity_ids"] = [(6, 0, ident_ids)]
+
+            agr_ids = []
+            for ref in agreement_refs:
+                rid = str(ref.get("id") or "").strip()
+                if not rid:
+                    continue
+                hit = Agreement.search([("tmf_id", "=", rid)], limit=1)
+                if not hit and rid.isdigit():
+                    hit = Agreement.browse(int(rid))
+                    if not hit.exists():
+                        hit = Agreement.browse([])
+                if hit:
+                    agr_ids.append(hit.id)
+            if agr_ids:
+                updates["privacy_agreement_ids"] = [(6, 0, agr_ids)]
 
             if updates:
                 rec.with_context(**ctx).write(updates)
