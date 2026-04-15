@@ -19,6 +19,10 @@
         "tmf_party_role",          # TMF669 PartyRole (no-op wiring for now)
         "tmf_service_order",       # TMF641 service-ordering-management-api
         "tmf_process_flow",        # TMF701 shared process/task flows
+        "tmf_geographic_address",  # TMF673 GeographicAddress
+        "tmf_geographic_site",     # TMF674 GeographicSite
+        "tmf_geographic_location", # TMF675 GeographicLocation
+        "tmf_permission",          # TMF672 Permission
     ],
     "data": [
         "security/ir.model.access.csv",

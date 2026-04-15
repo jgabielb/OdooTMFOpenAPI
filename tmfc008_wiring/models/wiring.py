@@ -160,6 +160,70 @@ class TMFC008ServiceWiring(models.Model):
         ),
     )
 
+    # ------------------------------------------------------------------
+    # TMF673/674/675 Geographic dependency wiring
+    # ------------------------------------------------------------------
+
+    tmfc008_place_ref_json = fields.Json(
+        default=list,
+        string="Place refs JSON (TMF673/674/675)",
+        help=(
+            "Raw place / geographic reference fragments associated with "
+            "this Service. Populated by TMFC008 listeners; the relational "
+            "fields below are the authoritative navigation surface."
+        ),
+    )
+
+    tmfc008_geographic_address_ids = fields.Many2many(
+        "tmf.geographic.address",
+        "tmfc008_service_geo_address_rel",
+        "service_id",
+        "address_id",
+        string="Geographic Addresses (TMF673)",
+        help="Resolved TMF673 GeographicAddress records related to this Service.",
+    )
+
+    tmfc008_geographic_site_ids = fields.Many2many(
+        "tmf.geographic.site",
+        "tmfc008_service_geo_site_rel",
+        "service_id",
+        "site_id",
+        string="Geographic Sites (TMF674)",
+        help="Resolved TMF674 GeographicSite records related to this Service.",
+    )
+
+    tmfc008_geographic_location_ids = fields.Many2many(
+        "tmf.geographic.location",
+        "tmfc008_service_geo_location_rel",
+        "service_id",
+        "location_id",
+        string="Geographic Locations (TMF675)",
+        help="Resolved TMF675 GeographicLocation records related to this Service.",
+    )
+
+    # ------------------------------------------------------------------
+    # TMF672 Permission dependency wiring
+    # ------------------------------------------------------------------
+
+    tmfc008_permission_ref_json = fields.Json(
+        default=list,
+        string="Permission refs JSON (TMF672)",
+        help=(
+            "Raw TMF672 PermissionRef fragments associated with this Service. "
+            "Populated by TMFC008 listeners; relational links below are the "
+            "authoritative navigation surface inside Odoo."
+        ),
+    )
+
+    tmfc008_permission_ids = fields.Many2many(
+        "tmf.permission",
+        "tmfc008_service_permission_rel",
+        "service_id",
+        "permission_id",
+        string="Permissions (TMF672)",
+        help="Resolved TMF672 Permission records related to this Service.",
+    )
+
 
 class TMFC008WiringTools(models.AbstractModel):
     """Wiring/tools layer for TMFC008 listener callbacks.
@@ -611,4 +675,146 @@ class TMFC008WiringTools(models.AbstractModel):
                     "tmfc008_service_order_ids": [(4, service_order.id)],
                 }
             )
+
+    # ------------------------------------------------------------------
+    # TMF673/674/675 Geographic events
+    # ------------------------------------------------------------------
+
+    def _reconcile_place_event(
+        self,
+        payload,
+        preferred_keys,
+        comodel,
+        m2m_field,
+        json_field,
+        referred_type,
+        href_template,
+    ):
+        """Generic place/permission reconciliation.
+
+        Locates Services whose ``json_field`` already mentions the affected
+        id and refreshes their relational link. If no Service references
+        the id yet, this is a no-op (we never invent new links here).
+        """
+
+        if not isinstance(payload, dict):
+            return
+
+        event_type = self._extract_event_type(payload)
+        self._log_received_event(referred_type, event_type, payload)
+
+        ref_id = self._extract_resource_id(payload, preferred_keys=preferred_keys)
+        if not ref_id:
+            return
+
+        Comodel = self.env[comodel].sudo()
+        Service = self.env["tmf.service"].sudo()
+
+        rec = Comodel.search([("tmf_id", "=", ref_id)], limit=1)
+        if not rec and ref_id.isdigit():
+            rec = Comodel.browse(int(ref_id))
+
+        # Find services that already reference this id via the JSON field.
+        try:
+            services = Service.search([(json_field, "ilike", ref_id)])
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception(
+                "TMFC008: search for %s referencing %s failed: %s",
+                referred_type,
+                ref_id,
+                exc,
+            )
+            return
+
+        if not services:
+            return
+
+        ctx = {"skip_tmf_wiring": True}
+
+        # Delete-style events: strip links and JSON entries.
+        if (event_type or "").endswith("DeleteEvent") or not (rec and rec.exists()):
+            for svc in services:
+                existing = svc[json_field] or []
+                if isinstance(existing, dict):
+                    existing = [existing]
+                kept_json = [
+                    e for e in existing
+                    if not (isinstance(e, dict) and str(e.get("id") or "") == ref_id)
+                ]
+                updates = {json_field: kept_json}
+                if rec and rec.exists():
+                    updates[m2m_field] = [(3, rec.id)]
+                svc.with_context(**ctx).write(updates)
+            return
+
+        # Otherwise: ensure the relational link is present and JSON is normalised.
+        for svc in services:
+            existing = svc[json_field] or []
+            if isinstance(existing, dict):
+                existing = [existing]
+
+            ref = {
+                "id": rec.tmf_id or str(rec.id),
+                "href": svc._abs_href(href_template.format(id=rec.tmf_id or rec.id)),
+                "name": getattr(rec, "name", "") or "",
+                "@type": f"{referred_type}Ref",
+                "@referredType": referred_type,
+            }
+            if not any(isinstance(e, dict) and str(e.get("id") or "") == ref["id"] for e in existing):
+                existing.append(ref)
+
+            svc.with_context(**ctx).write(
+                {
+                    json_field: existing,
+                    m2m_field: [(4, rec.id)],
+                }
+            )
+
+    @api.model
+    def handle_geographic_address_event(self, payload):
+        self._reconcile_place_event(
+            payload,
+            preferred_keys=["geographicAddress", "place", "address"],
+            comodel="tmf.geographic.address",
+            m2m_field="tmfc008_geographic_address_ids",
+            json_field="tmfc008_place_ref_json",
+            referred_type="GeographicAddress",
+            href_template="/tmf-api/geographicAddressManagement/v4/geographicAddress/{id}",
+        )
+
+    @api.model
+    def handle_geographic_site_event(self, payload):
+        self._reconcile_place_event(
+            payload,
+            preferred_keys=["geographicSite", "place", "site"],
+            comodel="tmf.geographic.site",
+            m2m_field="tmfc008_geographic_site_ids",
+            json_field="tmfc008_place_ref_json",
+            referred_type="GeographicSite",
+            href_template="/tmf-api/geographicSiteManagement/v4/geographicSite/{id}",
+        )
+
+    @api.model
+    def handle_geographic_location_event(self, payload):
+        self._reconcile_place_event(
+            payload,
+            preferred_keys=["geographicLocation", "place", "location"],
+            comodel="tmf.geographic.location",
+            m2m_field="tmfc008_geographic_location_ids",
+            json_field="tmfc008_place_ref_json",
+            referred_type="GeographicLocation",
+            href_template="/tmf-api/geographicLocationManagement/v4/geographicLocation/{id}",
+        )
+
+    @api.model
+    def handle_permission_event(self, payload):
+        self._reconcile_place_event(
+            payload,
+            preferred_keys=["permission"],
+            comodel="tmf.permission",
+            m2m_field="tmfc008_permission_ids",
+            json_field="tmfc008_permission_ref_json",
+            referred_type="Permission",
+            href_template="/tmf-api/permissionManagement/v4/permission/{id}",
+        )
 

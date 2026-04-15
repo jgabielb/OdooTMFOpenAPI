@@ -103,4 +103,52 @@ class TMFC008ListenerController(http.Controller):
         tools.handle_service_order_event(payload)
         return {"status": "accepted"}
 
+    @http.route(
+        ["/tmfc008/listener/geographicAddress"],  # TMF673
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_geographic_address(self):
+        payload = request.jsonrequest or {}
+        request.env["tmfc008.wiring.tools"].sudo().handle_geographic_address_event(payload)
+        return {"status": "accepted"}
+
+    @http.route(
+        ["/tmfc008/listener/geographicSite"],  # TMF674
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_geographic_site(self):
+        payload = request.jsonrequest or {}
+        request.env["tmfc008.wiring.tools"].sudo().handle_geographic_site_event(payload)
+        return {"status": "accepted"}
+
+    @http.route(
+        ["/tmfc008/listener/geographicLocation"],  # TMF675
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_geographic_location(self):
+        payload = request.jsonrequest or {}
+        request.env["tmfc008.wiring.tools"].sudo().handle_geographic_location_event(payload)
+        return {"status": "accepted"}
+
+    @http.route(
+        ["/tmfc008/listener/permission"],  # TMF672
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_permission(self):
+        payload = request.jsonrequest or {}
+        request.env["tmfc008.wiring.tools"].sudo().handle_permission_event(payload)
+        return {"status": "accepted"}
+
 
