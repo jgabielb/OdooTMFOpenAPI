@@ -29,6 +29,20 @@ TMFC007_WORK_ORDER_EVENTS = {
     "WorkOrderStateChangeEvent",
 }
 
+TMFC007_PARTY_EVENTS = {
+    "PartyCreateEvent",
+    "PartyAttributeValueChangeEvent",
+    "PartyStateChangeEvent",
+    "PartyDeleteEvent",
+}
+
+TMFC007_PARTY_ROLE_EVENTS = {
+    "PartyRoleCreateEvent",
+    "PartyRoleAttributeValueChangeEvent",
+    "PartyRoleStateChangeEvent",
+    "PartyRoleDeleteEvent",
+}
+
 
 class TMFC007ServiceOrderWiring(models.Model):
     """TMFC007 wiring extension for tmf.service.order.
@@ -103,6 +117,35 @@ class TMFC007ServiceOrderWiring(models.Model):
         ),
     )
 
+    # ------------------------------------------------------------------
+    # TMF632 Party / TMF669 PartyRole dependency wiring
+    # ------------------------------------------------------------------
+
+    tmfc007_related_partner_ids = fields.Many2many(
+        "res.partner",
+        "tmfc007_service_order_partner_rel",
+        "service_order_id",
+        "partner_id",
+        string="Related Partners (TMF632)",
+        help=(
+            "Resolved TMF632 Party references from relatedParty. Additive to "
+            "the base partner_id (which is the primary customer); this is the "
+            "full set of related parties for TMFC007 navigation."
+        ),
+    )
+
+    tmfc007_party_role_ids = fields.Many2many(
+        "tmf.party.role",
+        "tmfc007_service_order_party_role_rel",
+        "service_order_id",
+        "party_role_id",
+        string="Party Roles (TMF669)",
+        help=(
+            "Resolved TMF669 PartyRole entries found inside relatedParty "
+            "(items with @type PartyRole/PartyRoleRef)."
+        ),
+    )
+
     def _tmfc007_notify_state_transitions(self, old_state_map, old_cancel_map):
         """Publish TMF641 state-change and cancelServiceOrder events.
 
@@ -165,6 +208,11 @@ class TMFC007ServiceOrderWiring(models.Model):
         except Exception as exc:  # pragma: no cover - defensive
             _logger.exception("TMFC007: TMF638 ref resolution on create failed: %s", exc)
 
+        try:
+            recs._tmfc007_resolve_party_refs()
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception("TMFC007: Party/PartyRole resolution on create failed: %s", exc)
+
         return recs
 
     def write(self, vals):
@@ -187,6 +235,13 @@ class TMFC007ServiceOrderWiring(models.Model):
                 self._tmfc007_resolve_tmf_refs()
             except Exception as exc:  # pragma: no cover - defensive
                 _logger.exception("TMFC007: TMF638 ref resolution on write failed: %s", exc)
+
+        # Refresh TMF632/TMF669 wiring when relatedParty changes.
+        if "related_party" in vals:
+            try:
+                self._tmfc007_resolve_party_refs()
+            except Exception as exc:  # pragma: no cover - defensive
+                _logger.exception("TMFC007: Party/PartyRole resolution on write failed: %s", exc)
 
         return res
 
@@ -247,6 +302,69 @@ class TMFC007ServiceOrderWiring(models.Model):
                     resolved_ids.extend(Service.browse(numeric_ids).ids)
 
             updates["service_ids"] = [(6, 0, resolved_ids)] if resolved_ids else [(5, 0, 0)]
+            rec.with_context(**ctx).write(updates)
+
+    def _tmfc007_resolve_party_refs(self):
+        """Resolve TMF632 Party / TMF669 PartyRole refs from related_party.
+
+        Idempotent and additive: never alters base ``partner_id`` or
+        ``related_party`` JSON. Splits relatedParty entries by ``@type``
+        and resolves them into ``tmfc007_related_partner_ids`` and
+        ``tmfc007_party_role_ids``.
+        """
+
+        Partner = self.env["res.partner"].sudo()
+        PartyRole = self.env["tmf.party.role"].sudo()
+        ctx = {"skip_tmf_wiring": True}
+
+        for rec in self:
+            items = rec.related_party or []
+            if isinstance(items, dict):
+                items = [items]
+            if not isinstance(items, list):
+                items = []
+
+            partner_refs = []
+            party_role_refs = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                kind = (item.get("@type") or "").strip()
+                if kind in ("PartyRole", "PartyRoleRef"):
+                    party_role_refs.append(item)
+                else:
+                    partner_refs.append(item)
+
+            partner_ids = []
+            for ref in partner_refs:
+                rid = str(ref.get("id") or "").strip()
+                if not rid:
+                    continue
+                hit = Partner.search([("tmf_id", "=", rid)], limit=1)
+                if not hit and rid.isdigit():
+                    hit = Partner.browse(int(rid))
+                    if not hit.exists():
+                        hit = Partner.browse([])
+                if hit:
+                    partner_ids.append(hit.id)
+
+            role_ids = []
+            for ref in party_role_refs:
+                rid = str(ref.get("id") or "").strip()
+                if not rid:
+                    continue
+                hit = PartyRole.search([("tmf_id", "=", rid)], limit=1)
+                if not hit and rid.isdigit():
+                    hit = PartyRole.browse(int(rid))
+                    if not hit.exists():
+                        hit = PartyRole.browse([])
+                if hit:
+                    role_ids.append(hit.id)
+
+            updates = {
+                "tmfc007_related_partner_ids": [(6, 0, partner_ids)] if partner_ids else [(5, 0, 0)],
+                "tmfc007_party_role_ids": [(6, 0, role_ids)] if role_ids else [(5, 0, 0)],
+            }
             rec.with_context(**ctx).write(updates)
 
 
@@ -528,6 +646,60 @@ class TMFC007WiringTools(models.AbstractModel):
                     ref_id,
                     exc,
                 )
+
+
+    # ------------------------------------------------------------------
+    # TMF632 Party events
+    # ------------------------------------------------------------------
+
+    def handle_party_event(self, event_name, payload):
+        if event_name not in TMFC007_PARTY_EVENTS:
+            return
+        self._log_received_event("party", event_name, payload)
+        self._tmfc007_reconcile_party_event(payload, party_role=False)
+
+    # ------------------------------------------------------------------
+    # TMF669 PartyRole events
+    # ------------------------------------------------------------------
+
+    def handle_party_role_event(self, event_name, payload):
+        if event_name not in TMFC007_PARTY_ROLE_EVENTS:
+            return
+        self._log_received_event("partyRole", event_name, payload)
+        self._tmfc007_reconcile_party_event(payload, party_role=True)
+
+    def _tmfc007_reconcile_party_event(self, payload, party_role=False):
+        """Refresh ServiceOrder party links for any order touching this id.
+
+        Best-effort and idempotent: locates ServiceOrders whose
+        ``related_party`` JSON mentions the affected id, then re-runs
+        ``_tmfc007_resolve_party_refs`` on that subset. Never mutates
+        TMF641 payloads or URLs.
+        """
+
+        ref_id = self._extract_resource_id(payload)
+        if not ref_id:
+            return
+
+        ServiceOrder = self.env["tmf.service.order"].sudo()
+        try:
+            affected = ServiceOrder.search([("related_party", "ilike", ref_id)])
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception("TMFC007: party search failed for %s: %s", ref_id, exc)
+            return
+
+        if not affected:
+            return
+
+        try:
+            affected._tmfc007_resolve_party_refs()
+        except Exception as exc:  # pragma: no cover - best-effort
+            _logger.exception(
+                "TMFC007: party reconciliation failed for %s (%d orders): %s",
+                ref_id,
+                len(affected),
+                exc,
+            )
 
 
 class TMFC007CommunicationWiring(models.Model):

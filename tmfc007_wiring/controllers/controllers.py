@@ -46,6 +46,8 @@ from ..models.wiring import (
     TMFC007_SERVICE_QUALIFICATION_EVENTS,
     TMFC007_COMMUNICATION_EVENTS,
     TMFC007_WORK_ORDER_EVENTS,
+    TMFC007_PARTY_EVENTS,
+    TMFC007_PARTY_ROLE_EVENTS,
 )
 
 
@@ -245,6 +247,78 @@ class TMFC007ListenerController(http.Controller):
                 {"error": "Internal error processing event", "detail": str(exc)}, status=500
             )
 
+        return self._json_response({}, status=201)
+
+    # ------------------------------------------------------------------
+    # TMF632 Party listener
+    # ------------------------------------------------------------------
+
+    @http.route(
+        f"{TMFC007_LISTENER_BASE}/party",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_party(self, **_params):
+        payload = self._parse_json()
+        event_name = self._get_event_type(payload)
+        if not event_name:
+            return self._json_response(
+                {"error": "Missing mandatory attribute: eventType"}, status=400
+            )
+        if event_name not in TMFC007_PARTY_EVENTS:
+            return self._json_response(
+                {"error": f"Listener event '{event_name}' not supported by /party"},
+                status=404,
+            )
+        try:
+            request.env["tmfc007.wiring.tools"].sudo().handle_party_event(
+                event_name, payload
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception(
+                "TMFC007: error handling party event %s: %s", event_name, exc
+            )
+            return self._json_response(
+                {"error": "Internal error processing event", "detail": str(exc)}, status=500
+            )
+        return self._json_response({}, status=201)
+
+    # ------------------------------------------------------------------
+    # TMF669 PartyRole listener
+    # ------------------------------------------------------------------
+
+    @http.route(
+        f"{TMFC007_LISTENER_BASE}/partyRole",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+    )
+    def listener_party_role(self, **_params):
+        payload = self._parse_json()
+        event_name = self._get_event_type(payload)
+        if not event_name:
+            return self._json_response(
+                {"error": "Missing mandatory attribute: eventType"}, status=400
+            )
+        if event_name not in TMFC007_PARTY_ROLE_EVENTS:
+            return self._json_response(
+                {"error": f"Listener event '{event_name}' not supported by /partyRole"},
+                status=404,
+            )
+        try:
+            request.env["tmfc007.wiring.tools"].sudo().handle_party_role_event(
+                event_name, payload
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger.exception(
+                "TMFC007: error handling partyRole event %s: %s", event_name, exc
+            )
+            return self._json_response(
+                {"error": "Internal error processing event", "detail": str(exc)}, status=500
+            )
         return self._json_response({}, status=201)
 
     # ------------------------------------------------------------------
