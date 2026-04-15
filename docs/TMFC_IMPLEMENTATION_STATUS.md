@@ -54,7 +54,7 @@ Legend:
 ## Summary
 
 What is clearly implemented today is a **repeatable side-car wiring pattern** for a subset of TMFCs:
-`tmfc001`, `tmfc002`, `tmfc005`, `tmfc007`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc027`, `tmfc028`, `tmfc031`.
+`tmfc001`, `tmfc002`, `tmfc003`, `tmfc005`, `tmfc006`, `tmfc007`, `tmfc008`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc027`, `tmfc028`, `tmfc029`, `tmfc031`.
 
 That pattern typically does one or more of the following:
 - persist raw TMF JSON refs,
