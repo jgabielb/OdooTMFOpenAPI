@@ -40,10 +40,10 @@ Legend:
 | TMFC036  | LeadAndOpportunityManagement                   | ❌ | `tmf_sales` references TMFC036 in code, but no dedicated `tmfc036_*` wiring addon or full TMFC036 ODA component wiring layer was found. |
 | TMFC037  | ServicePerformanceManagement                   | ❌ | `tmf_performance_management` exists, but no `tmfc037_*` wiring addon or TMFC037-specific ODA side-car wiring was found. |
 | TMFC038  | ResourcePerformanceManagement                  | ❌ | Underlying performance/resource modules exist, but no `tmfc038_*` wiring addon or TMFC038-specific ODA component wiring was found. |
-| TMFC039  | AgreementManagement                            | ❌ | `tmf_agreement` exists, but no `tmfc039_*` wiring addon or TMFC039-specific ODA wiring was found. |
-| TMFC040  | ProductUsageManagement                         | ❌ | `tmf_usage` / `tmf_usage_consumption` exist, but no `tmfc040_*` wiring addon or TMFC040-specific ODA wiring was found. |
+| TMFC039  | AgreementManagement                            | ✅ | `tmfc039_wiring` side-car on `tmf.agreement` resolves engaged-party and product-specification refs; listeners for party/partyRole/productSpecification + hub. |
+| TMFC040  | ProductUsageManagement                         | ✅ | `tmfc040_wiring` side-car on `tmf.usage` resolves engaged parties, party roles, and billing accounts from `related_party_ids`; listeners for party/partyRole/billingAccount + hub. |
 | TMFC041  | AnomalyManagement                              | ❌ | No `tmfc041_*` wiring addon or anomaly-specific ODA component wiring was found. Underlying TMF modules alone are not enough evidence. |
-| TMFC043  | FaultManagement                                | ❌ | Alarm / service problem / trouble ticket modules exist, but no `tmfc043_*` wiring addon or TMFC043-specific ODA side-car wiring was found. |
+| TMFC043  | FaultManagement                                | ✅ | `tmfc043_wiring` side-car on `tmf.trouble.ticket`, `tmf.service.problem`, and `tmf.alarm` resolves party/service/resource refs; listeners for party/service/resource + hub. |
 | TMFC046  | WorkforceManagement                            | ❌ | `tmf_work_management` / related workforce modules exist, but no `tmfc046_*` wiring addon or TMFC046-specific ODA wiring was found. |
 | TMFC050  | ProductRecommendation                          | ❌ | `tmf_recommendation_management` exists, but no `tmfc050_*` wiring addon or TMFC050-specific ODA component wiring was found. |
 | TMFC054  | ProductTestManagement                          | ❌ | Test-related TMF modules exist, but no `tmfc054_*` wiring addon or TMFC054-specific ODA wiring was found. |
@@ -54,7 +54,7 @@ Legend:
 ## Summary
 
 What is clearly implemented today is a **repeatable side-car wiring pattern** for a subset of TMFCs:
-`tmfc001`, `tmfc002`, `tmfc003`, `tmfc005`, `tmfc006`, `tmfc007`, `tmfc008`, `tmfc010`, `tmfc011`, `tmfc012`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc024`, `tmfc027`, `tmfc028`, `tmfc029`, `tmfc030`, `tmfc031`.
+`tmfc001`, `tmfc002`, `tmfc003`, `tmfc005`, `tmfc006`, `tmfc007`, `tmfc008`, `tmfc010`, `tmfc011`, `tmfc012`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc024`, `tmfc027`, `tmfc028`, `tmfc029`, `tmfc030`, `tmfc031`, `tmfc039`, `tmfc040`, `tmfc043`.
 
 That pattern typically does one or more of the following:
 - persist raw TMF JSON refs,
