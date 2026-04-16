@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/tmf-componentsuite/selfcareapp/v1"
 
 RESOURCES = {
-    "selfCareApp": {"model": "tmf.self.care.resource", "path": f"{API_BASE, "resource_type": "selfCareApp"}/selfCareApp", "required": []},
-    "selfCareAppSpecification": {"model": "tmf.self.care.resource", "path": f"{API_BASE, "resource_type": "selfCareAppSpecification"}/selfCareAppSpecification", "required": []},
+    "selfCareApp": {"model": "tmf.self.care.resource", "path": f"{API_BASE}/selfCareApp", "resource_type": "selfCareApp", "required": []},
+    "selfCareAppSpecification": {"model": "tmf.self.care.resource", "path": f"{API_BASE}/selfCareAppSpecification", "resource_type": "selfCareAppSpecification", "required": []},
 }
 
 

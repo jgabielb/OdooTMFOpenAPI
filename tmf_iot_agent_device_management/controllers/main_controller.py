@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/iotdevicemanagement/v4"
 
 RESOURCES = {
-    "device": {"model": "tmf.iot.agent.device.resource", "path": f"{API_BASE, "resource_type": "device"}/device", "required": []},
-    "agent": {"model": "tmf.iot.agent.device.resource", "path": f"{API_BASE, "resource_type": "agent"}/agent", "required": []},
+    "device": {"model": "tmf.iot.agent.device.resource", "path": f"{API_BASE}/device", "resource_type": "device", "required": []},
+    "agent": {"model": "tmf.iot.agent.device.resource", "path": f"{API_BASE}/agent", "resource_type": "agent", "required": []},
 }
 
 

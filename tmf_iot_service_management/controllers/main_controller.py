@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/iotservicemanagement/v4"
 
 RESOURCES = {
-    "iotService": {"model": "tmf.iot.service.resource", "path": f"{API_BASE, "resource_type": "iotService"}/iotService", "required": []},
-    "iotServiceSpecification": {"model": "tmf.iot.service.resource", "path": f"{API_BASE, "resource_type": "iotServiceSpecification"}/iotServiceSpecification", "required": []},
+    "iotService": {"model": "tmf.iot.service.resource", "path": f"{API_BASE}/iotService", "resource_type": "iotService", "required": []},
+    "iotServiceSpecification": {"model": "tmf.iot.service.resource", "path": f"{API_BASE}/iotServiceSpecification", "resource_type": "iotServiceSpecification", "required": []},
 }
 
 
