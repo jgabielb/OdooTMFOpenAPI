@@ -31,6 +31,7 @@ class TMFGenericResource(models.Model):
     state = fields.Char(string="state")
     status = fields.Char(string="status")
     lifecycle_status = fields.Char(string="lifecycleStatus")
+    service_date = fields.Char(string="serviceDate")
     payload_json = fields.Text(string="payload")
     tmf_type_value = fields.Char(string="@type")
     base_type = fields.Char(string="@baseType")
@@ -55,6 +56,10 @@ class TMFGenericResource(models.Model):
             payload["status"] = self.status
         if self.lifecycle_status is not None:
             payload["lifecycleStatus"] = self.lifecycle_status
+        sd = self.service_date or payload.get("serviceDate")
+        if not sd:
+            sd = (self.create_date or fields.Datetime.now()).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        payload["serviceDate"] = sd
         payload["@type"] = self.tmf_type_value or payload.get("@type") or "Service"
         if self.base_type:
             payload["@baseType"] = self.base_type
@@ -75,6 +80,7 @@ class TMFGenericResource(models.Model):
             ("@type", "tmf_type_value"),
             ("@baseType", "base_type"),
             ("@schemaLocation", "schema_location"),
+            ("serviceDate", "service_date"),
         ]:
             if key in data:
                 vals[field_name] = data.get(key)
