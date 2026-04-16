@@ -1,129 +1,133 @@
+# -*- coding: utf-8 -*-
 import json
+import logging
+
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
+_logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/federatedIdentity/v5"
+NON_PATCHABLE = {"id", "href"}
+
+RESOURCES = {
+    "userinfo": {"model": "tmf.userinfo", "path": f"{API_BASE}/userinfo", "required": []},
+}
 
 
-def _json_response(payload, status=200, headers=None):
-    base_headers = [("Content-Type", "application/json")]
-    if headers:
-        base_headers.extend(headers)
-    return request.make_response(json.dumps(payload), headers=base_headers, status=status)
+class TMFUserinfoController(TMFBaseController):
 
+    def _tmf_list(self, res_key, **kw):
+        cfg = RESOURCES[res_key]
+        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-def _error(status, reason):
-    status_str = str(status)
-    return _json_response({"error": {"code": status_str, "status": status_str, "reason": reason}}, status=status)
-
-
-def _parse_json():
-    try:
-        raw = request.httprequest.data or b"{}"
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
-
-
-def _fields_filter(payload, fields_csv):
-    if not fields_csv:
-        return payload
-    wanted = {item.strip() for item in str(fields_csv).split(",") if item.strip()}
-    if not wanted:
-        return payload
-    wanted |= {"id", "href"}
-    return {key: value for key, value in payload.items() if key in wanted}
-
-
-def _find_by_rid(model_name, rid):
-    model = request.env[model_name].sudo()
-    rec = model.search([("tmf_id", "=", rid)], limit=1)
-    if rec:
-        return rec
-    if str(rid).isdigit():
-        rec = model.browse(int(rid))
-        if rec.exists():
-            return rec
-    return None
-
-
-def _subscription_json(rec):
-    base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
-    href = f"{base_url}{API_BASE}/hub/{rec.id}"
-    return {
-        "id": str(rec.id),
-        "href": href,
-        "callback": rec.callback,
-        "query": rec.query or "",
-        "@type": "Hub",
-    }
-
-
-def _require_authorization():
-    auth = request.httprequest.headers.get("Authorization")
-    if not auth:
-        return None, _error(401, "Missing Authorization header")
-    return auth, None
-
-
-class TMF691UserinfoController(http.Controller):
-    @http.route(f"{API_BASE}/userinfo", type="http", auth="public", methods=["GET"], csrf=False)
-    def list_userinfo(self, **params):
-        _auth, err = _require_authorization()
-        if err:
-            return err
-        offset = int(params.get("offset", 0) or 0)
-        limit = params.get("limit")
-        limit = int(limit) if limit not in (None, "") else None
-        model = request.env["tmf.userinfo"].sudo()
-        total = model.search_count([])
-        recs = model.search([], offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
-        headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
-        return _json_response(payload, status=200, headers=headers)
-
-    @http.route(f"{API_BASE}/userinfo/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
-    def get_userinfo(self, rid, **params):
-        _auth, err = _require_authorization()
-        if err:
-            return err
-        rec = _find_by_rid("tmf.userinfo", rid)
-        if not rec:
-            return _error(404, f"Userinfo {rid} not found")
-        return _json_response(_fields_filter(rec.to_tmf_json(), params.get("fields")), status=200)
-
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
-    def register_listener(self, **_params):
-        data = _parse_json()
+    def _tmf_create(self, res_key):
+        cfg = RESOURCES[res_key]
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        callback = data.get("callback")
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        for req in cfg.get("required", []):
+            if req not in data:
+                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
+        Model = request.env[cfg["model"]].sudo()
+        if hasattr(Model, "from_tmf_json"):
+            vals = Model.from_tmf_json(data)
+        else:
+            vals = data
+        rec = Model.create(vals)
+        return self._json(rec.to_tmf_json(), status=201)
+
+    def _tmf_individual(self, res_key, rid, **kw):
+        cfg = RESOURCES[res_key]
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record(cfg["model"], rid)
+        if not rec:
+            return self._error(404, "Not Found", f"{res_key} {rid} not found")
+        method = request.httprequest.method
+        if method == "GET":
+            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
+        elif method == "PATCH":
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "Bad Request", "Invalid JSON body")
+            illegal = [k for k in data if k in NON_PATCHABLE]
+            if illegal:
+                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
+            Model = request.env[cfg["model"]].sudo()
+            if hasattr(Model, "from_tmf_json"):
+                vals = Model.from_tmf_json(data, partial=True)
+            else:
+                vals = data
+            rec.write(vals)
+            return self._json(rec.to_tmf_json())
+        elif method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._error(405, "Method Not Allowed", f"{method} not supported")
+
+    # Hub
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def hub(self, **_kw):
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search([("callback", "!=", False)])
+            return self._json([{"id": str(s.id), "callback": s.callback, "query": s.query or ""} for s in subs])
+        data = self._parse_json_body()
+        callback = (data or {}).get("callback")
         if not callback:
-            return _error(400, "Missing mandatory attribute: callback")
-        rec = request.env["tmf.hub.subscription"].sudo().create(
-            {
-                "name": f"tmf691-userinfo-{callback}",
-                "api_name": "userinfo",
-                "callback": callback,
-                "query": data.get("query", ""),
-                "event_type": "any",
-                "content_type": "application/json",
-            }
-        )
-        return _json_response(_subscription_json(rec), status=201)
+            return self._error(400, "Bad Request", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf_userinfo-{callback}",
+            "api_name": "userinfo",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": data.get("eventType") or "any",
+            "content_type": "application/json",
+        })
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET"], csrf=False)
-    def get_listener(self, sid, **params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name != "userinfo":
-            return _error(404, f"Hub subscription {sid} not found")
-        return _json_response(_fields_filter(_subscription_json(rec), params.get("fields")), status=200)
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid, **_kw):
+        if not str(sid).isdigit():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+        if not rec.exists():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""})
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
-    def unregister_listener(self, sid, **_params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name != "userinfo":
-            return _error(404, f"Hub subscription {sid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
+    def _listener_ack(self):
+        data = self._parse_json_body()
+        if not isinstance(data, dict):
+            return self._error(400, "Bad Request", "Invalid event payload")
+        return request.make_response("", status=201)
+
+    @http.route(
+        [RESOURCES["userinfo"]["path"]],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def userinfo_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("userinfo")
+        return self._tmf_list("userinfo", **kw)
+
+    @http.route(
+        [RESOURCES["userinfo"]["path"] + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def userinfo_individual(self, rid, **kw):
+        return self._tmf_individual("userinfo", rid, **kw)
+
+    @http.route(f"{API_BASE}/listener/UserinfoCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_userinfocreateevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/UserinfoAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_userinfoattributevaluechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/UserinfoStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_userinfostatechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/UserinfoDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_userinfodeleteevent(self, **_kw):
+        return self._listener_ack()

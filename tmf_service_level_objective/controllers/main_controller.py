@@ -1,102 +1,133 @@
+# -*- coding: utf-8 -*-
+import json
+import logging
+
 from odoo import http
 from odoo.http import request
-import json
 
-class TMFController(http.Controller):
-    API_BASE = "/tmf-api/serviceLevelObjectiveManagement/v4/ServiceLevelObjective"
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 
-    @staticmethod
-    def _json_response(payload, status=200, headers=None):
-        hdrs = [("Content-Type", "application/json")]
-        if headers:
-            hdrs.extend(headers)
-        return request.make_response(json.dumps(payload), headers=hdrs, status=status)
+_logger = logging.getLogger(__name__)
 
-    @staticmethod
-    def _get_json_body():
-        raw = request.httprequest.data or b""
-        if not raw:
-            return {}
-        if isinstance(raw, bytes):
-            raw = raw.decode("utf-8")
-        return json.loads(raw)
+API_BASE = "/tmf-api/serviceLevelObjectiveManagement/v4"
+NON_PATCHABLE = {"id", "href"}
 
-    @staticmethod
-    def _map_payload_to_vals(data):
-        mapping = {
-            "conformanceComparator": "conformance_comparator",
-            "conformanceTarget": "conformance_target",
-            "graceTimes": "grace_times",
-            "name": "name",
-            "thresholdTarget": "threshold_target",
-            "toleranceTarget": "tolerance_target",
-            "conformancePeriod": "conformance_period",
-            "serviceLevelObjectiveConsequence": "service_level_objective_consequence",
-            "serviceLevelObjectiveParameter": "service_level_objective_parameter",
-            "tolerancePeriod": "tolerance_period",
-            "validFor": "valid_for",
-        }
-        vals = {}
-        for src, dst in mapping.items():
-            if src in data:
-                vals[dst] = data[src]
-        return vals
+RESOURCES = {
+    "serviceLevelObjective": {"model": "tmf.service.level.objective", "path": f"{API_BASE}/serviceLevelObjective", "required": []},
+}
 
-    @http.route(API_BASE, type='http', auth='public', methods=['GET'], csrf=False)
-    def get_resources(self, **params):
-        try:
-            limit = max(1, min(int(params.get("limit") or 50), 1000))
-        except (ValueError, TypeError):
-            limit = 50
-        try:
-            offset = max(0, int(params.get("offset") or 0))
-        except (ValueError, TypeError):
-            offset = 0
-        domain = []
-        env = request.env['tmf.service.level.objective'].sudo()
-        records = env.search(domain, limit=limit, offset=offset, order="id asc")
-        total = env.search_count(domain)
-        data = [r.to_tmf_json() for r in records]
-        return self._json_response(data, status=200, headers=[("X-Total-Count", str(total)), ("X-Result-Count", str(len(data)))])
 
-    @http.route(f"{API_BASE}/<string:tmf_id>", type='http', auth='public', methods=['GET'], csrf=False)
-    def get_resource(self, tmf_id, **params):
-        rec = request.env['tmf.service.level.objective'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
+class TMFServiceLevelObjectiveController(TMFBaseController):
+
+    def _tmf_list(self, res_key, **kw):
+        cfg = RESOURCES[res_key]
+        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
+
+    def _tmf_create(self, res_key):
+        cfg = RESOURCES[res_key]
+        data = self._parse_json_body()
+        if not isinstance(data, dict):
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        for req in cfg.get("required", []):
+            if req not in data:
+                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
+        Model = request.env[cfg["model"]].sudo()
+        if hasattr(Model, "from_tmf_json"):
+            vals = Model.from_tmf_json(data)
+        else:
+            vals = data
+        rec = Model.create(vals)
+        return self._json(rec.to_tmf_json(), status=201)
+
+    def _tmf_individual(self, res_key, rid, **kw):
+        cfg = RESOURCES[res_key]
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record(cfg["model"], rid)
         if not rec:
-            return self._json_response({"error": "NotFound", "message": "ServiceLevelObjective not found"}, status=404)
-        return self._json_response(rec.to_tmf_json(), status=200)
-
-    @http.route(API_BASE, type='http', auth='public', methods=['POST'], csrf=False)
-    def create_resource(self, **params):
-        try:
-            data = self._get_json_body()
-            vals = self._map_payload_to_vals(data)
-            new_rec = request.env['tmf.service.level.objective'].sudo().create(vals)
-            return self._json_response(
-                new_rec.to_tmf_json(),
-                status=201,
-                headers=[("Location", f"{self.API_BASE}/{new_rec.tmf_id}")],
-            )
-        except Exception as e:
-            return self._json_response({'error': str(e)}, status=400)
-
-    @http.route(f"{API_BASE}/<string:tmf_id>", type='http', auth='public', methods=['PATCH'], csrf=False)
-    def patch_resource(self, tmf_id, **params):
-        rec = request.env['tmf.service.level.objective'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
-        if not rec:
-            return self._json_response({"error": "NotFound", "message": "ServiceLevelObjective not found"}, status=404)
-        try:
-            data = self._get_json_body()
-            vals = self._map_payload_to_vals(data)
-            if vals:
-                rec.write(vals)
-            return self._json_response(rec.to_tmf_json(), status=200)
-        except Exception as e:
-            return self._json_response({'error': str(e)}, status=400)
-
-    @http.route(f"{API_BASE}/<string:tmf_id>", type='http', auth='public', methods=['DELETE'], csrf=False)
-    def delete_resource(self, tmf_id, **params):
-        rec = request.env['tmf.service.level.objective'].sudo().search([('tmf_id', '=', tmf_id)], limit=1)
-        if rec:
+            return self._error(404, "Not Found", f"{res_key} {rid} not found")
+        method = request.httprequest.method
+        if method == "GET":
+            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
+        elif method == "PATCH":
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "Bad Request", "Invalid JSON body")
+            illegal = [k for k in data if k in NON_PATCHABLE]
+            if illegal:
+                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
+            Model = request.env[cfg["model"]].sudo()
+            if hasattr(Model, "from_tmf_json"):
+                vals = Model.from_tmf_json(data, partial=True)
+            else:
+                vals = data
+            rec.write(vals)
+            return self._json(rec.to_tmf_json())
+        elif method == "DELETE":
             rec.unlink()
-        return request.make_response("", status=204)
+            return request.make_response("", status=204)
+        return self._error(405, "Method Not Allowed", f"{method} not supported")
+
+    # Hub
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def hub(self, **_kw):
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search([("callback", "!=", False)])
+            return self._json([{"id": str(s.id), "callback": s.callback, "query": s.query or ""} for s in subs])
+        data = self._parse_json_body()
+        callback = (data or {}).get("callback")
+        if not callback:
+            return self._error(400, "Bad Request", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf_service_level_objective-{callback}",
+            "api_name": "serviceLevelObjective",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": data.get("eventType") or "any",
+            "content_type": "application/json",
+        })
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
+
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid, **_kw):
+        if not str(sid).isdigit():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+        if not rec.exists():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""})
+
+    def _listener_ack(self):
+        data = self._parse_json_body()
+        if not isinstance(data, dict):
+            return self._error(400, "Bad Request", "Invalid event payload")
+        return request.make_response("", status=201)
+
+    @http.route(
+        [RESOURCES["serviceLevelObjective"]["path"]],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def serviceLevelObjective_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("serviceLevelObjective")
+        return self._tmf_list("serviceLevelObjective", **kw)
+
+    @http.route(
+        [RESOURCES["serviceLevelObjective"]["path"] + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def serviceLevelObjective_individual(self, rid, **kw):
+        return self._tmf_individual("serviceLevelObjective", rid, **kw)
+
+    @http.route(f"{API_BASE}/listener/ServiceLevelObjectiveCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_servicelevelobjectivecreateevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ServiceLevelObjectiveAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_servicelevelobjectiveattributevaluechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ServiceLevelObjectiveStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_servicelevelobjectivestatechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ServiceLevelObjectiveDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_servicelevelobjectivedeleteevent(self, **_kw):
+        return self._listener_ack()

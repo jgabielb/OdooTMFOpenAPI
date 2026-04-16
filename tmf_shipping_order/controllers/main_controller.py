@@ -1,213 +1,133 @@
+# -*- coding: utf-8 -*-
 import json
+import logging
+
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
+_logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/shippingOrder/v4.0"
+NON_PATCHABLE = {"id", "href"}
+
+RESOURCES = {
+    "shippingOrder": {"model": "tmf.shipping.order", "path": f"{API_BASE}/shippingOrder", "required": []},
+}
 
 
-def _json_response(payload, status=200, headers=None):
-    base_headers = [("Content-Type", "application/json")]
-    if headers:
-        base_headers.extend(headers)
-    return request.make_response(json.dumps(payload), headers=base_headers, status=status)
+class TMFShippingOrderController(TMFBaseController):
 
+    def _tmf_list(self, res_key, **kw):
+        cfg = RESOURCES[res_key]
+        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-def _error(status, reason):
-    status_str = str(status)
-    return _json_response({"error": {"code": status_str, "status": status_str, "reason": reason}}, status=status)
-
-
-def _parse_json():
-    try:
-        raw = request.httprequest.data or b"{}"
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
-
-
-def _fields_filter(payload, fields_csv):
-    if not fields_csv:
-        return payload
-    wanted = {item.strip() for item in str(fields_csv).split(",") if item.strip()}
-    if not wanted:
-        return payload
-    wanted |= {"id", "href"}
-    return {key: value for key, value in payload.items() if key in wanted}
-
-
-def _find_by_rid(rid):
-    model = request.env["tmf.shipping.order"].sudo()
-    rec = model.search([("tmf_id", "=", rid)], limit=1)
-    if rec:
-        return rec
-    if str(rid).isdigit():
-        rec = model.browse(int(rid))
-        if rec.exists():
-            return rec
-    return None
-
-
-def _subscription_json(rec):
-    return {"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}
-
-
-def _build_vals(data):
-    return {
-        "external_id": data.get("externalId"),
-        "state": data.get("state"),
-        "creation_date": data.get("creationDate"),
-        "status_change_date": data.get("statusChangeDate"),
-        "shipping_order_date": data.get("shippingOrderDate"),
-        "expected_shipping_start_date": data.get("expectedShippingStartDate"),
-        "expected_shipping_completion_date": data.get("expectedShippingCompletionDate"),
-        "completion_date": data.get("completionDate"),
-        "requested_shipping_start_date": data.get("requestedShippingStartDate"),
-        "requested_shipping_completion_date": data.get("requestedShippingCompletionDate"),
-        "note": data.get("note") or [],
-        "shipping_order_item": data.get("shippingOrderItem") or [],
-        "related_party": data.get("relatedParty") or [],
-        "related_shipping_order": data.get("relatedShippingOrder") or [],
-        "related_shipment": data.get("relatedShipment") or [],
-        "place": data.get("place") or [],
-        "extra_json": {
-            k: v
-            for k, v in data.items()
-            if k
-            not in {
-                "externalId",
-                "state",
-                "creationDate",
-                "statusChangeDate",
-                "shippingOrderDate",
-                "expectedShippingStartDate",
-                "expectedShippingCompletionDate",
-                "completionDate",
-                "requestedShippingStartDate",
-                "requestedShippingCompletionDate",
-                "note",
-                "shippingOrderItem",
-                "relatedParty",
-                "relatedShippingOrder",
-                "relatedShipment",
-                "place",
-                "id",
-                "href",
-            }
-        },
-    }
-
-
-class TMF700ShippingOrderController(http.Controller):
-    @http.route(f"{API_BASE}/shippingOrder", type="http", auth="public", methods=["GET"], csrf=False)
-    def list_shipping_order(self, **params):
-        domain = []
-        if params.get("id"):
-            domain.append(("tmf_id", "=", params["id"]))
-        if params.get("state"):
-            domain.append(("state", "=", params["state"]))
-        offset = int(params.get("offset", 0) or 0)
-        limit = params.get("limit")
-        limit = int(limit) if limit not in (None, "") else None
-        model = request.env["tmf.shipping.order"].sudo()
-        total = model.search_count(domain)
-        recs = model.search(domain, offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
-        headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
-        return _json_response(payload, status=200, headers=headers)
-
-    @http.route(f"{API_BASE}/shippingOrder", type="http", auth="public", methods=["POST"], csrf=False)
-    def create_shipping_order(self, **_params):
-        data = _parse_json()
+    def _tmf_create(self, res_key):
+        cfg = RESOURCES[res_key]
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        if not data.get("shippingOrderItem"):
-            return _error(400, "Missing mandatory attribute: shippingOrderItem")
-        rec = request.env["tmf.shipping.order"].sudo().create(_build_vals(data))
-        return _json_response(rec.to_tmf_json(), status=201)
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        for req in cfg.get("required", []):
+            if req not in data:
+                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
+        Model = request.env[cfg["model"]].sudo()
+        if hasattr(Model, "from_tmf_json"):
+            vals = Model.from_tmf_json(data)
+        else:
+            vals = data
+        rec = Model.create(vals)
+        return self._json(rec.to_tmf_json(), status=201)
 
-    @http.route(f"{API_BASE}/shippingOrder/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
-    def get_shipping_order(self, rid, **params):
-        rec = _find_by_rid(rid)
+    def _tmf_individual(self, res_key, rid, **kw):
+        cfg = RESOURCES[res_key]
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record(cfg["model"], rid)
         if not rec:
-            return _error(404, f"ShippingOrder {rid} not found")
-        return _json_response(_fields_filter(rec.to_tmf_json(), params.get("fields")), status=200)
+            return self._error(404, "Not Found", f"{res_key} {rid} not found")
+        method = request.httprequest.method
+        if method == "GET":
+            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
+        elif method == "PATCH":
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "Bad Request", "Invalid JSON body")
+            illegal = [k for k in data if k in NON_PATCHABLE]
+            if illegal:
+                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
+            Model = request.env[cfg["model"]].sudo()
+            if hasattr(Model, "from_tmf_json"):
+                vals = Model.from_tmf_json(data, partial=True)
+            else:
+                vals = data
+            rec.write(vals)
+            return self._json(rec.to_tmf_json())
+        elif method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
-    @http.route(f"{API_BASE}/shippingOrder/<string:rid>", type="http", auth="public", methods=["PUT"], csrf=False)
-    def put_shipping_order(self, rid, **_params):
-        rec = _find_by_rid(rid)
-        if not rec:
-            return _error(404, f"ShippingOrder {rid} not found")
-        data = _parse_json()
-        if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        if not data.get("shippingOrderItem"):
-            return _error(400, "Missing mandatory attribute: shippingOrderItem")
-        rec.sudo().write(_build_vals(data))
-        return _json_response(rec.to_tmf_json(), status=200)
-
-    @http.route(f"{API_BASE}/shippingOrder/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
-    def patch_shipping_order(self, rid, **_params):
-        rec = _find_by_rid(rid)
-        if not rec:
-            return _error(404, f"ShippingOrder {rid} not found")
-        patch = _parse_json()
-        if not isinstance(patch, dict):
-            return _error(400, "Invalid JSON body")
-        vals = _build_vals(patch)
-        rec.sudo().write(vals)
-        return _json_response(rec.to_tmf_json(), status=200)
-
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
-    def register_listener(self, **_params):
-        data = _parse_json()
-        if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        callback = data.get("callback")
+    # Hub
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def hub(self, **_kw):
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search([("callback", "!=", False)])
+            return self._json([{"id": str(s.id), "callback": s.callback, "query": s.query or ""} for s in subs])
+        data = self._parse_json_body()
+        callback = (data or {}).get("callback")
         if not callback:
-            return _error(400, "Missing mandatory attribute: callback")
-        rec = request.env["tmf.hub.subscription"].sudo().create(
-            {
-                "name": f"tmf700-shipping-{callback}",
-                "api_name": "shippingOrder",
-                "callback": callback,
-                "query": data.get("query", ""),
-                "event_type": "any",
-                "content_type": "application/json",
-            }
-        )
-        return _json_response(_subscription_json(rec), status=201)
+            return self._error(400, "Bad Request", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf_shipping_order-{callback}",
+            "api_name": "shippingOrder",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": data.get("eventType") or "any",
+            "content_type": "application/json",
+        })
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
-    def unregister_listener(self, sid, **_params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name != "shippingOrder":
-            return _error(404, f"Hub subscription {sid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid, **_kw):
+        if not str(sid).isdigit():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+        if not rec.exists():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""})
 
-    def _listener_ok(self):
-        data = _parse_json()
+    def _listener_ack(self):
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "Bad Request", "Invalid event payload")
         return request.make_response("", status=201)
 
-    @http.route(f"{API_BASE}/listener/shippingOrderCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_shipping_order_create(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["shippingOrder"]["path"]],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def shippingOrder_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("shippingOrder")
+        return self._tmf_list("shippingOrder", **kw)
 
-    @http.route(f"{API_BASE}/listener/shippingOrderAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_shipping_order_attr_change(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["shippingOrder"]["path"] + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def shippingOrder_individual(self, rid, **kw):
+        return self._tmf_individual("shippingOrder", rid, **kw)
 
-    @http.route(f"{API_BASE}/listener/shippingOrderDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_shipping_order_delete(self, **_params):
-        return self._listener_ok()
-
-    @http.route(f"{API_BASE}/listener/shippingOrderStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_shipping_order_state_change(self, **_params):
-        return self._listener_ok()
-
-    @http.route(f"{API_BASE}/listener/shippingOrderInformationRequiredEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_shipping_order_info_required(self, **_params):
-        return self._listener_ok()
+    @http.route(f"{API_BASE}/listener/ShippingOrderCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_shippingordercreateevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ShippingOrderAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_shippingorderattributevaluechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ShippingOrderStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_shippingorderstatechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/ShippingOrderDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_shippingorderdeleteevent(self, **_kw):
+        return self._listener_ack()

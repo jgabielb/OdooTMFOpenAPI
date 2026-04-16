@@ -1,175 +1,133 @@
+# -*- coding: utf-8 -*-
 import json
+import logging
+
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
+_logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/outageManagement/v5"
-RESOURCE_PATH = f"{API_BASE}/outage"
 NON_PATCHABLE = {"id", "href"}
 
-
-def _json_response(payload, status=200, headers=None):
-    response_headers = [("Content-Type", "application/json")]
-    if headers:
-        response_headers.extend(headers)
-    return request.make_response(json.dumps(payload), headers=response_headers, status=status)
+RESOURCES = {
+    "outage": {"model": "tmf.outage", "path": f"{API_BASE}/outage", "required": []},
+}
 
 
-def _error(status, reason):
-    code = str(status)
-    return _json_response({"code": code, "status": code, "reason": reason}, status=status)
+class TMFOutageManagementController(TMFBaseController):
 
+    def _tmf_list(self, res_key, **kw):
+        cfg = RESOURCES[res_key]
+        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-def _parse_json():
-    try:
-        raw = request.httprequest.data or b"{}"
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
-
-
-def _fields_filter(payload, fields_csv):
-    if not fields_csv:
-        return payload
-    wanted = {item.strip() for item in str(fields_csv).split(",") if item.strip()}
-    if not wanted:
-        return payload
-    wanted |= {"id", "href", "@type"}
-    return {key: value for key, value in payload.items() if key in wanted}
-
-
-def _find_record(rid):
-    model = request.env["tmf.outage"].sudo()
-    rec = model.search([("tmf_id", "=", rid)], limit=1)
-    if rec:
-        return rec
-    if str(rid).isdigit():
-        rec = model.browse(int(rid))
-        if rec.exists():
-            return rec
-    return None
-
-
-def _subscription_json(rec):
-    return {"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}
-
-
-class TMF777Controller(http.Controller):
-    @http.route(RESOURCE_PATH, type="http", auth="public", methods=["GET"], csrf=False)
-    def list_outage(self, **params):
-        model = request.env["tmf.outage"].sudo()
-        domain = []
-        if params.get("id"):
-            domain.append(("tmf_id", "=", params["id"]))
-        if params.get("name"):
-            domain.append(("name", "=", params["name"]))
-        if params.get("state"):
-            domain.append(("state", "=", params["state"]))
-        offset = int(params.get("offset", 0) or 0)
-        limit = params.get("limit")
-        limit = int(limit) if limit not in (None, "") else None
-        total = model.search_count(domain)
-        recs = model.search(domain, offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
-        headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
-        return _json_response(payload, status=200, headers=headers)
-
-    @http.route(RESOURCE_PATH, type="http", auth="public", methods=["POST"], csrf=False)
-    def create_outage(self, **_params):
-        data = _parse_json()
+    def _tmf_create(self, res_key):
+        cfg = RESOURCES[res_key]
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        for required in ["name", "isPlanned", "reason"]:
-            if required not in data:
-                return _error(400, f"Missing mandatory attribute: {required}")
-        data.setdefault("@type", "Outage")
-        vals = request.env["tmf.outage"].sudo().from_tmf_json(data)
-        rec = request.env["tmf.outage"].sudo().create(vals)
-        return _json_response(rec.to_tmf_json(), status=201)
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        for req in cfg.get("required", []):
+            if req not in data:
+                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
+        Model = request.env[cfg["model"]].sudo()
+        if hasattr(Model, "from_tmf_json"):
+            vals = Model.from_tmf_json(data)
+        else:
+            vals = data
+        rec = Model.create(vals)
+        return self._json(rec.to_tmf_json(), status=201)
 
-    @http.route(f"{RESOURCE_PATH}/<string:rid>", type="http", auth="public", methods=["GET"], csrf=False)
-    def get_outage(self, rid, **params):
-        rec = _find_record(rid)
+    def _tmf_individual(self, res_key, rid, **kw):
+        cfg = RESOURCES[res_key]
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record(cfg["model"], rid)
         if not rec:
-            return _error(404, f"outage {rid} not found")
-        return _json_response(_fields_filter(rec.to_tmf_json(), params.get("fields")), status=200)
+            return self._error(404, "Not Found", f"{res_key} {rid} not found")
+        method = request.httprequest.method
+        if method == "GET":
+            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
+        elif method == "PATCH":
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "Bad Request", "Invalid JSON body")
+            illegal = [k for k in data if k in NON_PATCHABLE]
+            if illegal:
+                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
+            Model = request.env[cfg["model"]].sudo()
+            if hasattr(Model, "from_tmf_json"):
+                vals = Model.from_tmf_json(data, partial=True)
+            else:
+                vals = data
+            rec.write(vals)
+            return self._json(rec.to_tmf_json())
+        elif method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
-    @http.route(f"{RESOURCE_PATH}/<string:rid>", type="http", auth="public", methods=["PATCH"], csrf=False)
-    def patch_outage(self, rid, **_params):
-        rec = _find_record(rid)
-        if not rec:
-            return _error(404, f"outage {rid} not found")
-        patch = _parse_json()
-        if not isinstance(patch, dict):
-            return _error(400, "Invalid JSON body")
-        illegal = [key for key in patch.keys() if key in NON_PATCHABLE]
-        if illegal:
-            return _error(400, f"Non-patchable attribute(s): {', '.join(illegal)}")
-        vals = request.env["tmf.outage"].sudo().from_tmf_json(patch, partial=True)
-        rec.write(vals)
-        return _json_response(rec.to_tmf_json(), status=200)
-
-    @http.route(f"{RESOURCE_PATH}/<string:rid>", type="http", auth="public", methods=["DELETE"], csrf=False)
-    def delete_outage(self, rid, **_params):
-        rec = _find_record(rid)
-        if not rec:
-            return _error(404, f"outage {rid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
-
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
-    def register_listener(self, **_params):
-        data = _parse_json()
-        if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        callback = data.get("callback")
+    # Hub
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def hub(self, **_kw):
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search([("callback", "!=", False)])
+            return self._json([{"id": str(s.id), "callback": s.callback, "query": s.query or ""} for s in subs])
+        data = self._parse_json_body()
+        callback = (data or {}).get("callback")
         if not callback:
-            return _error(400, "Missing mandatory attribute: callback")
-        rec = request.env["tmf.hub.subscription"].sudo().create(
-            {
-                "name": f"tmf777-outage-{callback}",
-                "api_name": "outage",
-                "callback": callback,
-                "query": data.get("query", "") or "",
-                "event_type": "any",
-                "content_type": "application/json",
-            }
-        )
-        return _json_response(_subscription_json(rec), status=201)
+            return self._error(400, "Bad Request", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf_outage_management-{callback}",
+            "api_name": "outage",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": data.get("eventType") or "any",
+            "content_type": "application/json",
+        })
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET"], csrf=False)
-    def get_listener(self, sid, **_params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name != "outage":
-            return _error(404, f"Hub subscription {sid} not found")
-        return _json_response(_subscription_json(rec), status=200)
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid, **_kw):
+        if not str(sid).isdigit():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+        if not rec.exists():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""})
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
-    def unregister_listener(self, sid, **_params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name != "outage":
-            return _error(404, f"Hub subscription {sid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
-
-    def _listener_ok(self):
-        data = _parse_json()
+    def _listener_ack(self):
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        return request.make_response("", status=204)
+            return self._error(400, "Bad Request", "Invalid event payload")
+        return request.make_response("", status=201)
 
-    @http.route(f"{API_BASE}/listener/outageAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_outage_change(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["outage"]["path"]],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def outage_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("outage")
+        return self._tmf_list("outage", **kw)
 
-    @http.route(f"{API_BASE}/listener/outageCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_outage_create(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["outage"]["path"] + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def outage_individual(self, rid, **kw):
+        return self._tmf_individual("outage", rid, **kw)
 
-    @http.route(f"{API_BASE}/listener/outageDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_outage_delete(self, **_params):
-        return self._listener_ok()
-
-    @http.route(f"{API_BASE}/listener/outageStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_outage_state(self, **_params):
-        return self._listener_ok()
+    @http.route(f"{API_BASE}/listener/OutageCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_outagecreateevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/OutageAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_outageattributevaluechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/OutageStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_outagestatechangeevent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/OutageDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_outagedeleteevent(self, **_kw):
+        return self._listener_ack()

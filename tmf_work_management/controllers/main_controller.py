@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
 import json
+import logging
+
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
+
+_logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/workManagement/v4"
 NON_PATCHABLE = {"id", "href"}
@@ -10,242 +16,181 @@ RESOURCES = {
     "work": {
         "model": "tmf.work",
         "path": f"{API_BASE}/work",
-        "alt_path": f"{API_BASE}/Work",
         "required": [],
     },
     "workSpecification": {
         "model": "tmf.work.specification",
         "path": f"{API_BASE}/workSpecification",
-        "alt_path": f"{API_BASE}/WorkSpecification",
-        "required": ["name"],
+        "required": [],
     },
 }
 
 
-def _json_response(payload, status=200, headers=None):
-    response_headers = [("Content-Type", "application/json")]
-    if headers:
-        response_headers.extend(headers)
-    return request.make_response(json.dumps(payload), headers=response_headers, status=status)
+class TMFWorkManagementController(TMFBaseController):
 
+    # ------------------------------------------------------------------
+    # Generic CRUD using TMFBaseController helpers
+    # ------------------------------------------------------------------
 
-def _error(status, reason):
-    code = str(status)
-    return _json_response({"code": code, "status": code, "reason": reason}, status=status)
-
-
-def _parse_json():
-    try:
-        raw = request.httprequest.data or b"{}"
-        return json.loads(raw.decode("utf-8"))
-    except Exception:
-        return None
-
-
-def _fields_filter(payload, fields_csv):
-    if not fields_csv:
-        return payload
-    wanted = {item.strip() for item in str(fields_csv).split(",") if item.strip()}
-    if not wanted:
-        return payload
-    wanted |= {"id", "href"}
-    return {key: value for key, value in payload.items() if key in wanted}
-
-
-def _find_record(model_name, rid):
-    model = request.env[model_name].sudo()
-    rec = model.search([("tmf_id", "=", rid)], limit=1)
-    if rec:
-        return rec
-    if str(rid).isdigit():
-        rec = model.browse(int(rid))
-        if rec.exists():
-            return rec
-    return None
-
-
-def _subscription_json(rec):
-    return {"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}
-
-
-def _guess_api_name(query):
-    q = (query or "").lower()
-    if "workspecification" in q:
-        return "workSpecification"
-    return "work"
-
-
-class TMF713Controller(http.Controller):
-    def _list(self, api_name, **params):
-        cfg = RESOURCES[api_name]
-        model = request.env[cfg["model"]].sudo()
+    def _tmf_list(self, res_key, **kw):
+        cfg = RESOURCES[res_key]
+        model = cfg["model"]
         domain = []
-        if params.get("id"):
-            domain.append(("tmf_id", "=", params["id"]))
-        if params.get("name"):
-            domain.append(("name", "=", params["name"]))
-        if params.get("description"):
-            domain.append(("description", "=", params["description"]))
-        if params.get("version"):
-            domain.append(("version", "=", params["version"]))
-        if params.get("state"):
-            domain.append(("state", "=", params["state"]))
-        offset = int(params.get("offset", 0) or 0)
-        limit = params.get("limit")
-        limit = int(limit) if limit not in (None, "") else None
-        total = model.search_count(domain)
-        recs = model.search(domain, offset=offset, limit=limit)
-        payload = [_fields_filter(rec.to_tmf_json(), params.get("fields")) for rec in recs]
-        headers = [("X-Result-Count", str(len(payload))), ("X-Total-Count", str(total))]
-        return _json_response(payload, status=200, headers=headers)
+        for key, val in kw.items():
+            if key in ("fields", "offset", "limit", "sort"):
+                continue
+            if val and hasattr(request.env[model], key):
+                domain.append((key, "=", val))
+        return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _create(self, api_name):
-        cfg = RESOURCES[api_name]
-        data = _parse_json()
+    def _tmf_create(self, res_key):
+        cfg = RESOURCES[res_key]
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        for required in cfg["required"]:
-            if required not in data:
-                return _error(400, f"Missing mandatory attribute: {required}")
-        vals = request.env[cfg["model"]].sudo().from_tmf_json(data)
-        rec = request.env[cfg["model"]].sudo().create(vals)
-        return _json_response(rec.to_tmf_json(), status=201)
+            return self._error(400, "Bad Request", "Invalid JSON body")
+        for req in cfg.get("required", []):
+            if req not in data:
+                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
+        Model = request.env[cfg["model"]].sudo()
+        if hasattr(Model, "from_tmf_json"):
+            vals = Model.from_tmf_json(data)
+        else:
+            vals = data
+        rec = Model.create(vals)
+        return self._json(rec.to_tmf_json(), status=201)
 
-    def _get(self, api_name, rid, **params):
-        cfg = RESOURCES[api_name]
-        rec = _find_record(cfg["model"], rid)
+    def _tmf_individual(self, res_key, rid, **kw):
+        cfg = RESOURCES[res_key]
+        rid = self._normalize_tmf_id(rid)
+        rec = self._find_record(cfg["model"], rid)
         if not rec:
-            return _error(404, f"{api_name} {rid} not found")
-        return _json_response(_fields_filter(rec.to_tmf_json(), params.get("fields")), status=200)
+            return self._error(404, "Not Found", f"{res_key} {rid} not found")
+        method = request.httprequest.method
+        if method == "GET":
+            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
+        elif method == "PATCH":
+            data = self._parse_json_body()
+            if not isinstance(data, dict):
+                return self._error(400, "Bad Request", "Invalid JSON body")
+            illegal = [k for k in data if k in NON_PATCHABLE]
+            if illegal:
+                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
+            Model = request.env[cfg["model"]].sudo()
+            if hasattr(Model, "from_tmf_json"):
+                vals = Model.from_tmf_json(data, partial=True)
+            else:
+                vals = data
+            rec.write(vals)
+            return self._json(rec.to_tmf_json())
+        elif method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
-    def _patch(self, api_name, rid):
-        cfg = RESOURCES[api_name]
-        rec = _find_record(cfg["model"], rid)
-        if not rec:
-            return _error(404, f"{api_name} {rid} not found")
-        patch = _parse_json()
-        if not isinstance(patch, dict):
-            return _error(400, "Invalid JSON body")
-        illegal = [key for key in patch.keys() if key in NON_PATCHABLE]
-        if illegal:
-            return _error(400, f"Non-patchable attribute(s): {', '.join(illegal)}")
-        vals = request.env[cfg["model"]].sudo().from_tmf_json(patch, partial=True)
-        rec.write(vals)
-        return _json_response(rec.to_tmf_json(), status=200)
+    # ------------------------------------------------------------------
+    # Hub
+    # ------------------------------------------------------------------
 
-    def _delete(self, api_name, rid):
-        cfg = RESOURCES[api_name]
-        rec = _find_record(cfg["model"], rid)
-        if not rec:
-            return _error(404, f"{api_name} {rid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
-
-    @http.route([RESOURCES["work"]["path"], RESOURCES["work"]["alt_path"]], type="http", auth="public", methods=["GET"], csrf=False)
-    def list_work(self, **params):
-        return self._list("work", **params)
-
-    @http.route([RESOURCES["work"]["path"], RESOURCES["work"]["alt_path"]], type="http", auth="public", methods=["POST"], csrf=False)
-    def create_work(self, **_params):
-        return self._create("work")
-
-    @http.route([f"{RESOURCES['work']['path']}/<string:rid>", f"{RESOURCES['work']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["GET"], csrf=False)
-    def get_work(self, rid, **params):
-        return self._get("work", rid, **params)
-
-    @http.route([f"{RESOURCES['work']['path']}/<string:rid>", f"{RESOURCES['work']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["PATCH"], csrf=False)
-    def patch_work(self, rid, **_params):
-        return self._patch("work", rid)
-
-    @http.route([f"{RESOURCES['work']['path']}/<string:rid>", f"{RESOURCES['work']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["DELETE"], csrf=False)
-    def delete_work(self, rid, **_params):
-        return self._delete("work", rid)
-
-    @http.route([RESOURCES["workSpecification"]["path"], RESOURCES["workSpecification"]["alt_path"]], type="http", auth="public", methods=["GET"], csrf=False)
-    def list_work_specification(self, **params):
-        return self._list("workSpecification", **params)
-
-    @http.route([RESOURCES["workSpecification"]["path"], RESOURCES["workSpecification"]["alt_path"]], type="http", auth="public", methods=["POST"], csrf=False)
-    def create_work_specification(self, **_params):
-        return self._create("workSpecification")
-
-    @http.route([f"{RESOURCES['workSpecification']['path']}/<string:rid>", f"{RESOURCES['workSpecification']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["GET"], csrf=False)
-    def get_work_specification(self, rid, **params):
-        return self._get("workSpecification", rid, **params)
-
-    @http.route([f"{RESOURCES['workSpecification']['path']}/<string:rid>", f"{RESOURCES['workSpecification']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["PATCH"], csrf=False)
-    def patch_work_specification(self, rid, **_params):
-        return self._patch("workSpecification", rid)
-
-    @http.route([f"{RESOURCES['workSpecification']['path']}/<string:rid>", f"{RESOURCES['workSpecification']['alt_path']}/<string:rid>"], type="http", auth="public", methods=["DELETE"], csrf=False)
-    def delete_work_specification(self, rid, **_params):
-        return self._delete("workSpecification", rid)
-
-    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["POST"], csrf=False)
-    def register_listener(self, **_params):
-        data = _parse_json()
-        if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
-        callback = data.get("callback")
+    @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def hub(self, **_kw):
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search(
+                [("callback", "!=", False)])
+            return self._json([{"id": str(s.id), "callback": s.callback, "query": s.query or ""} for s in subs])
+        data = self._parse_json_body()
+        callback = (data or {}).get("callback")
         if not callback:
-            return _error(400, "Missing mandatory attribute: callback")
-        query = data.get("query", "") or ""
-        api_name = _guess_api_name(query)
-        rec = request.env["tmf.hub.subscription"].sudo().create(
-            {
-                "name": f"tmf713-{api_name}-{callback}",
-                "api_name": api_name,
-                "callback": callback,
-                "query": query,
-                "event_type": "any",
-                "content_type": "application/json",
-            }
-        )
-        return _json_response(_subscription_json(rec), status=201)
+            return self._error(400, "Bad Request", "Missing mandatory attribute: callback")
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmf_work_management-{callback}",
+            "api_name": "work",
+            "callback": callback,
+            "query": data.get("query", ""),
+            "event_type": data.get("eventType") or "any",
+            "content_type": "application/json",
+        })
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""}, status=201)
 
-    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["DELETE"], csrf=False)
-    def unregister_listener(self, sid, **_params):
-        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid)) if str(sid).isdigit() else None
-        if not rec or not rec.exists() or rec.api_name not in RESOURCES:
-            return _error(404, f"Hub subscription {sid} not found")
-        rec.unlink()
-        return request.make_response("", status=204)
+    @http.route(f"{API_BASE}/hub/<string:sid>", type="http", auth="public", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid, **_kw):
+        if not str(sid).isdigit():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+        if not rec.exists():
+            return self._error(404, "Not Found", f"Hub subscription {sid} not found")
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._json({"id": str(rec.id), "callback": rec.callback, "query": rec.query or ""})
 
-    def _listener_ok(self):
-        data = _parse_json()
+    # ------------------------------------------------------------------
+    # Listener (acknowledge only)
+    # ------------------------------------------------------------------
+
+    def _listener_ack(self):
+        data = self._parse_json_body()
         if not isinstance(data, dict):
-            return _error(400, "Invalid JSON body")
+            return self._error(400, "Bad Request", "Invalid event payload")
         return request.make_response("", status=201)
 
-    @http.route(f"{API_BASE}/listener/workCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_create(self, **_params):
-        return self._listener_ok()
+    # ------------------------------------------------------------------
+    # Resource routes
+    # ------------------------------------------------------------------
 
-    @http.route(f"{API_BASE}/listener/workAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_change(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["work"]["path"], RESOURCES["work"]["path"].replace("work", "Work")],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def work_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("work")
+        return self._tmf_list("work", **kw)
 
-    @http.route(f"{API_BASE}/listener/workStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_state(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["work"]["path"] + "/<string:rid>",
+         RESOURCES["work"]["path"].replace("work", "Work") + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def work_individual(self, rid, **kw):
+        return self._tmf_individual("work", rid, **kw)
+    @http.route(
+        [RESOURCES["workSpecification"]["path"], RESOURCES["workSpecification"]["path"].replace("workSpecification", "WorkSpecification")],
+        type="http", auth="public", methods=["GET", "POST"], csrf=False)
+    def workSpecification_collection(self, **kw):
+        if request.httprequest.method == "POST":
+            return self._tmf_create("workSpecification")
+        return self._tmf_list("workSpecification", **kw)
 
-    @http.route(f"{API_BASE}/listener/workDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_delete(self, **_params):
-        return self._listener_ok()
+    @http.route(
+        [RESOURCES["workSpecification"]["path"] + "/<string:rid>",
+         RESOURCES["workSpecification"]["path"].replace("workSpecification", "WorkSpecification") + "/<string:rid>"],
+        type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
+    def workSpecification_individual(self, rid, **kw):
+        return self._tmf_individual("workSpecification", rid, **kw)
 
-    @http.route(f"{API_BASE}/listener/workSpecificationCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_spec_create(self, **_params):
-        return self._listener_ok()
+    # ------------------------------------------------------------------
+    # Listener routes
+    # ------------------------------------------------------------------
 
-    @http.route(f"{API_BASE}/listener/workSpecificationAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_spec_change(self, **_params):
-        return self._listener_ok()
-
-    @http.route(f"{API_BASE}/listener/workSpecificationStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_spec_state(self, **_params):
-        return self._listener_ok()
-
-    @http.route(f"{API_BASE}/listener/workSpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
-    def listen_work_spec_delete(self, **_params):
-        return self._listener_ok()
-
+    @http.route(f"{API_BASE}/listener/WorkCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkCreateEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkAttributeValueChangeEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkStateChangeEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkDeleteEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkSpecificationCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkSpecificationCreateEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkSpecificationAttributeValueChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkSpecificationAttributeValueChangeEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkSpecificationStateChangeEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkSpecificationStateChangeEvent(self, **_kw):
+        return self._listener_ack()
+    @http.route(f"{API_BASE}/listener/WorkSpecificationDeleteEvent", type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_WorkSpecificationDeleteEvent(self, **_kw):
+        return self._listener_ack()
