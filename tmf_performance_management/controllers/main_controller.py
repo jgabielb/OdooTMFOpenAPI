@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/performance/v5"
 
 RESOURCES = {
-    "performanceMeasurementJob": {"model": "tmf.performance.management.resource", "path": f"{API_BASE}/performanceMeasurementJob", "required": []},
-    "performanceMeasurementCollection": {"model": "tmf.performance.management.resource", "path": f"{API_BASE}/performanceMeasurementCollection", "required": []},
+    "performanceMeasurementJob": {"model": "tmf.performance.management.resource", "path": f"{API_BASE, "resource_type": "performanceMeasurementJob"}/performanceMeasurementJob", "required": []},
+    "performanceMeasurementCollection": {"model": "tmf.performance.management.resource", "path": f"{API_BASE, "resource_type": "performanceMeasurementCollection"}/performanceMeasurementCollection", "required": []},
 }
 
 

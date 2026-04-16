@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/ServiceActivationAndConfiguration/v4"
 
 RESOURCES = {
-    "service": {"model": "tmf.5gslice.service.activation.resource", "path": f"{API_BASE}/service", "required": []},
-    "monitor": {"model": "tmf.5gslice.service.activation.resource", "path": f"{API_BASE}/monitor", "required": []},
+    "service": {"model": "tmf.5gslice.service.activation.resource", "path": f"{API_BASE}/service", "required": [], "resource_type": "service"},
+    "monitor": {"model": "tmf.5gslice.service.activation.resource", "path": f"{API_BASE}/monitor", "required": [], "resource_type": "monitor"},
 }
 
 

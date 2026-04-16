@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 API_BASE = "/tmf-api/naas/v4"
 
 RESOURCES = {
-    "naasRequest": {"model": "tmf.naas.resource", "path": f"{API_BASE}/naasRequest", "required": []},
-    "naasTemplate": {"model": "tmf.naas.resource", "path": f"{API_BASE}/naasTemplate", "required": []},
+    "naasRequest": {"model": "tmf.naas.resource", "path": f"{API_BASE, "resource_type": "naasRequest"}/naasRequest", "required": []},
+    "naasTemplate": {"model": "tmf.naas.resource", "path": f"{API_BASE, "resource_type": "naasTemplate"}/naasTemplate", "required": []},
 }
 
 

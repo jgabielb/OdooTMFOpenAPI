@@ -250,7 +250,10 @@ class TMFBaseController(http.Controller):
                 return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
         Model = request.env[cfg["model"]].sudo()
         if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
+            extra_kw = {}
+            if cfg.get("resource_type"):
+                extra_kw["resource_type"] = cfg["resource_type"]
+            vals = Model.from_tmf_json(data, **extra_kw)
         else:
             vals = data
         rec = Model.create(vals)
