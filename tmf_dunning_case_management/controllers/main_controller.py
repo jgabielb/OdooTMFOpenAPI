@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/dunningCase/v4"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "dunningScenario": {
@@ -48,49 +47,7 @@ class TMFDunningCaseManagementController(TMFBaseController):
                 domain.append((key, "=", val))
         return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # ------------------------------------------------------------------
     # Hub
@@ -147,43 +104,43 @@ class TMFDunningCaseManagementController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def dunningScenario_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("dunningScenario")
-        return self._tmf_list("dunningScenario", **kw)
+            return self._tmf_do_create(RESOURCES["dunningScenario"])
+        return self._tmf_do_list(RESOURCES["dunningScenario"], **kw)
 
     @http.route(
         [RESOURCES["dunningScenario"]["path"] + "/<string:rid>",
          RESOURCES["dunningScenario"]["path"].replace("dunningScenario", "DunningScenario") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def dunningScenario_individual(self, rid, **kw):
-        return self._tmf_individual("dunningScenario", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["dunningScenario"], rid, **kw)
     @http.route(
         [RESOURCES["dunningRule"]["path"], RESOURCES["dunningRule"]["path"].replace("dunningRule", "DunningRule")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def dunningRule_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("dunningRule")
-        return self._tmf_list("dunningRule", **kw)
+            return self._tmf_do_create(RESOURCES["dunningRule"])
+        return self._tmf_do_list(RESOURCES["dunningRule"], **kw)
 
     @http.route(
         [RESOURCES["dunningRule"]["path"] + "/<string:rid>",
          RESOURCES["dunningRule"]["path"].replace("dunningRule", "DunningRule") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def dunningRule_individual(self, rid, **kw):
-        return self._tmf_individual("dunningRule", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["dunningRule"], rid, **kw)
     @http.route(
         [RESOURCES["dunningCase"]["path"], RESOURCES["dunningCase"]["path"].replace("dunningCase", "DunningCase")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def dunningCase_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("dunningCase")
-        return self._tmf_list("dunningCase", **kw)
+            return self._tmf_do_create(RESOURCES["dunningCase"])
+        return self._tmf_do_list(RESOURCES["dunningCase"], **kw)
 
     @http.route(
         [RESOURCES["dunningCase"]["path"] + "/<string:rid>",
          RESOURCES["dunningCase"]["path"].replace("dunningCase", "DunningCase") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def dunningCase_individual(self, rid, **kw):
-        return self._tmf_individual("dunningCase", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["dunningCase"], rid, **kw)
 
     # ------------------------------------------------------------------
     # Listener routes

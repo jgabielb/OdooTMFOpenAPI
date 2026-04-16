@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/processFlowManagement/v4"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "processFlow": {"model": "tmf.process.flow", "path": f"{API_BASE}/processFlow", "required": []},
@@ -22,53 +21,8 @@ RESOURCES = {
 
 class TMFProcessFlowController(TMFBaseController):
 
-    def _tmf_list(self, res_key, **kw):
-        cfg = RESOURCES[res_key]
-        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # Hub
     @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
@@ -113,53 +67,53 @@ class TMFProcessFlowController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def processFlow_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("processFlow")
-        return self._tmf_list("processFlow", **kw)
+            return self._tmf_do_create(RESOURCES["processFlow"])
+        return self._tmf_do_list(RESOURCES["processFlow"], **kw)
 
     @http.route(
         [RESOURCES["processFlow"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def processFlow_individual(self, rid, **kw):
-        return self._tmf_individual("processFlow", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["processFlow"], rid, **kw)
     @http.route(
         [RESOURCES["taskFlow"]["path"]],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def taskFlow_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("taskFlow")
-        return self._tmf_list("taskFlow", **kw)
+            return self._tmf_do_create(RESOURCES["taskFlow"])
+        return self._tmf_do_list(RESOURCES["taskFlow"], **kw)
 
     @http.route(
         [RESOURCES["taskFlow"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def taskFlow_individual(self, rid, **kw):
-        return self._tmf_individual("taskFlow", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["taskFlow"], rid, **kw)
     @http.route(
         [RESOURCES["processFlowSpecification"]["path"]],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def processFlowSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("processFlowSpecification")
-        return self._tmf_list("processFlowSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["processFlowSpecification"])
+        return self._tmf_do_list(RESOURCES["processFlowSpecification"], **kw)
 
     @http.route(
         [RESOURCES["processFlowSpecification"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def processFlowSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("processFlowSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["processFlowSpecification"], rid, **kw)
     @http.route(
         [RESOURCES["taskFlowSpecification"]["path"]],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def taskFlowSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("taskFlowSpecification")
-        return self._tmf_list("taskFlowSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["taskFlowSpecification"])
+        return self._tmf_do_list(RESOURCES["taskFlowSpecification"], **kw)
 
     @http.route(
         [RESOURCES["taskFlowSpecification"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def taskFlowSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("taskFlowSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["taskFlowSpecification"], rid, **kw)
 
     @http.route(f"{API_BASE}/listener/ProcessFlowCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listener_processflowcreateevent(self, **_kw):

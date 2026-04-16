@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/costManagement/v5"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "actualCost": {
@@ -43,49 +42,7 @@ class TMFCostManagementController(TMFBaseController):
                 domain.append((key, "=", val))
         return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # ------------------------------------------------------------------
     # Hub
@@ -142,29 +99,29 @@ class TMFCostManagementController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def actualCost_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("actualCost")
-        return self._tmf_list("actualCost", **kw)
+            return self._tmf_do_create(RESOURCES["actualCost"])
+        return self._tmf_do_list(RESOURCES["actualCost"], **kw)
 
     @http.route(
         [RESOURCES["actualCost"]["path"] + "/<string:rid>",
          RESOURCES["actualCost"]["path"].replace("actualCost", "ActualCost") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def actualCost_individual(self, rid, **kw):
-        return self._tmf_individual("actualCost", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["actualCost"], rid, **kw)
     @http.route(
         [RESOURCES["projectedCost"]["path"], RESOURCES["projectedCost"]["path"].replace("projectedCost", "ProjectedCost")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def projectedCost_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("projectedCost")
-        return self._tmf_list("projectedCost", **kw)
+            return self._tmf_do_create(RESOURCES["projectedCost"])
+        return self._tmf_do_list(RESOURCES["projectedCost"], **kw)
 
     @http.route(
         [RESOURCES["projectedCost"]["path"] + "/<string:rid>",
          RESOURCES["projectedCost"]["path"].replace("projectedCost", "ProjectedCost") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def projectedCost_individual(self, rid, **kw):
-        return self._tmf_individual("projectedCost", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["projectedCost"], rid, **kw)
 
     # ------------------------------------------------------------------
     # Listener routes

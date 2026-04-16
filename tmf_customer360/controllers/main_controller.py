@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/customer360/v4"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "customer360": {"model": "tmf.customer360", "path": f"{API_BASE}/customer360", "required": []},
@@ -19,53 +18,8 @@ RESOURCES = {
 
 class TMFCustomer360Controller(TMFBaseController):
 
-    def _tmf_list(self, res_key, **kw):
-        cfg = RESOURCES[res_key]
-        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # Hub
     @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
@@ -110,14 +64,14 @@ class TMFCustomer360Controller(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def customer360_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("customer360")
-        return self._tmf_list("customer360", **kw)
+            return self._tmf_do_create(RESOURCES["customer360"])
+        return self._tmf_do_list(RESOURCES["customer360"], **kw)
 
     @http.route(
         [RESOURCES["customer360"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def customer360_individual(self, rid, **kw):
-        return self._tmf_individual("customer360", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["customer360"], rid, **kw)
 
     @http.route(f"{API_BASE}/listener/Customer360CreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listener_customer360createevent(self, **_kw):

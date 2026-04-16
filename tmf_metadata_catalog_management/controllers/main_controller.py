@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/metadataCatalog/v4"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "metadataCatalog": {
@@ -53,49 +52,7 @@ class TMFMetadataCatalogManagementController(TMFBaseController):
                 domain.append((key, "=", val))
         return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # ------------------------------------------------------------------
     # Hub
@@ -152,57 +109,57 @@ class TMFMetadataCatalogManagementController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def metadataCatalog_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("metadataCatalog")
-        return self._tmf_list("metadataCatalog", **kw)
+            return self._tmf_do_create(RESOURCES["metadataCatalog"])
+        return self._tmf_do_list(RESOURCES["metadataCatalog"], **kw)
 
     @http.route(
         [RESOURCES["metadataCatalog"]["path"] + "/<string:rid>",
          RESOURCES["metadataCatalog"]["path"].replace("metadataCatalog", "MetadataCatalog") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def metadataCatalog_individual(self, rid, **kw):
-        return self._tmf_individual("metadataCatalog", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["metadataCatalog"], rid, **kw)
     @http.route(
         [RESOURCES["metadataCategory"]["path"], RESOURCES["metadataCategory"]["path"].replace("metadataCategory", "MetadataCategory")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def metadataCategory_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("metadataCategory")
-        return self._tmf_list("metadataCategory", **kw)
+            return self._tmf_do_create(RESOURCES["metadataCategory"])
+        return self._tmf_do_list(RESOURCES["metadataCategory"], **kw)
 
     @http.route(
         [RESOURCES["metadataCategory"]["path"] + "/<string:rid>",
          RESOURCES["metadataCategory"]["path"].replace("metadataCategory", "MetadataCategory") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def metadataCategory_individual(self, rid, **kw):
-        return self._tmf_individual("metadataCategory", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["metadataCategory"], rid, **kw)
     @http.route(
         [RESOURCES["metadataCatalogItem"]["path"], RESOURCES["metadataCatalogItem"]["path"].replace("metadataCatalogItem", "MetadataCatalogItem")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def metadataCatalogItem_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("metadataCatalogItem")
-        return self._tmf_list("metadataCatalogItem", **kw)
+            return self._tmf_do_create(RESOURCES["metadataCatalogItem"])
+        return self._tmf_do_list(RESOURCES["metadataCatalogItem"], **kw)
 
     @http.route(
         [RESOURCES["metadataCatalogItem"]["path"] + "/<string:rid>",
          RESOURCES["metadataCatalogItem"]["path"].replace("metadataCatalogItem", "MetadataCatalogItem") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def metadataCatalogItem_individual(self, rid, **kw):
-        return self._tmf_individual("metadataCatalogItem", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["metadataCatalogItem"], rid, **kw)
     @http.route(
         [RESOURCES["metadataSpecification"]["path"], RESOURCES["metadataSpecification"]["path"].replace("metadataSpecification", "MetadataSpecification")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def metadataSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("metadataSpecification")
-        return self._tmf_list("metadataSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["metadataSpecification"])
+        return self._tmf_do_list(RESOURCES["metadataSpecification"], **kw)
 
     @http.route(
         [RESOURCES["metadataSpecification"]["path"] + "/<string:rid>",
          RESOURCES["metadataSpecification"]["path"].replace("metadataSpecification", "MetadataSpecification") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def metadataSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("metadataSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["metadataSpecification"], rid, **kw)
 
     # ------------------------------------------------------------------
     # Listener routes

@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/privateOptimizedBinding/v5"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "cloudApplication": {
@@ -53,49 +52,7 @@ class TMFPrivateOptimizedBindingController(TMFBaseController):
                 domain.append((key, "=", val))
         return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # ------------------------------------------------------------------
     # Hub
@@ -152,57 +109,57 @@ class TMFPrivateOptimizedBindingController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def cloudApplication_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("cloudApplication")
-        return self._tmf_list("cloudApplication", **kw)
+            return self._tmf_do_create(RESOURCES["cloudApplication"])
+        return self._tmf_do_list(RESOURCES["cloudApplication"], **kw)
 
     @http.route(
         [RESOURCES["cloudApplication"]["path"] + "/<string:rid>",
          RESOURCES["cloudApplication"]["path"].replace("cloudApplication", "CloudApplication") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def cloudApplication_individual(self, rid, **kw):
-        return self._tmf_individual("cloudApplication", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["cloudApplication"], rid, **kw)
     @http.route(
         [RESOURCES["cloudApplicationSpecification"]["path"], RESOURCES["cloudApplicationSpecification"]["path"].replace("cloudApplicationSpecification", "CloudApplicationSpecification")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def cloudApplicationSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("cloudApplicationSpecification")
-        return self._tmf_list("cloudApplicationSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["cloudApplicationSpecification"])
+        return self._tmf_do_list(RESOURCES["cloudApplicationSpecification"], **kw)
 
     @http.route(
         [RESOURCES["cloudApplicationSpecification"]["path"] + "/<string:rid>",
          RESOURCES["cloudApplicationSpecification"]["path"].replace("cloudApplicationSpecification", "CloudApplicationSpecification") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def cloudApplicationSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("cloudApplicationSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["cloudApplicationSpecification"], rid, **kw)
     @http.route(
         [RESOURCES["userEquipment"]["path"], RESOURCES["userEquipment"]["path"].replace("userEquipment", "UserEquipment")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def userEquipment_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("userEquipment")
-        return self._tmf_list("userEquipment", **kw)
+            return self._tmf_do_create(RESOURCES["userEquipment"])
+        return self._tmf_do_list(RESOURCES["userEquipment"], **kw)
 
     @http.route(
         [RESOURCES["userEquipment"]["path"] + "/<string:rid>",
          RESOURCES["userEquipment"]["path"].replace("userEquipment", "UserEquipment") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def userEquipment_individual(self, rid, **kw):
-        return self._tmf_individual("userEquipment", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["userEquipment"], rid, **kw)
     @http.route(
         [RESOURCES["userEquipmentSpecification"]["path"], RESOURCES["userEquipmentSpecification"]["path"].replace("userEquipmentSpecification", "UserEquipmentSpecification")],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def userEquipmentSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("userEquipmentSpecification")
-        return self._tmf_list("userEquipmentSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["userEquipmentSpecification"])
+        return self._tmf_do_list(RESOURCES["userEquipmentSpecification"], **kw)
 
     @http.route(
         [RESOURCES["userEquipmentSpecification"]["path"] + "/<string:rid>",
          RESOURCES["userEquipmentSpecification"]["path"].replace("userEquipmentSpecification", "UserEquipmentSpecification") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def userEquipmentSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("userEquipmentSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["userEquipmentSpecification"], rid, **kw)
 
     # ------------------------------------------------------------------
     # Listener routes

@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/device/v4"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "Device": {
@@ -38,49 +37,7 @@ class TMFDeviceController(TMFBaseController):
                 domain.append((key, "=", val))
         return self._list_response(model, domain, lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # ------------------------------------------------------------------
     # Hub
@@ -137,15 +94,15 @@ class TMFDeviceController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def Device_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("Device")
-        return self._tmf_list("Device", **kw)
+            return self._tmf_do_create(RESOURCES["Device"])
+        return self._tmf_do_list(RESOURCES["Device"], **kw)
 
     @http.route(
         [RESOURCES["Device"]["path"] + "/<string:rid>",
          RESOURCES["Device"]["path"].replace("Device", "Device") + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def Device_individual(self, rid, **kw):
-        return self._tmf_individual("Device", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["Device"], rid, **kw)
 
     # ------------------------------------------------------------------
     # Listener routes

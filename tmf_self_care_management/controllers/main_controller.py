@@ -10,7 +10,6 @@ from odoo.addons.tmf_base.controllers.base_controller import TMFBaseController
 _logger = logging.getLogger(__name__)
 
 API_BASE = "/tmf-api/tmf-componentsuite/selfcareapp/v1"
-NON_PATCHABLE = {"id", "href"}
 
 RESOURCES = {
     "selfCareApp": {"model": "tmf.self.care.resource", "path": f"{API_BASE}/selfCareApp", "required": []},
@@ -20,53 +19,8 @@ RESOURCES = {
 
 class TMFSelfCareManagementController(TMFBaseController):
 
-    def _tmf_list(self, res_key, **kw):
-        cfg = RESOURCES[res_key]
-        return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
-    def _tmf_create(self, res_key):
-        cfg = RESOURCES[res_key]
-        data = self._parse_json_body()
-        if not isinstance(data, dict):
-            return self._error(400, "Bad Request", "Invalid JSON body")
-        for req in cfg.get("required", []):
-            if req not in data:
-                return self._error(400, "Bad Request", f"Missing mandatory attribute: {req}")
-        Model = request.env[cfg["model"]].sudo()
-        if hasattr(Model, "from_tmf_json"):
-            vals = Model.from_tmf_json(data)
-        else:
-            vals = data
-        rec = Model.create(vals)
-        return self._json(rec.to_tmf_json(), status=201)
 
-    def _tmf_individual(self, res_key, rid, **kw):
-        cfg = RESOURCES[res_key]
-        rid = self._normalize_tmf_id(rid)
-        rec = self._find_record(cfg["model"], rid)
-        if not rec:
-            return self._error(404, "Not Found", f"{res_key} {rid} not found")
-        method = request.httprequest.method
-        if method == "GET":
-            return self._json(self._select_fields(rec.to_tmf_json(), kw.get("fields")))
-        elif method == "PATCH":
-            data = self._parse_json_body()
-            if not isinstance(data, dict):
-                return self._error(400, "Bad Request", "Invalid JSON body")
-            illegal = [k for k in data if k in NON_PATCHABLE]
-            if illegal:
-                return self._error(400, "Bad Request", f"Non-patchable attribute(s): {', '.join(illegal)}")
-            Model = request.env[cfg["model"]].sudo()
-            if hasattr(Model, "from_tmf_json"):
-                vals = Model.from_tmf_json(data, partial=True)
-            else:
-                vals = data
-            rec.write(vals)
-            return self._json(rec.to_tmf_json())
-        elif method == "DELETE":
-            rec.unlink()
-            return request.make_response("", status=204)
-        return self._error(405, "Method Not Allowed", f"{method} not supported")
 
     # Hub
     @http.route(f"{API_BASE}/hub", type="http", auth="public", methods=["GET", "POST"], csrf=False)
@@ -111,27 +65,27 @@ class TMFSelfCareManagementController(TMFBaseController):
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def selfCareApp_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("selfCareApp")
-        return self._tmf_list("selfCareApp", **kw)
+            return self._tmf_do_create(RESOURCES["selfCareApp"])
+        return self._tmf_do_list(RESOURCES["selfCareApp"], **kw)
 
     @http.route(
         [RESOURCES["selfCareApp"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def selfCareApp_individual(self, rid, **kw):
-        return self._tmf_individual("selfCareApp", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["selfCareApp"], rid, **kw)
     @http.route(
         [RESOURCES["selfCareAppSpecification"]["path"]],
         type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def selfCareAppSpecification_collection(self, **kw):
         if request.httprequest.method == "POST":
-            return self._tmf_create("selfCareAppSpecification")
-        return self._tmf_list("selfCareAppSpecification", **kw)
+            return self._tmf_do_create(RESOURCES["selfCareAppSpecification"])
+        return self._tmf_do_list(RESOURCES["selfCareAppSpecification"], **kw)
 
     @http.route(
         [RESOURCES["selfCareAppSpecification"]["path"] + "/<string:rid>"],
         type="http", auth="public", methods=["GET", "PATCH", "DELETE"], csrf=False)
     def selfCareAppSpecification_individual(self, rid, **kw):
-        return self._tmf_individual("selfCareAppSpecification", rid, **kw)
+        return self._tmf_do_individual(RESOURCES["selfCareAppSpecification"], rid, **kw)
 
     @http.route(f"{API_BASE}/listener/SelfCareAppCreateEvent", type="http", auth="public", methods=["POST"], csrf=False)
     def listener_selfcareappcreateevent(self, **_kw):
