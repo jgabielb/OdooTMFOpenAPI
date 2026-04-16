@@ -32,7 +32,7 @@ Write-Host "Database:    TMF_Odoo_DB (Port 5433)"
 Write-Host "------------------------------------------------------" -ForegroundColor Cyan
 
 # 1. Core / Manual Modules (The "Smart" Logic)
-$CoreModules = "tmf_base,tmf_party,tmf_customer,tmf_product_catalog,tmf_product_ordering,tmf_service_inventory,tmf_resource_inventory,tmf_trouble_ticket,tmf_billing_management,tmfc001_wiring,tmfc002_wiring,tmfc003_wiring,tmfc005_wiring,tmfc006_wiring,tmfc007_wiring,tmfc008_wiring,tmfc010_wiring,tmfc011_wiring,tmfc012_wiring,tmfc020_wiring,tmfc022_wiring,tmfc023_wiring,tmfc024_wiring,tmfc027_wiring,tmfc028_wiring,tmfc029_wiring,tmfc030_wiring,tmfc031_wiring,tmfc039_wiring,tmfc040_wiring,tmfc043_wiring"
+$CoreModules = "tmf_base,tmf_party,tmf_customer,tmf_product_catalog,tmf_product_ordering,tmf_service_inventory,tmf_resource_inventory,tmf_trouble_ticket,tmf_billing_management,tmfc001_wiring,tmfc002_wiring,tmfc003_wiring,tmfc005_wiring,tmfc006_wiring,tmfc007_wiring,tmfc008_wiring,tmfc010_wiring,tmfc011_wiring,tmfc012_wiring,tmfc020_wiring,tmfc022_wiring,tmfc023_wiring,tmfc024_wiring,tmfc027_wiring,tmfc028_wiring,tmfc029_wiring,tmfc030_wiring,tmfc031_wiring,tmfc039_wiring,tmfc040_wiring,tmfc043_wiring,tmfc009_wiring,tmfc014_wiring,tmfc035_wiring"
 
 # 1b. Native Odoo Apps to leverage with TMF data
 # Keep this list explicit so environments stay reproducible.
