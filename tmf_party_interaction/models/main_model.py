@@ -100,6 +100,24 @@ class TMFPartyInteraction(models.Model):
     def _get_tmf_api_path(self):
         return f"{API_BASE}/{RESOURCE}"
 
+    @staticmethod
+    def _ensure_channel_type(channels):
+        if not isinstance(channels, list):
+            return channels
+        for ch in channels:
+            if isinstance(ch, dict) and "@type" not in ch:
+                ch["@type"] = "RelatedChannel"
+        return channels
+
+    @staticmethod
+    def _ensure_party_type(parties):
+        if not isinstance(parties, list):
+            return parties
+        for p in parties:
+            if isinstance(p, dict) and "@type" not in p:
+                p["@type"] = "RelatedParty"
+        return parties
+
     def to_tmf_json(self, host_url=""):
         self.ensure_one()
         host_url = (host_url or "").rstrip("/")
@@ -116,13 +134,13 @@ class TMFPartyInteraction(models.Model):
             "status": None if self.status in (None, "") else str(self.status),
             "statusChangeDate": self.status_change_date.isoformat() if self.status_change_date else None,
             "interactionDate": self.interaction_date,
-            "relatedChannel": self.related_channel,
-            "attachment": self.attachment,
+            "relatedChannel": self._ensure_channel_type(_as_list(self.related_channel)) or None,
+            "attachment": _as_list(self.attachment) or None,
             "externalIdentifier": _as_list(self.external_identifier),
-            "interactionItem": self.interaction_item,
-            "interactionRelationship": self.interaction_relationship,
-            "note": self.note,
-            "relatedParty": self.related_party,
+            "interactionItem": _as_list(self.interaction_item) or None,
+            "interactionRelationship": _as_list(self.interaction_relationship) or None,
+            "note": _as_list(self.note) or None,
+            "relatedParty": self._ensure_party_type(_as_list(self.related_party)) or None,
         }
         if payload.get("interactionDate") in ("", None):
             payload.pop("interactionDate", None)

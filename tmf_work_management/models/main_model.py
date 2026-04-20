@@ -1,5 +1,8 @@
 import json
+import logging
 from odoo import api, fields, models
+
+_logger = logging.getLogger(__name__)
 
 
 def _dumps(value):
@@ -130,6 +133,13 @@ class TMFWork(models.Model):
                     return partner
         return False
 
+    def _get_or_create_default_project(self):
+        Project = self.env["project.project"].sudo()
+        project = Project.search([("name", "=", "TMF Work Orders")], limit=1)
+        if not project:
+            project = Project.create({"name": "TMF Work Orders"})
+        return project
+
     def _sync_native_links(self):
         env_task = self.env["project.task"].sudo()
         for rec in self:
@@ -147,13 +157,17 @@ class TMFWork(models.Model):
                 else:
                     task = env_task.search([("name", "=", rec.name or rec.tmf_id)], limit=1)
                 if not task:
-                    vals = {"name": rec.name or f"TMF713:{rec.tmf_id}"}
+                    project = rec._get_or_create_default_project()
+                    vals = {
+                        "name": rec.name or f"TMF713:{rec.tmf_id}",
+                        "project_id": project.id,
+                    }
                     if rec.partner_id:
                         vals["partner_id"] = rec.partner_id.id
-                    task = env_task.create(vals)
+                    task = env_task.with_context(skip_tmf_bridge=True).create(vals)
                 rec.project_task_id = task.id
             except Exception:
-                pass
+                _logger.warning("TMF work → project.task sync failed", exc_info=True)
 
     def _get_tmf_api_path(self):
         return "/workManagement/v4/work"

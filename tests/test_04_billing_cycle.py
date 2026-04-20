@@ -33,15 +33,10 @@ class TestBillingCycle:
         amount = data.get("totalAmount", {})
         assert amount.get("value") == 59.99 or str(amount.get("value")) == "59.99"
 
-    def test_create_customer_bill(self, tmf, billing_setup):
-        """POST customer bill."""
-        data, _ = tmf.create("customer_bill", "customerBill", {
-            "name": "Bill-2026-04",
-            "billingAccount": {"id": billing_setup["account_id"]},
-            "state": "new",
-        })
-        bill_id = assert_tmf_resource(data)
-        self.__class__.bill_id = bill_id
+    def test_list_customer_bills(self, tmf, billing_setup):
+        """GET customer bills (POST not supported — bills are generated from invoices)."""
+        data, _ = tmf.list("customer_bill", "customerBill")
+        assert isinstance(data, list), "Expected list of customer bills"
 
     def test_list_payments(self, tmf):
         """GET payments returns at least 1."""

@@ -40,11 +40,33 @@ class OdooClient:
             {"fields": fields or []},
         )
 
+    def create(self, model, vals):
+        return self._object.execute_kw(
+            self.db, self.uid, self._password,
+            model, "create",
+            [vals],
+        )
+
     def write(self, model, ids, vals):
         return self._object.execute_kw(
             self.db, self.uid, self._password,
             model, "write",
             [ids, vals],
+        )
+
+    def unlink(self, model, ids):
+        return self._object.execute_kw(
+            self.db, self.uid, self._password,
+            model, "unlink",
+            [ids],
+        )
+
+    def call(self, model, method, args=None, kwargs=None):
+        return self._object.execute_kw(
+            self.db, self.uid, self._password,
+            model, method,
+            args or [],
+            kwargs or {},
         )
 
     # -- Convenience --

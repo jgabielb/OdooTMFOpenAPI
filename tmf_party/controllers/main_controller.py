@@ -183,11 +183,18 @@ class TMFPartyController(TMFBaseController):
         if "/" in tmf_id:
             tmf_id = tmf_id.split("/", 1)[0].strip()
         partner = self._find_individual(tmf_id)
-        if partner:
-            try:
-                partner.unlink()
-            except Exception:
-                pass
+        if not partner:
+            # Idempotent: if already gone, return 204
+            return request.make_response('', status=204)
+        try:
+            with request.env.cr.savepoint():
+                partner.with_context(skip_tmf_bridge=True).unlink()
+        except Exception as e:
+            err = str(e).lower()
+            if "foreign key constraint" in err or "violates" in err or "integrity" in err:
+                return self._error(409, "Conflict",
+                    f"Individual {tmf_id} cannot be deleted: referenced by other resources")
+            raise
         return request.make_response('', status=204)
 
     # -----------------------
@@ -296,11 +303,18 @@ class TMFPartyController(TMFBaseController):
         if "/" in tmf_id:
             tmf_id = tmf_id.split("/", 1)[0].strip()
         partner = self._find_organization(tmf_id)
-        if partner:
-            try:
-                partner.unlink()
-            except Exception:
-                pass
+        if not partner:
+            # Idempotent: if already gone, return 204
+            return request.make_response('', status=204)
+        try:
+            with request.env.cr.savepoint():
+                partner.with_context(skip_tmf_bridge=True).unlink()
+        except Exception as e:
+            err = str(e).lower()
+            if "foreign key constraint" in err or "violates" in err or "integrity" in err:
+                return self._error(409, "Conflict",
+                    f"Organization {tmf_id} cannot be deleted: referenced by other resources")
+            raise
         return request.make_response('', status=204)
 
     # -----------------------

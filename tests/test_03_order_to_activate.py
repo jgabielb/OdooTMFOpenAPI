@@ -32,8 +32,14 @@ class TestOrderToActivate:
     def test_create_shopping_cart(self, tmf, setup_data):
         """POST cart → creates quotation sale.order via bridge."""
         data, _ = tmf.create("shopping_cart", "shoppingCart", {
+            "@type": "ShoppingCart",
             "cartItem": [{
-                "productOffering": {"id": setup_data["offering_id"]},
+                "id": "item-1",
+                "productOffering": {
+                    "id": setup_data["offering_id"],
+                    "href": f"/tmf-api/productCatalogManagement/v5/productOffering/{setup_data['offering_id']}",
+                    "name": "Test Offering",
+                },
                 "quantity": 1,
             }],
             "relatedParty": [{"id": setup_data["party_id"]}],

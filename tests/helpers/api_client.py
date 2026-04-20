@@ -18,38 +18,38 @@ class TMFClient:
 
     # -- API base paths --
     APIS = {
-        "party": "/tmf-api/party/v4",
-        "customer": "/tmf-api/customerManagement/v4",
+        "party": "/tmf-api/partyManagement/v5",
+        "customer": "/tmf-api/customerManagement/v5",
         "account": "/tmf-api/accountManagement/v4",
-        "catalog": "/tmf-api/productCatalogManagement/v4",
-        "ordering": "/tmf-api/productOrderingManagement/v4",
-        "service_inventory": "/tmf-api/serviceInventory/v4",
-        "resource_inventory": "/tmf-api/resourceInventory/v4",
-        "billing": "/tmf-api/billingManagement/v4",
+        "catalog": "/tmf-api/productCatalogManagement/v5",
+        "ordering": "/tmf-api/productOrderingManagement/v5",
+        "service_inventory": "/tmf-api/serviceInventoryManagement/v5",
+        "resource_inventory": "/tmf-api/resourceInventoryManagement/v4",
+        "billing": "/tmf-api/accountManagement/v4",
         "customer_bill": "/tmf-api/customerBillManagement/v4",
         "payment": "/tmf-api/paymentManagement/v4",
         "trouble_ticket": "/tmf-api/troubleTicketManagement/v5",
-        "incident": "/tmf-api/incidentManagement/v4",
+        "incident": "/tmf-api/Incident/v4",
         "work": "/tmf-api/workManagement/v4",
         "appointment": "/tmf-api/appointmentManagement/v4",
-        "alarm": "/tmf-api/alarmManagement/v4",
+        "alarm": "/tmf-api/alarmManagement/v5",
         "agreement": "/tmf-api/agreementManagement/v4",
-        "document": "/tmf-api/documentManagement/v4",
+        "document": "/tmf-api/document/v4",
         "communication": "/tmf-api/communicationManagement/v4",
         "geographic_address": "/tmf-api/geographicAddressManagement/v4",
         "geographic_site": "/tmf-api/geographicSiteManagement/v4",
         "quote": "/tmf-api/quoteManagement/v4",
-        "shopping_cart": "/tmf-api/shoppingCart/v4",
+        "shopping_cart": "/tmf-api/shoppingCartManagement/v5",
         "shipping_order": "/tmf-api/shippingOrder/v4.0",
         "shipment": "/tmf-api/shipmentManagement/v4",
         "promotion": "/tmf-api/promotionManagement/v4",
         "usage": "/tmf-api/usageManagement/v4",
         "service_catalog": "/tmf-api/serviceCatalogManagement/v4",
-        "resource_catalog": "/tmf-api/resourceCatalogManagement/v4",
-        "resource_order": "/tmf-api/resourceOrderingManagement/v4",
-        "service_order": "/tmf-api/serviceOrderingManagement/v4",
+        "resource_catalog": "/tmf-api/resourceCatalogManagement/v5",
+        "resource_order": "/tmf-api/resourceOrdering/v4",
+        "service_order": "/tmf-api/serviceOrdering/v4",
         "service_activation": "/tmf-api/ServiceActivationAndConfiguration/v4",
-        "party_interaction": "/tmf-api/partyInteraction/v2",
+        "party_interaction": "/tmf-api/partyInteractionManagement/v5",
     }
 
     def url(self, api_name, resource, rid=None):
@@ -58,6 +58,17 @@ class TMFClient:
         if rid:
             path = f"{path}/{rid}"
         return path
+
+    # -- Helpers --
+
+    @staticmethod
+    def _parse_json(resp):
+        if not resp.content:
+            return {}
+        try:
+            return resp.json()
+        except (ValueError, requests.exceptions.JSONDecodeError):
+            return {}
 
     # -- CRUD --
 
@@ -68,7 +79,7 @@ class TMFClient:
             assert resp.status_code == expected_status, (
                 f"POST {url} → {resp.status_code}: {resp.text[:500]}"
             )
-        data = resp.json() if resp.content else {}
+        data = self._parse_json(resp)
         if isinstance(data, dict) and "id" in data:
             self._created.append((api_name, resource, data["id"]))
         return data, resp
@@ -80,7 +91,7 @@ class TMFClient:
             assert resp.status_code == expected_status, (
                 f"GET {url} → {resp.status_code}: {resp.text[:500]}"
             )
-        return resp.json() if resp.content else {}, resp
+        return self._parse_json(resp), resp
 
     def patch(self, api_name, resource, rid, body, expected_status=200):
         url = self.url(api_name, resource, rid)
@@ -89,7 +100,7 @@ class TMFClient:
             assert resp.status_code == expected_status, (
                 f"PATCH {url} → {resp.status_code}: {resp.text[:500]}"
             )
-        return resp.json() if resp.content else {}, resp
+        return self._parse_json(resp), resp
 
     def delete(self, api_name, resource, rid, expected_status=204):
         url = self.url(api_name, resource, rid)
@@ -132,7 +143,7 @@ class TMFClient:
     def create_billing_account(self, name, party_id, **extra):
         body = {
             "name": name,
-            "relatedParty": [{"id": party_id, "role": "Customer"}],
+            "relatedParty": [{"id": party_id, "role": "Customer", "@type": "RelatedParty"}],
             **extra,
         }
         return self.create("account", "billingAccount", body)

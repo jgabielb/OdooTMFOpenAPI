@@ -19,12 +19,14 @@ class TMFAlarmBridge(models.Model):
             if rec.env.context.get("skip_tmf_bridge") or rec.activity_id:
                 continue
             user = self.env.user
+            # Attach to res.partner (has mail.thread) via user's partner
+            partner = user.partner_id
             activity = Activity.with_context(skip_tmf_bridge=True).create({
                 "activity_type_id": act_type.id,
-                "summary": f"Alarm: {rec.name or rec.tmf_id}",
-                "note": rec.description if hasattr(rec, "description") else "",
-                "res_model_id": self.env["ir.model"]._get_id("tmf.alarm"),
-                "res_id": rec.id,
+                "summary": f"Alarm: {getattr(rec, 'name', '') or rec.tmf_id}",
+                "note": getattr(rec, "description", "") or "",
+                "res_model_id": self.env["ir.model"]._get_id("res.partner"),
+                "res_id": partner.id,
                 "user_id": user.id,
             })
             rec.with_context(skip_tmf_bridge=True).write({"activity_id": activity.id})

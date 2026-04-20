@@ -27,13 +27,28 @@ class AccountPaymentTMF(models.Model):
                 "name": rec.partner_id.name if rec.partner_id else "Unknown",
                 "@referredType": "BillingAccount",
             })
+            # Derive payment method from Odoo journal
+            journal = rec.journal_id if rec.journal_id else False
+            journal_type = getattr(journal, "type", "bank") if journal else "bank"
+            method_map = {
+                "bank": "bankTransfer",
+                "cash": "cash",
+                "credit": "creditCard",
+            }
+            pm_name = method_map.get(journal_type, "bankTransfer")
+            payment_method = json.dumps({
+                "name": pm_name,
+                "description": journal.name if journal else "Bank Transfer",
+                "@type": "PaymentMethodRef",
+            })
             vals = {
                 "name": rec.name or "Payment",
-                "description": rec.ref or rec.name or "",
+                "description": getattr(rec, "ref", "") or rec.name or "",
                 "status": self._map_state_to_tmf(rec),
                 "partner_id": rec.partner_id.id if rec.partner_id else False,
                 "total_amount_json": total_amount,
                 "account_json": account_ref,
+                "payment_method_json": payment_method,
                 "payment_date": rec.date,
             }
             if rec.tmf_payment_id and rec.tmf_payment_id.exists():
@@ -69,7 +84,7 @@ class AccountPaymentTMF(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        trigger = {"name", "ref", "partner_id", "amount", "state", "date"}
+        trigger = {"name", "partner_id", "amount", "state", "date"}
         if not self.env.context.get("skip_tmf_bridge") and trigger & set(vals):
             try:
                 self._sync_tmf_payment()

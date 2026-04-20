@@ -79,7 +79,11 @@ class TestMultiServiceCustomer:
     def test_create_interaction(self, tmf):
         """Log customer interaction."""
         data, _ = tmf.create("party_interaction", "partyInteraction", {
+            "@type": "PartyInteraction",
             "description": "Customer called about bill dispute",
+            "direction": "inbound",
+            "reason": "Bill dispute",
+            "relatedChannel": [{"id": "phone", "name": "Phone"}],
             "interactionDate": {"startDateTime": "2026-04-17T09:00:00Z"},
             "relatedParty": [{"id": self.party_id}],
         })
@@ -92,12 +96,14 @@ class TestMultiServiceCustomer:
         assert_field_value(data, "givenName", "Frank")
 
     def test_verify_three_accounts(self, tmf):
-        """List accounts for party returns 3."""
-        data, _ = tmf.list("account", "billingAccount")
-        party_accounts = [a for a in data
-                          if any(p.get("id") == self.party_id
-                                 for p in a.get("relatedParty", []))]
-        assert len(party_accounts) >= 3, f"Expected 3+ accounts, got {len(party_accounts)}"
+        """All 3 accounts exist and are linked to the party."""
+        for aid in self.account_ids:
+            data, _ = tmf.get("account", "billingAccount", aid)
+            related = data.get("relatedParty", [])
+            party_refs = [p for p in related if p.get("id") == self.party_id]
+            assert len(party_refs) >= 1, (
+                f"Account {aid} missing relatedParty with id={self.party_id}, got {related}"
+            )
 
     def test_verify_three_orders(self, tmf):
         """All 3 orders exist."""

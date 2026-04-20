@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+
+    <!-- ============================================================
+         Customer Portfolio tab on the partner form.
+         Shows TMF Accounts, Services, Orders, and Sales Leads
+         so the salesperson has a single view of the customer.
+         ============================================================ -->
+
+    <record id="view_partner_form_tmf_portfolio" model="ir.ui.view">
+      <field name="name">res.partner.form.tmf.portfolio</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="priority">50</field>
+      <field name="arch" type="xml">
+
+        <!-- Add Portfolio tab inside the notebook -->
+        <xpath expr="//notebook" position="inside">
+          <page string="Customer Portfolio" name="tmf_portfolio">
+
+            <!-- Smart summary row -->
+            <group>
+              <group>
+                <field name="tmf_account_count" string="Accounts"/>
+                <field name="tmf_service_count" string="Active Services"/>
+              </group>
+              <group>
+                <field name="tmf_order_count" string="Orders"/>
+                <field name="tmf_sales_lead_count" string="Sales Leads"/>
+              </group>
+            </group>
+
+            <separator string="Accounts (TMF666)"/>
+            <field name="tmf_account_ids" nolabel="1" readonly="1">
+              <list>
+                <field name="name"/>
+                <field name="resource_type" string="Type"/>
+                <field name="account_type" string="Account Type"/>
+                <field name="state" string="Status"/>
+                <field name="payment_status" string="Payment"/>
+              </list>
+            </field>
+
+            <separator string="Services (TMF638)"/>
+            <field name="tmf_service_ids" nolabel="1" readonly="1">
+              <list>
+                <field name="name"/>
+                <field name="service_type" string="Type"/>
+                <field name="category" string="CFS/RFS"/>
+                <field name="state" string="Status"/>
+                <field name="start_date" string="Start"/>
+                <field name="end_date" string="End"/>
+              </list>
+            </field>
+
+            <separator string="Product Orders (TMF622)"/>
+            <field name="tmf_order_ids" nolabel="1" readonly="1"
+                   domain="[('partner_id', '=', id)]"
+                   context="{'create': False}">
+              <list>
+                <field name="name" string="Order"/>
+                <field name="date_order" string="Date"/>
+                <field name="state" string="Odoo Status"/>
+                <field name="tmf_status" string="TMF Status"/>
+                <field name="amount_total" string="Total"/>
+              </list>
+            </field>
+
+            <separator string="Sales Leads (TMF699)"/>
+            <field name="tmf_sales_lead_ids" nolabel="1" readonly="1">
+              <list>
+                <field name="name"/>
+                <field name="status" string="Status"/>
+                <field name="priority" string="Priority"/>
+                <field name="crm_lead_id" string="CRM Lead"/>
+                <field name="sale_order_id" string="Sale Order"/>
+              </list>
+            </field>
+
+          </page>
+        </xpath>
+
+      </field>
+    </record>
+
+  </data>
+</odoo>

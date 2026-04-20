@@ -36,6 +36,7 @@ class TestResourceShipment:
             "description": "Order 5G SIM cards",
             "category": "SIM",
             "orderItem": [{
+                "id": "item-001",
                 "action": "add",
                 "quantity": 100,
             }],

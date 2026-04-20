@@ -25,7 +25,7 @@ class TMFUsageBridge(models.Model):
             if rec.env.context.get("skip_tmf_bridge") or rec.analytic_line_id:
                 continue
             line = Line.with_context(skip_tmf_bridge=True).create({
-                "name": f"Usage {rec.name or rec.tmf_id}",
+                "name": f"Usage {getattr(rec, 'name', '') or rec.tmf_id}",
                 "account_id": account.id,
                 "amount": 0,
             })

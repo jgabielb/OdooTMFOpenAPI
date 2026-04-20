@@ -162,7 +162,6 @@ class TMFPayment(models.Model):
                 "partner_id": partner.id,
                 "amount": amount,
                 "date": (rec.payment_date.date() if rec.payment_date else fields.Date.context_today(rec)),
-                "ref": rec.description or rec.name or rec.tmf_id,
                 "journal_id": journal.id,
             }
             if method_line and method_line.exists():
@@ -236,7 +235,7 @@ class TMFPayment(models.Model):
             "statusDate": _iso_z(self.status_date),
             "account": account_obj,
             "totalAmount": _json_load(self.total_amount_json),
-            "paymentMethod": _json_load(self.payment_method_json),
+            "paymentMethod": _json_load(self.payment_method_json) or {"name": "unspecified", "@type": "PaymentMethodRef"},
             "channel": _json_load(self.channel_json),
             "paymentItem": payment_item_obj,
         }

@@ -18,10 +18,10 @@ class TMFResourceOrderBridge(models.Model):
             partner = rec.partner_id if hasattr(rec, "partner_id") and rec.partner_id else self.env.ref("base.partner_admin", False)
             if not partner:
                 continue
-            po = PO.with_context(skip_tmf_bridge=True).create({
-                "partner_id": partner.id,
-                "notes": f"TMF Resource Order {rec.tmf_id}",
-            })
+            po_vals = {"partner_id": partner.id}
+            if "notes" in PO._fields:
+                po_vals["notes"] = f"TMF Resource Order {rec.tmf_id}"
+            po = PO.with_context(skip_tmf_bridge=True).create(po_vals)
             rec.with_context(skip_tmf_bridge=True).write({"purchase_order_id": po.id})
 
     @api.model_create_multi

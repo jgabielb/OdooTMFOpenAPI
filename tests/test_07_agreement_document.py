@@ -19,10 +19,10 @@ class TestAgreementDocument:
         data, _ = tmf.create("agreement", "agreement", {
             "name": "Enterprise SLA Agreement",
             "agreementType": "SLA",
-            "engagedParty": {
+            "engagedParty": [{
                 "id": contract_setup["party_id"],
                 "name": "Eve Brown",
-            },
+            }],
             "agreementItem": [{"product": [{"id": "plan-001"}]}],
             "agreementPeriod": {
                 "startDateTime": "2026-01-01",
@@ -72,7 +72,11 @@ class TestAgreementDocument:
     def test_create_party_interaction(self, tmf, contract_setup):
         """POST party interaction → mail.message via bridge."""
         data, _ = tmf.create("party_interaction", "partyInteraction", {
+            "@type": "PartyInteraction",
             "description": "Customer called about contract terms",
+            "direction": "inbound",
+            "reason": "Contract inquiry",
+            "relatedChannel": [{"id": "phone", "name": "Phone"}],
             "interactionDate": {"startDateTime": "2026-04-17T09:00:00Z"},
             "relatedParty": [{"id": contract_setup["party_id"]}],
         })

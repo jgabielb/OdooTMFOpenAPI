@@ -29,9 +29,12 @@ class ResPartner(models.Model):
     ], string="TMF Status", default='initialized')
 
     def _notify_tmf_party(self, action, payloads=None):
-        managed = self.filtered(lambda r: r.tmf_managed)
-        if not managed and payloads is None:
-            return
+        if payloads is None:
+            managed = self.filtered(lambda r: r.tmf_managed)
+            if not managed:
+                return
+        else:
+            managed = self.env["res.partner"]  # empty; payloads already captured
         hub = self.env["tmf.hub.subscription"].sudo()
         kind_map = {
             ("individual", "create"): "IndividualCreateEvent",
