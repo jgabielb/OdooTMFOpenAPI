@@ -13,6 +13,7 @@ class TMFService(models.Model):
 
     # Who owns this service?
     partner_id = fields.Many2one('res.partner', string="Customer", required=True)
+    account_id = fields.Many2one('tmf.account', string="Account", ondelete="set null")
 
     # Service specification
     product_specification_id = fields.Many2one(

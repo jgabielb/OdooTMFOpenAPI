@@ -4,7 +4,7 @@
 
     <!-- ============================================================
          Customer Portfolio tab on the partner form.
-         Shows TMF Accounts, Services, Orders, and Sales Leads
+         Shows TMF Accounts (with nested Services), Orders, and Leads
          so the salesperson has a single view of the customer.
          ============================================================ -->
 
@@ -31,26 +31,64 @@
               </group>
             </group>
 
-            <separator string="Accounts (TMF666)"/>
+            <!-- Accounts with nested services -->
+            <separator string="Accounts &amp; Services"/>
             <field name="tmf_account_ids" nolabel="1" readonly="1">
               <list>
                 <field name="name"/>
                 <field name="resource_type" string="Type"/>
-                <field name="account_type" string="Account Type"/>
+                <field name="description" string="Address"/>
                 <field name="state" string="Status"/>
-                <field name="payment_status" string="Payment"/>
+                <field name="service_count" string="Services"/>
               </list>
+              <form string="Account Detail">
+                <sheet>
+                  <group>
+                    <group>
+                      <field name="name"/>
+                      <field name="resource_type"/>
+                      <field name="state"/>
+                    </group>
+                    <group>
+                      <field name="description" string="Address"/>
+                      <field name="payment_status"/>
+                      <field name="service_count"/>
+                    </group>
+                  </group>
+                  <separator string="Services on this Account"/>
+                  <field name="service_ids" nolabel="1" readonly="1">
+                    <list>
+                      <field name="name"/>
+                      <field name="service_type" string="Type"/>
+                      <field name="category" string="CFS/RFS"/>
+                      <field name="state" string="Status"
+                             decoration-success="state == 'active'"
+                             decoration-warning="state in ('feasabilityChecked','designed','reserved')"
+                             decoration-muted="state in ('terminated','suspended')"
+                             decoration-info="state == 'inactive'"/>
+                      <field name="resource_id" string="Device"/>
+                      <field name="start_date" string="Start"/>
+                    </list>
+                  </field>
+                </sheet>
+              </form>
             </field>
 
-            <separator string="Services (TMF638)"/>
+            <!-- Flat service list (all services across accounts) -->
+            <separator string="All Services (TMF638)"/>
             <field name="tmf_service_ids" nolabel="1" readonly="1">
               <list>
                 <field name="name"/>
+                <field name="account_id" string="Account"/>
                 <field name="service_type" string="Type"/>
                 <field name="category" string="CFS/RFS"/>
-                <field name="state" string="Status"/>
+                <field name="state" string="Status"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state in ('feasabilityChecked','designed','reserved')"
+                       decoration-muted="state in ('terminated','suspended')"
+                       decoration-info="state == 'inactive'"/>
+                <field name="resource_id" string="Device"/>
                 <field name="start_date" string="Start"/>
-                <field name="end_date" string="End"/>
               </list>
             </field>
 
@@ -61,6 +99,7 @@
               <list>
                 <field name="name" string="Order"/>
                 <field name="date_order" string="Date"/>
+                <field name="tmf_account_id" string="Account" optional="show"/>
                 <field name="state" string="Odoo Status"/>
                 <field name="tmf_status" string="TMF Status"/>
                 <field name="amount_total" string="Total"/>

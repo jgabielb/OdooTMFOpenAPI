@@ -17,6 +17,13 @@ class SaleOrderProvisioning(models.Model):
     """
     _inherit = "sale.order"
 
+    tmf_account_id = fields.Many2one(
+        "tmf.account",
+        string="TMF Account",
+        domain="[('partner_id', '=', partner_id), ('resource_type', '=', 'PartyAccount')]",
+        help="Account to provision services against. If empty, a default account is created automatically.",
+    )
+
     def write(self, vals):
         # Capture which orders are transitioning to 'sale' state
         if vals.get("state") == "sale" and not self.env.context.get("skip_tmf_bridge"):
@@ -31,6 +38,24 @@ class SaleOrderProvisioning(models.Model):
 
         return res
 
+    def _get_or_create_tmf_account(self, partner):
+        """Find existing PartyAccount for partner, or create one."""
+        TMFAccount = self.env["tmf.account"].sudo()
+        account = TMFAccount.search([
+            ("partner_id", "=", partner.id),
+            ("resource_type", "=", "PartyAccount"),
+        ], limit=1)
+        if account:
+            return account
+        account = TMFAccount.with_context(skip_tmf_bridge=True).create({
+            "name": f"{partner.name} - Default Account",
+            "resource_type": "PartyAccount",
+            "partner_id": partner.id,
+            "state": "active",
+        })
+        _logger.info("TMF Provisioning: created account %s for partner %s", account.tmf_id, partner.name)
+        return account
+
     def _provision_tmf_services(self):
         """Create TMF638 Service records for confirmed order lines."""
         TMFService = self.env["tmf.service"].sudo()
@@ -40,6 +65,8 @@ class SaleOrderProvisioning(models.Model):
             if not partner:
                 _logger.warning("TMF Provisioning: order %s has no partner, skipping", order.name)
                 continue
+
+            account = order.tmf_account_id or self._get_or_create_tmf_account(partner)
 
             for line in order.order_line:
                 # Skip non-product lines (sections, notes, delivery)
@@ -71,6 +98,7 @@ class SaleOrderProvisioning(models.Model):
                     svc_vals = {
                         "name": f"{product.name} - {svc_spec.name}",
                         "partner_id": partner.id,
+                        "account_id": account.id,
                         "order_line_id": line.id,
                         "state": "feasabilityChecked",
                         "category": "CFS",

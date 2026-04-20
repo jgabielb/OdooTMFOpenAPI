@@ -75,27 +75,12 @@
     </record>
 
     <!-- ============================================================ -->
-    <!-- Catalog sub-menu for organized navigation                    -->
+    <!-- Resource Specification views + menu                          -->
+    <!-- (The ui_normalizer auto-sorts these under the "Catalog"      -->
+    <!--  domain bucket, so we parent directly to menu_tmf_root.)     -->
     <!-- ============================================================ -->
 
-    <menuitem id="menu_tmf_catalog"
-              name="Product Catalog"
-              parent="tmf_product_catalog.menu_tmf_root"
-              sequence="5"/>
-
-    <!-- Move existing specs menu under catalog -->
-    <record id="tmf_product_catalog.menu_product_specification" model="ir.ui.menu">
-        <field name="parent_id" ref="menu_tmf_catalog"/>
-        <field name="sequence">10</field>
-    </record>
-
-    <!-- Move service specification menu under catalog -->
-    <record id="tmf_service_catalog.menu_tmf_service_specification" model="ir.ui.menu">
-        <field name="parent_id" ref="menu_tmf_catalog"/>
-        <field name="sequence">20</field>
-    </record>
-
-    <!-- Resource Specification form view (was missing) -->
+    <!-- Resource Specification form view -->
     <record id="view_resource_specification_form" model="ir.ui.view">
         <field name="name">tmf.resource.specification.form</field>
         <field name="model">tmf.resource.specification</field>
@@ -146,8 +131,8 @@
 
     <menuitem id="menu_resource_specification"
               name="Resource Specifications"
-              parent="menu_tmf_catalog"
+              parent="tmf_product_catalog.menu_tmf_root"
               action="action_resource_specification"
-              sequence="30"/>
+              sequence="12"/>
 
 </odoo>

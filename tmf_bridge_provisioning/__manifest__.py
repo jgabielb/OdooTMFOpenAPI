@@ -21,10 +21,12 @@
         "tmf_product_catalog",
         "tmf_product_ordering",
         "tmf_service_inventory",
+        "tmf_account",
         "sale_management",
     ],
     "data": [
         "security/ir.model.access.csv",
+        "views/sale_order_views.xml",
     ],
     "installable": True,
     "license": "LGPL-3",
