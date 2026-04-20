@@ -37,4 +37,117 @@
             </xpath>
         </field>
     </record>
+    <!-- Extend ProductSpecification form with linked Service/Resource Specs -->
+    <record id="view_product_specification_tmfc001_wiring" model="ir.ui.view">
+        <field name="name">product.specification.tmfc001.wiring</field>
+        <field name="model">tmf.product.specification</field>
+        <field name="inherit_id" ref="tmf_product_catalog.view_product_specification_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/field[@name='description']" position="after">
+                <notebook>
+                    <page string="Service Specifications (TMF633)" name="service_specs">
+                        <field name="service_specification_ids" nolabel="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="description"/>
+                                <field name="lifecycle_status" string="Status"/>
+                                <field name="version"/>
+                                <field name="is_bundle"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Resource Specifications (TMF634)" name="resource_specs">
+                        <field name="resource_specification_ids" nolabel="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="description"/>
+                                <field name="lifecycle_status" string="Status"/>
+                                <field name="version"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Related Parties (TMF632)" name="related_parties">
+                        <field name="related_partner_ids" widget="many2many_tags" nolabel="1"/>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Catalog sub-menu for organized navigation                    -->
+    <!-- ============================================================ -->
+
+    <menuitem id="menu_tmf_catalog"
+              name="Product Catalog"
+              parent="tmf_product_catalog.menu_tmf_root"
+              sequence="5"/>
+
+    <!-- Move existing specs menu under catalog -->
+    <record id="tmf_product_catalog.menu_product_specification" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_tmf_catalog"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- Move service specification menu under catalog -->
+    <record id="tmf_service_catalog.menu_tmf_service_specification" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_tmf_catalog"/>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Resource Specification form view (was missing) -->
+    <record id="view_resource_specification_form" model="ir.ui.view">
+        <field name="name">tmf.resource.specification.form</field>
+        <field name="model">tmf.resource.specification</field>
+        <field name="arch" type="xml">
+            <form string="Resource Specification">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Huawei ONT HG8245H" required="1"/></h1>
+                    </div>
+                    <group col="4">
+                        <group>
+                            <field name="description"/>
+                            <field name="version"/>
+                            <field name="product_tmpl_id"/>
+                        </group>
+                        <group>
+                            <field name="lifecycle_status"/>
+                            <field name="last_update" readonly="1"/>
+                            <field name="tmf_id" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Resource Specification list view -->
+    <record id="view_resource_specification_tree" model="ir.ui.view">
+        <field name="name">tmf.resource.specification.tree</field>
+        <field name="model">tmf.resource.specification</field>
+        <field name="arch" type="xml">
+            <list string="Resource Specifications">
+                <field name="name"/>
+                <field name="description"/>
+                <field name="version"/>
+                <field name="lifecycle_status"/>
+                <field name="product_tmpl_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Resource Specification action + menu -->
+    <record id="action_resource_specification" model="ir.actions.act_window">
+        <field name="name">Resource Specifications</field>
+        <field name="res_model">tmf.resource.specification</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_resource_specification"
+              name="Resource Specifications"
+              parent="menu_tmf_catalog"
+              action="action_resource_specification"
+              sequence="30"/>
+
 </odoo>
