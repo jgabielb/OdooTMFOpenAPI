@@ -59,6 +59,8 @@ def _create_product_ref_or_value(prod_dict):
     Create a tmf.product.ref.or.value record from TMF ProductRefOrValue payload.
     Returns record id or False.
     """
+    if not isinstance(prod_dict, dict):
+        return False
     href_val = prod_dict.get("href")
     if not isinstance(href_val, str):
         return False

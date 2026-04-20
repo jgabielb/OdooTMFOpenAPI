@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Keep the tmf.customer360 model views for backwards compat -->
     <record id="view_tmf_customer360_tree" model="ir.ui.view">
         <field name="name">tmf.customer360.tree</field>
         <field name="model">tmf.customer360</field>
@@ -34,11 +35,42 @@
         </field>
     </record>
 
-    <record id="action_tmf_customer360" model="ir.actions.act_window">
-        <field name="name">Customer 360</field>
-        <field name="res_model">tmf.customer360</field>
-        <field name="view_mode">list,form</field>
+    <!-- Customer 360 live view — shows partners that have a tmf_id -->
+    <record id="view_customer360_partner_tree" model="ir.ui.view">
+        <field name="name">customer360.partner.tree</field>
+        <field name="model">res.partner</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list string="Customer 360 View">
+                <field name="tmf_id" string="TMF ID"/>
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="is_company" string="Organization"/>
+            </list>
+        </field>
     </record>
 
-    <menuitem id="menu_tmf_customer360" name="Customer 360" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_customer360"/>
+    <record id="action_customer360_live" model="ir.actions.act_window">
+        <field name="name">Customer 360</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tmf_id', '!=', False)]</field>
+        <field name="context">{'search_default_customer': 1}</field>
+        <field name="view_id" ref="view_customer360_partner_tree"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No TMF customers found.
+            </p>
+            <p>
+                Customers appear here when created via the TMF Party Management API.
+                Use GET /tmf-api/customer360/v4/customer360/{id} for the full 360 view.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_tmf_customer360"
+              name="Customer 360"
+              parent="tmf_product_catalog.menu_tmf_root"
+              action="action_customer360_live"/>
 </odoo>

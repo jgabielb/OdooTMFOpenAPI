@@ -126,7 +126,7 @@ class TMFShipment(models.Model):
                 "id": str(self.picking_id.id),
                 "href": f"/web#id={self.picking_id.id}&model=stock.picking&view_type=form",
                 "status": self.picking_id.state,
-                "trackingNumber": self.picking_id.carrier_tracking_ref,
+                "trackingNumber": getattr(self.picking_id, "carrier_tracking_ref", "") or "",
             }
         payload["shippingInstruction"] = _loads(self.shipping_instruction_json)
         payload["weight"] = _loads(self.weight_json)

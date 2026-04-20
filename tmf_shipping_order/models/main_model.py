@@ -28,6 +28,39 @@ class TMFShippingOrder(models.Model):
     picking_id = fields.Many2one("stock.picking", string="Delivery Picking", copy=False, index=True)
 
     @staticmethod
+    def from_tmf_json(data, partial=False):
+        FIELD_MAP = {
+            "externalId": "external_id",
+            "state": "state",
+            "creationDate": "creation_date",
+            "statusChangeDate": "status_change_date",
+            "shippingOrderDate": "shipping_order_date",
+            "expectedShippingStartDate": "expected_shipping_start_date",
+            "expectedShippingCompletionDate": "expected_shipping_completion_date",
+            "completionDate": "completion_date",
+            "requestedShippingStartDate": "requested_shipping_start_date",
+            "requestedShippingCompletionDate": "requested_shipping_completion_date",
+            "note": "note",
+            "shippingOrderItem": "shipping_order_item",
+            "relatedParty": "related_party",
+            "relatedShippingOrder": "related_shipping_order",
+            "relatedShipment": "related_shipment",
+            "place": "place",
+        }
+        vals = {}
+        extra = {}
+        for k, v in data.items():
+            if k.startswith("@") or k in ("id", "href"):
+                continue
+            if k in FIELD_MAP:
+                vals[FIELD_MAP[k]] = v
+            else:
+                extra[k] = v
+        if extra:
+            vals["extra_json"] = extra
+        return vals
+
+    @staticmethod
     def _now_iso():
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
