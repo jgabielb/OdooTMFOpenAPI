@@ -38,9 +38,7 @@ class SaleOrder(models.Model):
         if st in ("draft", "sent"):
             return "acknowledged"
         if st == "sale":
-            return "inProgress"
-        if st == "done":
-            return "completed"
+            return "completed" if self.locked else "inProgress"
         if st == "cancel":
             return "cancelled"
         return "acknowledged"
@@ -142,15 +140,13 @@ class SaleOrder(models.Model):
 
     # ---------- compute ----------
 
-    @api.depends('state')
+    @api.depends('state', 'locked')
     def _compute_tmf_status(self):
         for order in self:
             if order.state in ('draft', 'sent'):
                 order.tmf_status = 'acknowledged'
             elif order.state == 'sale':
-                order.tmf_status = 'inProgress'
-            elif order.state == 'done':
-                order.tmf_status = 'completed'
+                order.tmf_status = 'completed' if order.locked else 'inProgress'
             elif order.state == 'cancel':
                 order.tmf_status = 'cancelled'
             else:

@@ -36,7 +36,7 @@ class TMFModel(models.Model):
     note = fields.Char(string="Note")
     related_party = fields.Char(string="Related Party")
     contact_medium = fields.Char(string="Contact Medium")
-    calendar_event = fields.Char(string="Calendar Event")
+    calendar_event = fields.Char(string="Calendar Event (Raw)")
     related_entity = fields.Char(string="Related Entity")
     related_place = fields.Char(string="Related Place")
     partner_id = fields.Many2one("res.partner", string="Partner", copy=False, index=True)

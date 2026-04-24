@@ -14,9 +14,7 @@ class TMFPartnershipSpecification(models.Model):
     role_specification_json = fields.Text(string="roleSpecification")  # list of objects as JSON string
     product_tmpl_id = fields.Many2one("product.template", string="Product Template", ondelete="set null")
 
-    _sql_constraints = [
-        ("tmf_id_unique", "unique(tmf_id)", "TMF id must be unique."),
-    ]
+    _tmf_id_unique = models.Constraint("unique(tmf_id)", "TMF id must be unique.")
 
     def _sync_product_link(self):
         env_pt = self.env["product.template"].sudo()

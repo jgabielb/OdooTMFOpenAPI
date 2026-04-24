@@ -48,7 +48,7 @@ class TMFUsageRelatedParty(models.Model):
     _inherit = ["tmf.model.mixin"]
 
     usage_id = fields.Many2one("tmf.usage", required=True, ondelete="cascade")
-    party_id = fields.Char(string="TMF ID")  # TMF party id
+    party_id = fields.Char(string="Party TMF ID")  # TMF party id
     href = fields.Char()
     name = fields.Char()
     role = fields.Char()

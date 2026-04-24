@@ -18,9 +18,7 @@ class TMFPartnership(models.Model):
     partner_id = fields.Many2one("res.partner", string="Partner", ondelete="set null")
     specification_id = fields.Many2one("tmf.partnership.specification", string="Specification", ondelete="set null")
 
-    _sql_constraints = [
-        ("tmf_id_unique", "unique(tmf_id)", "TMF id must be unique."),
-    ]
+    _tmf_id_unique = models.Constraint("unique(tmf_id)", "TMF id must be unique.")
 
     def _json_load(self, value, default):
         if not value:

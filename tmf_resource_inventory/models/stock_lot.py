@@ -44,7 +44,7 @@ class StockLot(models.Model):
         store=False,
     )
     qty_available = fields.Float(
-        string="On Hand Quantity",
+        string="Lot On Hand Quantity",
         compute="_compute_inventory_links",
         store=False,
     )

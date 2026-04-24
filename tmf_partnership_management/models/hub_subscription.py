@@ -10,6 +10,4 @@ class TMF668HubSubscription(models.Model):
     callback = fields.Char(required=True)
     query = fields.Char()
 
-    _sql_constraints = [
-        ("tmf_id_unique", "unique(tmf_id)", "Hub id must be unique."),
-    ]
+    _tmf_id_unique = models.Constraint("unique(tmf_id)", "Hub id must be unique.")

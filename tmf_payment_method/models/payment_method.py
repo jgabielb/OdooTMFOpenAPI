@@ -72,9 +72,7 @@ class TMFPaymentMethod(models.Model):
     payment_method_line_id = fields.Many2one("account.payment.method.line", string="Odoo Payment Method", ondelete="set null")
     journal_id = fields.Many2one("account.journal", string="Journal", ondelete="set null")
 
-    _sql_constraints = [
-        ("tmf_id_unique", "unique(tmf_id)", "tmf_id must be unique"),
-    ]
+    _tmf_id_unique = models.Constraint("unique(tmf_id)", "tmf_id must be unique")
 
     def _notify(self, action, payloads=None):
         hub = self.env["tmf.hub.subscription"].sudo()

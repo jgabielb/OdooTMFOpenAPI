@@ -44,9 +44,7 @@ class TMFPromotion(models.Model):
     pricelist_id = fields.Many2one("product.pricelist", string="Pricelist", copy=False, index=True)
     pricelist_item_id = fields.Many2one("product.pricelist.item", string="Pricelist Item", copy=False, index=True)
 
-    _sql_constraints = [
-        ("tmf_id_uniq", "unique(tmf_id)", "TMF671: id must be unique."),
-    ]
+    _tmf_id_uniq = models.Constraint("unique(tmf_id)", "TMF671: id must be unique.")
 
     @staticmethod
     def _extract_discount_percent(pattern_obj):
