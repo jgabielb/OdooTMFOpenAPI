@@ -2,6 +2,8 @@
 {
   "name": "TMF654 Prepay Balance Management",
   "version": "1.0.0",
+  "author": "Joao Nascimento",
+  "license": "LGPL-3",
   "category": "TMF",
   "depends": [
       "tmf_base",

@@ -56,6 +56,38 @@ class SaleOrderProvisioning(models.Model):
         _logger.info("TMF Provisioning: created account %s for partner %s", account.tmf_id, partner.name)
         return account
 
+    def _create_rfs_for_cfs(self, cfs_service, product_spec, partner, account):
+        """Auto-create RFS (Resource-Facing Services) for a CFS based on resource specifications."""
+        TMFService = self.env["tmf.service"].sudo()
+        res_specs = getattr(product_spec, "resource_specification_ids", None)
+        if not res_specs:
+            return
+
+        for res_spec in res_specs:
+            try:
+                rfs = TMFService.with_context(skip_tmf_bridge=True).create({
+                    "name": f"RFS - {res_spec.name}",
+                    "partner_id": partner.id,
+                    "account_id": account.id,
+                    "parent_service_id": cfs_service.id,
+                    "state": "feasabilityChecked",
+                    "category": "RFS",
+                    "service_type": "device",
+                    "is_service_enabled": True,
+                    "has_started": False,
+                    "start_mode": "2",  # Automatically by owning device
+                    "is_stateful": True,
+                })
+                _logger.info(
+                    "TMF Provisioning: created RFS %s (%s) -> parent CFS %s",
+                    rfs.tmf_id, res_spec.name, cfs_service.tmf_id,
+                )
+            except Exception:
+                _logger.exception(
+                    "TMF Provisioning: failed to create RFS for spec %s under CFS %s",
+                    res_spec.name, cfs_service.tmf_id,
+                )
+
     def _provision_tmf_services(self):
         """Create TMF638 Service records for confirmed order lines."""
         TMFService = self.env["tmf.service"].sudo()
@@ -93,30 +125,37 @@ class SaleOrderProvisioning(models.Model):
                     )
                     continue
 
-                # Create one service per service specification
+                # Create one CFS per service specification, with qty support
+                qty = int(line.product_uom_qty) or 1
                 for svc_spec in svc_specs:
-                    svc_vals = {
-                        "name": f"{product.name} - {svc_spec.name}",
-                        "partner_id": partner.id,
-                        "account_id": account.id,
-                        "order_line_id": line.id,
-                        "state": "feasabilityChecked",
-                        "category": "CFS",
-                        "service_type": getattr(svc_spec, "service_type", None) or "voice/data",
-                    }
+                    for i in range(qty):
+                        suffix = f" #{i + 1}" if qty > 1 else ""
+                        svc_vals = {
+                            "name": f"{product.name} - {svc_spec.name}{suffix}",
+                            "partner_id": partner.id,
+                            "account_id": account.id,
+                            "order_line_id": line.id,
+                            "state": "feasabilityChecked",
+                            "category": "CFS",
+                            "service_type": getattr(svc_spec, "service_type", None) or "voice/data",
+                        }
 
-                    # Link to product specification if the field exists
-                    if "product_specification_id" in TMFService._fields:
-                        svc_vals["product_specification_id"] = spec.id
+                        # Link to product specification if the field exists
+                        if "product_specification_id" in TMFService._fields:
+                            svc_vals["product_specification_id"] = spec.id
 
-                    try:
-                        service = TMFService.with_context(skip_tmf_bridge=True).create(svc_vals)
-                        _logger.info(
-                            "TMF Provisioning: created service %s (%s) for order %s line %s",
-                            service.tmf_id, svc_spec.name, order.name, line.product_id.name,
-                        )
-                    except Exception:
-                        _logger.exception(
-                            "TMF Provisioning: failed to create service for order %s line %s spec %s",
-                            order.name, line.product_id.name, svc_spec.name,
-                        )
+                        try:
+                            service = TMFService.with_context(skip_tmf_bridge=True).create(svc_vals)
+                            _logger.info(
+                                "TMF Provisioning: created CFS %s (%s) for order %s line %s",
+                                service.tmf_id, svc_spec.name, order.name, line.product_id.name,
+                            )
+
+                            # Auto-create RFS for each resource specification
+                            self._create_rfs_for_cfs(service, spec, partner, account)
+
+                        except Exception:
+                            _logger.exception(
+                                "TMF Provisioning: failed to create service for order %s line %s spec %s",
+                                order.name, line.product_id.name, svc_spec.name,
+                            )

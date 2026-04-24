@@ -65,7 +65,7 @@
     <menuitem
         id="menu_tmf_customer"
         name="Customers"
-        parent="tmf_product_catalog.menu_tmf_root"
+        parent="tmf_base.menu_tmf_root"
         action="action_tmf_customer"
         sequence="5"/>
 </odoo>

@@ -150,7 +150,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_metadata_catalog_root" name="TMF Metadata Catalog" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_metadata_catalog_root" name="TMF Metadata Catalog" parent="tmf_base.menu_tmf_root"/>
     <menuitem id="menu_tmf_metadata_catalog" name="Metadata Catalog" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_catalog"/>
     <menuitem id="menu_tmf_metadata_category" name="Metadata Category" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_category"/>
     <menuitem id="menu_tmf_metadata_catalog_item" name="Metadata Catalog Item" parent="menu_tmf_metadata_catalog_root" action="action_tmf_metadata_catalog_item"/>

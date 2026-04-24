@@ -7,7 +7,7 @@
         - TMF669 partyRoleIdentified / relatedParty -> tmf.party.role
         - TMF639 resourceIdentified -> stock.lot
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': [

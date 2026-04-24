@@ -42,6 +42,6 @@
 
     <menuitem id="menu_tmf_performance_management_resource"
               name="TMF628 Performance"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_performance_management_resource"/>
 </odoo>

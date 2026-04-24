@@ -2,7 +2,7 @@
     "name": "TMF724 Incident Management",
     "summary": "TMF724 Incident Management API",
     "description": "Implements TMF724 Incident Management API with Incident, DiagnoseIncident, and ResolveIncident resources.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

@@ -240,18 +240,6 @@ class TMFResourceOrder(models.Model):
     related_party_ids = fields.One2many("tmf.related.party", "resource_order_id", string="relatedParty")
     order_item_ids = fields.One2many("tmf.resource.order.item", "resource_order_id", string="orderItem", required=True)
 
-    # --- UI aliases for generated views (snake_case) ---
-    cancellation_date = fields.Datetime(related="cancellationDate", store=True, readonly=False)
-    cancellation_reason = fields.Char(related="cancellationReason", store=True, readonly=False)
-    completion_date = fields.Datetime(related="completionDate", store=True, readonly=False)
-    expected_completion_date = fields.Datetime(related="expectedCompletionDate", store=True, readonly=False)
-    requested_start_date = fields.Datetime(related="requestedStartDate", store=True, readonly=False)
-    requested_completion_date = fields.Datetime(related="requestedCompletionDate", store=True, readonly=False)
-    start_date = fields.Datetime(related="startDate", store=True, readonly=False)
-
-    # Recommended readonly
-    order_date = fields.Datetime(related="orderDate", store=True, readonly=True)
-    order_type = fields.Char(related="orderType", store=True, readonly=False)
 
     # -------------------------
     # TMF helper methods

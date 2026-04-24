@@ -41,6 +41,6 @@
 
     <menuitem id="menu_tmf_general_test_artifact"
               name="General Test Artifact"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_general_test_artifact"/>
 </odoo>

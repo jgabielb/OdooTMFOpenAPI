@@ -122,6 +122,6 @@
         </field>
     </record>
 
-    <menuitem id="menu_tmf680_root" name="TMF680 Sales Recommendation Management" parent="tmf_product_catalog.menu_tmf_root" sequence="37"/>
+    <menuitem id="menu_tmf680_root" name="TMF680 Sales Recommendation Management" parent="tmf_base.menu_tmf_root" sequence="37"/>
     <menuitem id="menu_tmf_query_product_recommendation" name="Product Recommendations" parent="menu_tmf680_root" action="action_tmf_query_product_recommendation" sequence="10"/>
 </odoo>

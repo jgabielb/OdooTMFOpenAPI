@@ -42,6 +42,6 @@
 
     <menuitem id="menu_tmf_privacy_management_resource"
               name="TMF644 Privacy"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_privacy_management_resource"/>
 </odoo>

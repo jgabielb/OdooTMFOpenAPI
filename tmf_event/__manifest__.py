@@ -2,7 +2,7 @@
     'name': "TMF Event",
     'summary': "Auto-generated implementation of Event Management API",
     'description': "Implements Event API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

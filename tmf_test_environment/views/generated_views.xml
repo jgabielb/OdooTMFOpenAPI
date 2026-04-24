@@ -34,7 +34,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_abstract_environment" name="Abstract Environment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_abstract_environment"/>
+    <menuitem id="menu_tmf_abstract_environment" name="Abstract Environment" parent="tmf_base.menu_tmf_root" action="action_tmf_abstract_environment"/>
 
     <record id="view_tmf_concrete_environment_meta_model_tree" model="ir.ui.view">
         <field name="name">tmf.concrete.environment.meta.model.tree</field>
@@ -71,7 +71,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_concrete_environment_meta_model" name="Concrete Environment Meta Model" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_concrete_environment_meta_model"/>
+    <menuitem id="menu_tmf_concrete_environment_meta_model" name="Concrete Environment Meta Model" parent="tmf_base.menu_tmf_root" action="action_tmf_concrete_environment_meta_model"/>
 
     <record id="view_tmf_test_resource_api_tree" model="ir.ui.view">
         <field name="name">tmf.test.resource.api.tree</field>
@@ -108,7 +108,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_resource_api" name="Test Resource API" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_resource_api"/>
+    <menuitem id="menu_tmf_test_resource_api" name="Test Resource API" parent="tmf_base.menu_tmf_root" action="action_tmf_test_resource_api"/>
 
     <record id="view_tmf_provisioning_artifact_tree" model="ir.ui.view">
         <field name="name">tmf.provisioning.artifact.tree</field>
@@ -145,5 +145,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_provisioning_artifact" name="Provisioning Artifact" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_provisioning_artifact"/>
+    <menuitem id="menu_tmf_provisioning_artifact" name="Provisioning Artifact" parent="tmf_base.menu_tmf_root" action="action_tmf_provisioning_artifact"/>
 </odoo>

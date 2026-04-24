@@ -98,7 +98,7 @@
     </field>
   </record>
 
-  <menuitem id="menu_tmf672_root" name="TMF672 User Role &amp; Permission" parent="tmf_product_catalog.menu_tmf_root" sequence="36"/>
+  <menuitem id="menu_tmf672_root" name="TMF672 User Role &amp; Permission" parent="tmf_base.menu_tmf_root" sequence="36"/>
   <menuitem id="menu_tmf672_user_role" name="User Roles" parent="menu_tmf672_root" action="action_tmf672_user_role" sequence="10"/>
   <menuitem id="menu_tmf672_permission" name="Permissions" parent="menu_tmf672_root" action="action_tmf672_permission" sequence="20"/>
 </odoo>

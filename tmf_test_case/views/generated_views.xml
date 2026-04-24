@@ -35,7 +35,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_case" name="Test Case" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case"/>
+    <menuitem id="menu_tmf_test_case" name="Test Case" parent="tmf_base.menu_tmf_root" action="action_tmf_test_case"/>
 
     <record id="view_tmf_test_suite_form" model="ir.ui.view">
         <field name="name">tmf.test.suite.form</field>
@@ -73,7 +73,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_suite" name="Test Suite" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite"/>
+    <menuitem id="menu_tmf_test_suite" name="Test Suite" parent="tmf_base.menu_tmf_root" action="action_tmf_test_suite"/>
 
     <record id="view_tmf_non_functional_test_model_form" model="ir.ui.view">
         <field name="name">tmf.non.functional.test.model.form</field>
@@ -111,5 +111,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_non_functional_test_model" name="Non-Functional Test Model" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_model"/>
+    <menuitem id="menu_tmf_non_functional_test_model" name="Non-Functional Test Model" parent="tmf_base.menu_tmf_root" action="action_tmf_non_functional_test_model"/>
 </odoo>

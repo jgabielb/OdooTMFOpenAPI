@@ -8,7 +8,7 @@
         "subscribed events, plus optional TMF701 linkage."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_service_inventory",   # TMF638 service-inventory-management-api

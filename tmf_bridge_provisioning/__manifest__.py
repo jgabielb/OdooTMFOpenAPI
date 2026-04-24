@@ -13,7 +13,7 @@
 
         External OSS/provisioning systems can advance the service state via TMF638 API.
     """,
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": [

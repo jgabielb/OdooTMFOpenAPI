@@ -11,7 +11,7 @@
         - TMF669 partyRole -> tmf.party.role
         - TMF673/674/675 place -> geographic models
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': [

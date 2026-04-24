@@ -2,7 +2,7 @@
     "name": "TMF715 Warranty Management",
     "summary": "TMF715 Warranty Management API",
     "description": "Implements TMF715 Warranty Management API with hub notifications.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

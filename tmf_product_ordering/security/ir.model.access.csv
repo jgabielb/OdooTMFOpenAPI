@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sale_order_tmf_user,access.sale.order.tmf.user,model_sale_order,,1,1,1,0
 access_sale_order_line_tmf_user,access.sale.order.line.tmf.user,model_sale_order_line,,1,1,1,0
+tmf_product_ordering.access_tmf_cancel_product_order,access_tmf_cancel_product_order,tmf_product_ordering.model_tmf_cancel_product_order,base.group_user,1,1,1,1

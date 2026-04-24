@@ -6,3 +6,4 @@ access_tmf_contact_medium,tmf.contact.medium,model_tmf_contact_medium,,1,1,1,1
 access_tmf_related_party,tmf.related.party,model_tmf_related_party,,1,1,1,1
 access_tmf_product_offering_ref,tmf.product.offering.ref,model_tmf_product_offering_ref,,1,1,1,1
 access_tmf_product_ref_or_value,tmf.product.ref.or.value,model_tmf_product_ref_or_value,,1,1,1,1
+tmf_shopping_cart.access_tmf_note,access_tmf_note,tmf_shopping_cart.model_tmf_note,base.group_user,1,1,1,1

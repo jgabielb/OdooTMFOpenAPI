@@ -1,5 +1,5 @@
 <odoo>
-<menuitem id="tmf685_root" name="TMF685 Resource Pool" parent="tmf_product_catalog.menu_tmf_root" sequence="50"/>
+<menuitem id="tmf685_root" name="TMF685 Resource Pool" parent="tmf_base.menu_tmf_root" sequence="50"/>
 
   <menuitem id="tmf685_capacity_spec_menu" name="Capacity Specification" parent="tmf685_root" action="action_tmf_capacity_specification"/>
   <menuitem id="tmf685_pool_spec_menu" name="Resource Pool Specification" parent="tmf685_root" action="action_tmf_resource_pool_specification"/>

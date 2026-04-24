@@ -36,7 +36,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_role" name="Resource Role" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_role"/>
+    <menuitem id="menu_tmf_resource_role" name="Resource Role" parent="tmf_base.menu_tmf_root" action="action_tmf_resource_role"/>
 
     <record id="view_tmf_resource_role_spec_tree" model="ir.ui.view">
         <field name="name">tmf.resource.role.specification.tree</field>
@@ -75,5 +75,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_role_spec" name="Resource Role Spec" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_role_spec"/>
+    <menuitem id="menu_tmf_resource_role_spec" name="Resource Role Spec" parent="tmf_base.menu_tmf_root" action="action_tmf_resource_role_spec"/>
 </odoo>

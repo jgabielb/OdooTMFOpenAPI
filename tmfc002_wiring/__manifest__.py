@@ -3,7 +3,7 @@
     "name": "TMFC002 Wiring - Product Order Capture and Validation",
     "summary": "ODA TMFC002 wiring on top of TMF622 Product Ordering (tmf_product_ordering)",
     "version": "1.0.0",
-    "author": "OdooTMFOpenAPI",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "category": "TMF/ODA",
     "depends": [

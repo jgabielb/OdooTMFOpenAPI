@@ -51,5 +51,5 @@
   </record>
 
   <!-- parent menu must exist; change to your real root menu -->
-  <menuitem id="menu_tmf_payment" name="Payment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_payment"/>
+  <menuitem id="menu_tmf_payment" name="Payment" parent="tmf_base.menu_tmf_root" action="action_tmf_payment"/>
 </odoo>

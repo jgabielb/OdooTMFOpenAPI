@@ -2,7 +2,7 @@
     'name': "TMF ServiceQualification",
     'summary': "Auto-generated implementation of Service Qualification Management",
     'description': "Implements ServiceQualification API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog', 'tmf_geographic_address', 'sale'],

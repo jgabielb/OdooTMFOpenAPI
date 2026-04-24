@@ -2,7 +2,7 @@
     'name': 'TMF684 Shipment Tracking Management',
     'summary': 'TMF684 Shipment Tracking Management API',
     'description': 'Implements TMF684 Shipment Tracking Management API with Odoo stock picking wiring.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'stock', 'contacts', 'tmf_product_catalog'],

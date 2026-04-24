@@ -49,7 +49,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_check_work_qualification" name="Check Work Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_check_work_qualification"/>
+    <menuitem id="menu_tmf_check_work_qualification" name="Check Work Qualification" parent="tmf_base.menu_tmf_root" action="action_tmf_check_work_qualification"/>
 
     <record id="view_tmf_query_work_qualification_tree" model="ir.ui.view">
         <field name="name">tmf.query.work.qualification.tree</field>
@@ -98,5 +98,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_query_work_qualification" name="Query Work Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_query_work_qualification"/>
+    <menuitem id="menu_tmf_query_work_qualification" name="Query Work Qualification" parent="tmf_base.menu_tmf_root" action="action_tmf_query_work_qualification"/>
 </odoo>

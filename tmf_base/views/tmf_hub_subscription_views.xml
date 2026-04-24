@@ -54,9 +54,9 @@
 
         <!-- Menus (simple TMF → Hub → Subscriptions) -->
         <menuitem id="menu_tmf_root"
-                  name="TMF Webhook"
-                  sequence="10"
-                  groups="base.group_system"/>
+                  name="TMF Open APIs"
+                  web_icon="tmf_base,static/description/icon.png"
+                  sequence="1"/>
 
         <menuitem id="menu_tmf_hub_root"
                   name="Hub"

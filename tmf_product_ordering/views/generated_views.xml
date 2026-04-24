@@ -6,7 +6,7 @@
   ========================================================== -->
   <menuitem id="tmf_menu_root"
             name="TMF622 Product Ordering"
-            parent="tmf_product_catalog.menu_tmf_root"
+            parent="tmf_base.menu_tmf_root"
             sequence="10"/>
 
   <menuitem id="tmf_menu_product_ordering"

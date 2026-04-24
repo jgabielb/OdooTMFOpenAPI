@@ -7,7 +7,7 @@
         "TMF673/674/675 Geographic Address/Site/Location."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_resource_inventory",

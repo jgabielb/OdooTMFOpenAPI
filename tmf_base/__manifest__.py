@@ -7,7 +7,7 @@
         - Common Mixins (Lifecycle, HREF)
         - Error handling utilities
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'website': "https://www.odoo.com",
     'category': 'Technical',
     'version': '0.1',
@@ -15,6 +15,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/tmf_hub_subscription_views.xml',
+        'views/tmf_api_key_views.xml',
     ],
     'installable': True,
     'application': False,

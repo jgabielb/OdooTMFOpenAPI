@@ -7,7 +7,7 @@
         "and exposes listener scaffolding for TMF652/TMF645/TMF681/TMF697."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_service_order",      # tmf.service.order (TMF641)

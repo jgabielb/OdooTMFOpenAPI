@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Pricelist ↔ TMF Promotion",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Pricelist ↔ TMF Promotion",
     "depends": ["product", "tmf_promotion_management"],

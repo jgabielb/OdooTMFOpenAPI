@@ -41,5 +41,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_party_rev_sharing_model" name="Revenue Sharing Model" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_party_rev_sharing_model"/>
+    <menuitem id="menu_tmf_party_rev_sharing_model" name="Revenue Sharing Model" parent="tmf_base.menu_tmf_root" action="action_tmf_party_rev_sharing_model"/>
 </odoo>

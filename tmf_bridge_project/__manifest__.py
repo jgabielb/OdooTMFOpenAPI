@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Project ↔ TMF Work Management",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Project ↔ TMF Work Management",
     "depends": ["project", "tmf_work_management"],

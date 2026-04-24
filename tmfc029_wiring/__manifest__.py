@@ -8,7 +8,7 @@
         "events without altering CTK-facing payment APIs."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_payment",

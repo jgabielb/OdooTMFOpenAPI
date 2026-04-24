@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Draft SO ↔ TMF Shopping Cart",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Draft SO ↔ TMF Shopping Cart",
     "depends": ["sale", "tmf_shopping_cart"],

@@ -2,7 +2,7 @@
     'name': "TMF GeographicAddress",
     'summary': "Auto-generated implementation of API Place - GeographicAddress",
     'description': "Implements GeographicAddress API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.2',
     'depends': ['tmf_base', 'tmf_product_catalog', 'tmf_geographic_location'],

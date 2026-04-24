@@ -41,7 +41,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_actual_cost" name="Actual Cost" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_actual_cost"/>
+    <menuitem id="menu_tmf_actual_cost" name="Actual Cost" parent="tmf_base.menu_tmf_root" action="action_tmf_actual_cost"/>
 
     <record id="view_tmf_projected_cost_tree" model="ir.ui.view">
         <field name="name">tmf.projected.cost.tree</field>
@@ -85,5 +85,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_projected_cost" name="Projected Cost" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_projected_cost"/>
+    <menuitem id="menu_tmf_projected_cost" name="Projected Cost" parent="tmf_base.menu_tmf_root" action="action_tmf_projected_cost"/>
 </odoo>

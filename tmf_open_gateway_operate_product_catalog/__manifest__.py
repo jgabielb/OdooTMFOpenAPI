@@ -2,7 +2,7 @@
     'name': 'TMF936 Open Gateway Product Catalog',
     'summary': 'TMF936 Open Gateway Product Catalog API',
     'description': 'Implements TMF936 Open Gateway Product Catalog API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'product', 'tmf_product_catalog'],

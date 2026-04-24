@@ -3,7 +3,7 @@
     "name": "TMF648 Quote Management",
     "summary": "TMF648 Quote Management API v4 implementation (Quote, Hub, Notifications skeleton)",
     "description": "Implements TMF648 Quote Management API v4 endpoints in Odoo.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": [

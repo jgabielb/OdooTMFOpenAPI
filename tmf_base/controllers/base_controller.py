@@ -8,6 +8,8 @@ from urllib.parse import unquote
 from odoo import http
 from odoo.http import request
 
+from odoo.addons.tmf_base.controllers.auth import check_api_key
+
 _logger = logging.getLogger(__name__)
 
 
@@ -22,6 +24,21 @@ class TMFBaseController(http.Controller):
     - Pagination with X-Total-Count / X-Result-Count headers
     - Safe record lookup (tmf_id → numeric id fallback)
     """
+
+    # ------------------------------------------------------------------
+    # API key authentication
+    # ------------------------------------------------------------------
+
+    def _check_api_auth(self):
+        """Return a 401 response if auth is enabled and key is missing/invalid.
+
+        Usage at the top of any route method::
+
+            denied = self._check_api_auth()
+            if denied:
+                return denied
+        """
+        return check_api_key()
 
     # ------------------------------------------------------------------
     # Response helpers
@@ -239,9 +256,15 @@ class TMFBaseController(http.Controller):
     NON_PATCHABLE = {"id", "href"}
 
     def _tmf_do_list(self, cfg, **kw):
+        denied = self._check_api_auth()
+        if denied:
+            return denied
         return self._list_response(cfg["model"], [], lambda r: r.to_tmf_json(), kw)
 
     def _tmf_do_create(self, cfg):
+        denied = self._check_api_auth()
+        if denied:
+            return denied
         data = self._parse_json_body()
         if not isinstance(data, dict):
             return self._error(400, "Bad Request", "Invalid JSON body")
@@ -260,6 +283,9 @@ class TMFBaseController(http.Controller):
         return self._json(rec.to_tmf_json(), status=201)
 
     def _tmf_do_individual(self, cfg, rid, **kw):
+        denied = self._check_api_auth()
+        if denied:
+            return denied
         rid = self._normalize_tmf_id(rid)
         rec = self._find_record(cfg["model"], rid)
         if not rec:

@@ -9,3 +9,15 @@ DOCUMENTATION/
 *.pyo
 *.pyd
 
+# Secrets & customer data
+mock_oss/config.env
+mock_oss/seed_condell_order.py
+deploy/certs/*.pem
+deploy/certs/*.key
+deploy/certs/*.pfx
+deploy/certs/openssl.cnf
+deploy/certbot/
+*.pem
+*.key
+*.pfx
+

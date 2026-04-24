@@ -6,19 +6,19 @@
       <form>
         <sheet>
           <group>
-            <field name="cancellation_date"/>
-            <field name="cancellation_reason"/>
+            <field name="cancellationDate"/>
+            <field name="cancellationReason"/>
             <field name="category"/>
-            <field name="completion_date"/>
+            <field name="completionDate"/>
             <field name="description"/>
-            <field name="expected_completion_date"/>
+            <field name="expectedCompletionDate"/>
             <field name="name"/>
-            <field name="order_date"/>
-            <field name="order_type"/>
+            <field name="orderDate"/>
+            <field name="orderType"/>
             <field name="priority"/>
-            <field name="requested_completion_date"/>
-            <field name="requested_start_date"/>
-            <field name="start_date"/>
+            <field name="requestedCompletionDate"/>
+            <field name="requestedStartDate"/>
+            <field name="startDate"/>
             <field name="state"/>
 
             <field name="external_reference_ids"/>
@@ -40,9 +40,9 @@
         <field name="name"/>
         <field name="priority"/>
         <field name="state"/>
-        <field name="order_date"/>
-        <field name="expected_completion_date"/>
-        <field name="completion_date"/>
+        <field name="orderDate"/>
+        <field name="expectedCompletionDate"/>
+        <field name="completionDate"/>
       </list>
     </field>
   </record>
@@ -55,6 +55,6 @@
 
   <menuitem id="menu_tmf_resource_order"
             name="Resource Order"
-            parent="tmf_product_catalog.menu_tmf_root"
+            parent="tmf_base.menu_tmf_root"
             action="action_tmf_resource_order"/>
 </odoo>

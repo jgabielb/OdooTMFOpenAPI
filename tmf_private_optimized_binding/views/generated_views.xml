@@ -37,7 +37,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_cloud_application" name="Platform Cloud Application" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_cloud_application"/>
+    <menuitem id="menu_tmf_cloud_application" name="Platform Cloud Application" parent="tmf_base.menu_tmf_root" action="action_tmf_cloud_application"/>
 
     <record id="view_tmf_cloud_application_specification_tree" model="ir.ui.view">
         <field name="name">tmf.cloud.application.specification.tree</field>
@@ -75,7 +75,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_cloud_application_specification" name="Cloud App Specification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_cloud_application_specification"/>
+    <menuitem id="menu_tmf_cloud_application_specification" name="Cloud App Specification" parent="tmf_base.menu_tmf_root" action="action_tmf_cloud_application_specification"/>
 
     <record id="view_tmf_user_equipment_tree" model="ir.ui.view">
         <field name="name">tmf.user.equipment.tree</field>
@@ -115,7 +115,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_user_equipment" name="Resource User Equipment" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_user_equipment"/>
+    <menuitem id="menu_tmf_user_equipment" name="Resource User Equipment" parent="tmf_base.menu_tmf_root" action="action_tmf_user_equipment"/>
 
     <record id="view_tmf_user_equipment_specification_tree" model="ir.ui.view">
         <field name="name">tmf.user.equipment.specification.tree</field>
@@ -153,5 +153,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_user_equipment_specification" name="Resource User Equipment Specification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_user_equipment_specification"/>
+    <menuitem id="menu_tmf_user_equipment_specification" name="Resource User Equipment Specification" parent="tmf_base.menu_tmf_root" action="action_tmf_user_equipment_specification"/>
 </odoo>

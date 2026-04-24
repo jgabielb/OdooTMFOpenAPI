@@ -1,11 +1,17 @@
 FROM python:3.12-slim
 
 WORKDIR /app
-COPY oss_provisioner.py .
 
-ENV OSS_HOST=host.docker.internal
-ENV OSS_PORT=8069
-ENV OSS_INTERVAL=10
-ENV OSS_STEP_DELAY=3
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "oss_provisioner.py"]
+COPY oss_simulator.py .
+
+ENV ODOO_BASE_URL=http://host.docker.internal:8069
+ENV ODOO_API_KEY=
+ENV POLL_INTERVAL=15
+ENV STEP_DELAY=5
+ENV DRY_RUN=false
+ENV LOG_LEVEL=INFO
+
+CMD ["python", "-u", "oss_simulator.py"]

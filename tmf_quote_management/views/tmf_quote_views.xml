@@ -198,7 +198,7 @@
 
   <menuitem id="menu_tmf_quote_management_root"
             name="TMF648 Quote Management"
-            parent="tmf_product_catalog.menu_tmf_root"
+            parent="tmf_base.menu_tmf_root"
             sequence="35"/>
 
   <menuitem id="menu_tmf_quote"

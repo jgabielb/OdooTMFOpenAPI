@@ -2,7 +2,7 @@
     'name': "TMF708 Test Execution",
     'summary': "TMF708 Test Execution Management API",
     'description': "Implements TMF708 Test Execution Management API with Hub notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

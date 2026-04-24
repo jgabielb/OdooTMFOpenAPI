@@ -179,8 +179,33 @@ class OdooRPC:
         return rec_id, True
 
 
+def _ensure_sales_journal(rpc):
+    """Ensure a Sales journal exists (required for invoice creation)."""
+    journals = rpc.search("account.journal", [("type", "=", "sale")], limit=1)
+    if journals:
+        log.info("  Sales journal already exists (id=%s)", journals[0])
+        return journals[0]
+    company_ids = rpc.search("res.company", [], limit=1)
+    journal_id = rpc.create("account.journal", {
+        "name": "Customer Invoices",
+        "type": "sale",
+        "code": "INV",
+        "company_id": company_ids[0] if company_ids else 1,
+    })
+    log.info("  Created Sales journal (id=%s)", journal_id)
+    return journal_id
+
+
 def seed(rpc):
     """Main seeding logic."""
+
+    # ------------------------------------------------------------------
+    # 0. Accounting prerequisites
+    # ------------------------------------------------------------------
+    log.info("=" * 60)
+    log.info("STEP 0: Ensuring accounting setup")
+    log.info("=" * 60)
+    _ensure_sales_journal(rpc)
 
     # ------------------------------------------------------------------
     # 1. Create Customer (res.partner)

@@ -118,7 +118,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_incident_root" name="TMF Incident" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_incident_root" name="TMF Incident" parent="tmf_base.menu_tmf_root"/>
     <menuitem id="menu_tmf_incident" name="Incident" parent="menu_tmf_incident_root" action="action_tmf_incident"/>
     <menuitem id="menu_tmf_diagnose_incident" name="Diagnose Incident" parent="menu_tmf_incident_root" action="action_tmf_diagnose_incident"/>
     <menuitem id="menu_tmf_resolve_incident" name="Resolve Incident" parent="menu_tmf_incident_root" action="action_tmf_resolve_incident"/>

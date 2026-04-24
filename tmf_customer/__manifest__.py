@@ -2,7 +2,7 @@
     'name': "TMF Customer",
     'summary': "Auto-generated implementation of Customer Management",
     'description': "Implements Customer API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

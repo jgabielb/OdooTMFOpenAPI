@@ -2,7 +2,7 @@
     'name': 'TMF738 Revenue Sharing Model Management',
     'summary': 'TMF738 Revenue Sharing Model Management API',
     'description': 'Implements TMF738 Revenue Sharing Model Management API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

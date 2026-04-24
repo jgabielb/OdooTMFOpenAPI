@@ -42,5 +42,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_digital_identity" name="Digital Identity" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_digital_identity"/>
+    <menuitem id="menu_tmf_digital_identity" name="Digital Identity" parent="tmf_base.menu_tmf_root" action="action_tmf_digital_identity"/>
 </odoo>

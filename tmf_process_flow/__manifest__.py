@@ -2,7 +2,7 @@
     'name': "TMF ProcessFlow",
     'summary': "Auto-generated implementation of ProcessFlow Management",
     'description': "Implements ProcessFlow API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

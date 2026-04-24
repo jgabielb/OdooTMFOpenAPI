@@ -2,7 +2,7 @@
     "name": "TMFC022 Party Privacy Management Wiring",
     "summary": "Side-car wiring for Party Privacy Agreements into Party and Digital Identity graph.",
     "version": "0.1",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "license": "LGPL-3",
     "depends": [

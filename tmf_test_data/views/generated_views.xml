@@ -34,7 +34,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_data_instance" name="Test Data Instance" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_data_instance"/>
+    <menuitem id="menu_tmf_test_data_instance" name="Test Data Instance" parent="tmf_base.menu_tmf_root" action="action_tmf_test_data_instance"/>
 
     <record id="view_tmf_test_data_schema_tree" model="ir.ui.view">
         <field name="name">tmf.test.data.schema.tree</field>
@@ -71,5 +71,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_data_schema" name="Test Data Schema" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_data_schema"/>
+    <menuitem id="menu_tmf_test_data_schema" name="Test Data Schema" parent="tmf_base.menu_tmf_root" action="action_tmf_test_data_schema"/>
 </odoo>

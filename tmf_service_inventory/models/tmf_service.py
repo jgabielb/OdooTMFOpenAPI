@@ -81,6 +81,18 @@ class TMFService(models.Model):
     start_date = fields.Datetime(string="Start Date", default=fields.Datetime.now)
     end_date = fields.Datetime(string="End Date")
 
+    parent_service_id = fields.Many2one(
+        'tmf.service',
+        string="Parent Service",
+        ondelete="set null",
+        index=True,
+        help="CFS that this RFS supports, or parent in a service hierarchy",
+    )
+    child_service_ids = fields.One2many(
+        'tmf.service', 'parent_service_id',
+        string="Supporting Services",
+    )
+
     resource_id = fields.Many2one(
         'stock.lot',
         string="Supporting Resource",
@@ -206,6 +218,21 @@ class TMFService(models.Model):
                 "@type": "ResourceRef",
                 "@referredType": "Resource",
             }]
+
+        # supportingService — child RFS services
+        if self.child_service_ids:
+            data["supportingService"] = []
+            for child in self.child_service_ids:
+                child_id = child.tmf_id or str(child.id)
+                child_href = f"/tmf-api/serviceInventoryManagement/v5/service/{child_id}"
+                data["supportingService"].append({
+                    "id": child_id,
+                    "href": self._abs_href(child_href),
+                    "name": child.name or "",
+                    "category": child.category or "RFS",
+                    "@type": "ServiceRef",
+                    "@referredType": "Service",
+                })
 
         if not include_nulls:
             data = {k: v for k, v in data.items() if v is not None}

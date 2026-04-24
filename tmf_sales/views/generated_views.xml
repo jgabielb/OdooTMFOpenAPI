@@ -44,6 +44,6 @@
 
     <menuitem id="menu_tmf_sales_lead"
               name="Sales Lead"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_sales_lead"/>
 </odoo>

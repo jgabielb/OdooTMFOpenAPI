@@ -6,7 +6,7 @@
         - TMF666: Billing Account (linked to res.partner)
         - TMF678: Customer Bill (linked to account.move)
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.2',
     'depends': ['tmf_base', 'account', 'tmf_party', 'tmf_product_catalog'],

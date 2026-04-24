@@ -4,8 +4,8 @@
     "version": "19.0.1.0.0",
     "category": "TMF Open API",
     "summary": "Implements TMF672 v4 Permission and UserRole resources",
-    "author": "Joao Gabriel",
-    "depends": ["tmf_base"],
+    "author": "Joao Nascimento",
+    "depends": ["tmf_base", "tmf_product_catalog"],
     "data": [
         "security/ir.model.access.csv",
         "views/permission_views.xml",

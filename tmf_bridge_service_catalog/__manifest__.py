@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Product Template ↔ TMF Service Specification",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Product Template ↔ TMF Service Specification",
     "depends": ["product", "tmf_service_catalog"],

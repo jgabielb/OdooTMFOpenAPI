@@ -61,6 +61,6 @@
   </record>
 
   <!-- MENU (optional) -->
-  <menuitem id="menu_tmf_root" name="TMF669 Party Role" parent="tmf_product_catalog.menu_tmf_root"/>
+  <menuitem id="menu_tmf_root" name="TMF669 Party Role" parent="tmf_base.menu_tmf_root"/>
   <menuitem id="menu_tmf_party_role" name="Party Roles" parent="menu_tmf_root" action="action_tmf_party_role"/>
 </odoo>

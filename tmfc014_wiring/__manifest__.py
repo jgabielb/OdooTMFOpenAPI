@@ -6,7 +6,7 @@
         "to TMF632 Party / TMF669 PartyRole, with listener + hub scaffolding."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_geographic_address",

@@ -34,7 +34,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_environment_provisioning_execution" name="Test Environment Provisioning Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_provisioning_execution"/>
+    <menuitem id="menu_tmf_test_environment_provisioning_execution" name="Test Environment Provisioning Execution" parent="tmf_base.menu_tmf_root" action="action_tmf_test_environment_provisioning_execution"/>
 
     <record id="view_tmf_test_environment_allocation_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.environment.allocation.execution.tree</field>
@@ -73,7 +73,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_environment_allocation_execution" name="Test Environment Allocation Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_environment_allocation_execution"/>
+    <menuitem id="menu_tmf_test_environment_allocation_execution" name="Test Environment Allocation Execution" parent="tmf_base.menu_tmf_root" action="action_tmf_test_environment_allocation_execution"/>
 
     <record id="view_tmf_test_suite_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.suite.execution.tree</field>
@@ -109,7 +109,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_suite_execution" name="Test Suite Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_suite_execution"/>
+    <menuitem id="menu_tmf_test_suite_execution" name="Test Suite Execution" parent="tmf_base.menu_tmf_root" action="action_tmf_test_suite_execution"/>
 
     <record id="view_tmf_test_case_execution_tree" model="ir.ui.view">
         <field name="name">tmf.test.case.execution.tree</field>
@@ -145,7 +145,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_test_case_execution" name="Test Case Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_test_case_execution"/>
+    <menuitem id="menu_tmf_test_case_execution" name="Test Case Execution" parent="tmf_base.menu_tmf_root" action="action_tmf_test_case_execution"/>
 
     <record id="view_tmf_non_functional_test_execution_tree" model="ir.ui.view">
         <field name="name">tmf.non.functional.test.execution.tree</field>
@@ -181,5 +181,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_non_functional_test_execution" name="Non-Functional Test Execution" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_non_functional_test_execution"/>
+    <menuitem id="menu_tmf_non_functional_test_execution" name="Non-Functional Test Execution" parent="tmf_base.menu_tmf_root" action="action_tmf_non_functional_test_execution"/>
 </odoo>

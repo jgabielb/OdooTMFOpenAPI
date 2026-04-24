@@ -2,7 +2,7 @@
     "name": "TMF705 Test Environment",
     "summary": "TMF705 Test Environment Management API",
     "description": "Implements TMF705 Test Environment Management API with hub notifications.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

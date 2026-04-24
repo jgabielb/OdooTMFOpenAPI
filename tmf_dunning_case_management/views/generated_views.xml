@@ -126,7 +126,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_dunning_root" name="TMF Dunning" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_dunning_root" name="TMF Dunning" parent="tmf_base.menu_tmf_root"/>
     <menuitem id="menu_tmf_dunning_scenario" name="Dunning Scenario" parent="menu_tmf_dunning_root" action="action_tmf_dunning_scenario"/>
     <menuitem id="menu_tmf_dunning_rule" name="Dunning Rule" parent="menu_tmf_dunning_root" action="action_tmf_dunning_rule"/>
     <menuitem id="menu_tmf_dunning_case" name="Dunning Case" parent="menu_tmf_dunning_root" action="action_tmf_dunning_case"/>

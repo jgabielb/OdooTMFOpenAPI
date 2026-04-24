@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Mail ↔ TMF Party Interaction",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Mail ↔ TMF Party Interaction",
     "depends": ["mail", "tmf_party_interaction"],

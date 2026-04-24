@@ -9,7 +9,7 @@
         - TMF699 Sales Leads
         Gives salespersons a single view of everything a customer has.
     """,
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": [

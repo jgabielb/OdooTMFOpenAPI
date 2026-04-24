@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the Account form to show billing/party account links -->
+    <record id="view_tmf_account_billing_link" model="ir.ui.view">
+        <field name="name">tmf.account.billing.link</field>
+        <field name="model">tmf.account</field>
+        <field name="inherit_id" ref="tmf_account.view_tmf_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="billing_account_id"
+                       invisible="resource_type != 'PartyAccount'"/>
+                <field name="party_account_id"
+                       invisible="resource_type != 'BillingAccount'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

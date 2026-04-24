@@ -131,7 +131,7 @@
 
     <menuitem id="menu_resource_specification"
               name="Resource Specifications"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_resource_specification"
               sequence="12"/>
 

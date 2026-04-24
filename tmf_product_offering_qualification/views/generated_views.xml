@@ -150,5 +150,5 @@
         </field>
     </record>
 
-    <menuitem id="menu_tmf_check_poq" name="Product Offering Qualification" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_check_poq"/>
+    <menuitem id="menu_tmf_check_poq" name="Product Offering Qualification" parent="tmf_base.menu_tmf_root" action="action_tmf_check_poq"/>
 </odoo>

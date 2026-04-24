@@ -101,7 +101,7 @@
   </record>
 
   <!-- Menu (under a TMF root menu if you have one; otherwise this creates its own) -->
-  <menuitem id="menu_tmf_change_management_root" name="TMF Assurance Change Management" parent="tmf_product_catalog.menu_tmf_root" sequence="80"/>
+  <menuitem id="menu_tmf_change_management_root" name="TMF Assurance Change Management" parent="tmf_base.menu_tmf_root" sequence="80"/>
   <menuitem id="menu_tmf_change_request"
             name="Change Requests"
             parent="menu_tmf_change_management_root"

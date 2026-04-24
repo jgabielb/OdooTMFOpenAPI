@@ -9,7 +9,7 @@ class TMFAccountDashboard(models.Model):
         string="Services",
     )
     service_count = fields.Integer(
-        string="Services", compute="_compute_service_count", store=False,
+        string="Service Count", compute="_compute_service_count", store=False,
     )
 
     def _compute_service_count(self):

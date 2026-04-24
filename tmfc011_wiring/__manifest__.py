@@ -7,7 +7,7 @@
         "tmf.resource.order, with listener + hub scaffolding."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_resource_order",

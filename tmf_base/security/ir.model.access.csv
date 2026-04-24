@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_hub_subscription_user,access_tmf_hub_subscription_user,model_tmf_hub_subscription,base.group_system,1,1,1,1
+access_tmf_api_key_admin,access_tmf_api_key_admin,model_tmf_api_key,base.group_system,1,1,1,1

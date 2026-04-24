@@ -1,6 +1,7 @@
 {
     'name': 'TMF685 Resource Pool Management',
     'version': '19.0.1.0.0',
+    'author': 'Joao Nascimento',
     'summary': 'TMF685 Resource Pool Management API (CTK-oriented)',
     'category': 'TMF Open API',
     'depends': ['tmf_base', 'product', 'stock', 'tmf_product_catalog'],

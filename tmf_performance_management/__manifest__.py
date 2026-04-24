@@ -2,7 +2,7 @@
     'name': 'TMF628 Performance Management',
     'summary': 'TMF628 Performance Management API',
     'description': 'Implements TMF628 Performance Management API endpoints.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

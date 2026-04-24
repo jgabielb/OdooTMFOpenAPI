@@ -2,7 +2,7 @@
     "name": "TMFC028 Party Management Wiring",
     "summary": "Side-car wiring for Party (TMF632) into Digital Identity, Privacy Agreements, and Party Interactions.",
     "version": "0.1",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "license": "LGPL-3",
     "depends": [

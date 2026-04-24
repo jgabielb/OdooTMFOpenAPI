@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Activity ↔ TMF Alarm",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Activity ↔ TMF Alarm",
     "depends": ["mail", "tmf_alarm"],

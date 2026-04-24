@@ -2,7 +2,7 @@
     "name": "TMF706 Test Data",
     "summary": "TMF706 Test Data Management API",
     "description": "Implements TMF706 Test Data Management API with hub notifications.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

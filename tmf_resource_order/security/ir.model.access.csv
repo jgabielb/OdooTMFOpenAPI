@@ -1,3 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_resource_order,tmf.resource.order,model_tmf_resource_order,base.group_user,1,1,1,1
 access_tmf_resource,tmf.resource,model_tmf_resource,base.group_user,1,1,1,1
+tmf_resource_order.access_tmf_characteristic,access_tmf_characteristic,tmf_resource_order.model_tmf_characteristic,base.group_user,1,1,1,1
+tmf_resource_order.access_tmf_external_reference,access_tmf_external_reference,tmf_resource_order.model_tmf_external_reference,base.group_user,1,1,1,1
+tmf_resource_order.access_tmf_note,access_tmf_note,tmf_resource_order.model_tmf_note,base.group_user,1,1,1,1
+tmf_resource_order.access_tmf_resource_order_item,access_tmf_resource_order_item,tmf_resource_order.model_tmf_resource_order_item,base.group_user,1,1,1,1

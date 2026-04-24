@@ -2,7 +2,7 @@
     "name": "TMF725 Metadata Catalog Management",
     "summary": "TMF725 Metadata Catalog Management API",
     "description": "Implements TMF725 Metadata Catalog Management API with MetadataCatalog, MetadataCategory, MetadataCatalogItem, and MetadataSpecification resources.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

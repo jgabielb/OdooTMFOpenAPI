@@ -2,7 +2,7 @@
     'name': "TMF687 Stock Management",
     'summary': "TMF687 Stock Management API v4",
     'description': "Implements TMF687 endpoints for ProductStock and ReserveProductStock.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog', 'stock'],

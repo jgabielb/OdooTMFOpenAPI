@@ -2,7 +2,7 @@
     'name': 'TMF771 Resource Usage Management',
     'summary': 'TMF771 Resource Usage Management API',
     'description': 'Implements TMF771 Resource Usage Management API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

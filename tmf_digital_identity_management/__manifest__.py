@@ -2,7 +2,7 @@
     "name": "TMF720 Digital Identity Management",
     "summary": "TMF720 Digital Identity Management API",
     "description": "Implements TMF720 Digital Identity Management API with hub notifications.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

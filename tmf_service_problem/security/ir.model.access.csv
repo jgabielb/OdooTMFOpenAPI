@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_service_problem,tmf.service.problem,model_tmf_service_problem,base.group_user,1,1,1,1
+tmf_service_problem.access_tmf_problem_acknowledgement,access_tmf_problem_acknowledgement,tmf_service_problem.model_tmf_problem_acknowledgement,base.group_user,1,1,1,1
+tmf_service_problem.access_tmf_problem_group,access_tmf_problem_group,tmf_service_problem.model_tmf_problem_group,base.group_user,1,1,1,1
+tmf_service_problem.access_tmf_problem_unacknowledgement,access_tmf_problem_unacknowledgement,tmf_service_problem.model_tmf_problem_unacknowledgement,base.group_user,1,1,1,1
+tmf_service_problem.access_tmf_problem_ungroup,access_tmf_problem_ungroup,tmf_service_problem.model_tmf_problem_ungroup,base.group_user,1,1,1,1

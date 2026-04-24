@@ -70,7 +70,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_payment_method_root" name="TMF670 Payment Method" parent="tmf_product_catalog.menu_tmf_root" sequence="60"/>
+    <menuitem id="menu_tmf_payment_method_root" name="TMF670 Payment Method" parent="tmf_base.menu_tmf_root" sequence="60"/>
     <menuitem id="menu_tmf_payment_method" name="Payment Methods" parent="menu_tmf_payment_method_root"
               action="action_tmf_payment_method" sequence="10"/>
 </odoo>

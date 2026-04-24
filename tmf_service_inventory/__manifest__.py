@@ -6,7 +6,7 @@
         - New Model: tmf.service
         - Automates service creation when Sales Order is confirmed.
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_ordering', 'tmf_product_catalog', 'stock'],

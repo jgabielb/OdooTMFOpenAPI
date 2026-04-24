@@ -36,7 +36,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_usage" name="Resource Usage" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_usage"/>
+    <menuitem id="menu_tmf_resource_usage" name="Resource Usage" parent="tmf_base.menu_tmf_root" action="action_tmf_resource_usage"/>
 
     <record id="view_tmf_resource_usage_specification_tree" model="ir.ui.view">
         <field name="name">tmf.resource.usage.specification.tree</field>
@@ -73,5 +73,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_resource_usage_specification" name="Resource Usage Spec" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_resource_usage_specification"/>
+    <menuitem id="menu_tmf_resource_usage_specification" name="Resource Usage Spec" parent="tmf_base.menu_tmf_root" action="action_tmf_resource_usage_specification"/>
 </odoo>

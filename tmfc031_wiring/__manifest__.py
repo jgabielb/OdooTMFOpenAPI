@@ -11,7 +11,7 @@
         - TMF669 partyRole -> tmf.party.role
         - TMF701 processFlow -> tmf.process.flow
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': [

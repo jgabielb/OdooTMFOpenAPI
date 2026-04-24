@@ -6,7 +6,7 @@
         - Product Specification (TMF620)
         - Product Template as Product Offering
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.2',
     'depends': [

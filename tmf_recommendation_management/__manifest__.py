@@ -2,11 +2,12 @@
     "name": "TMF680 Recommendation Management",
     "version": "19.0.1.0.0",
     "summary": "TMF680 Recommendation Management API",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "license": "LGPL-3",
     "depends": [
         "tmf_base",
+        "tmf_product_catalog",
         "tmf_product",
         "tmf_party",
         "tmf_shopping_cart",

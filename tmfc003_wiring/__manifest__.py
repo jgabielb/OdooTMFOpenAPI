@@ -8,7 +8,7 @@
         "TMF641/TMF652 subscribed events."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_product_ordering",    # sale.order + TMF622 ProductOrder

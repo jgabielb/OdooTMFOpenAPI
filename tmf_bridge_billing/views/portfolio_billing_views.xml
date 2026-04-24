@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add billing section to Customer Portfolio tab -->
+    <record id="view_partner_form_tmf_billing" model="ir.ui.view">
+        <field name="name">res.partner.form.tmf.billing</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="tmf_sales_dashboard.view_partner_form_tmf_portfolio"/>
+        <field name="priority">60</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tmf_sales_lead_ids']" position="before">
+                <separator string="Customer Bills (TMF678)"/>
+                <field name="tmf_customer_bill_ids" nolabel="1" readonly="1">
+                    <list>
+                        <field name="name"/>
+                        <field name="state" string="Status"/>
+                        <field name="bill_date" string="Bill Date"/>
+                        <field name="move_id" string="Invoice"/>
+                        <field name="billing_period_start" string="Period Start"/>
+                        <field name="billing_period_end" string="Period End"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>

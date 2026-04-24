@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Invoice ↔ TMF Customer Bill",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Invoice ↔ TMF Customer Bill",
     "depends": ["account", "tmf_customer_bill_management"],

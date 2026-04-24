@@ -34,7 +34,7 @@
 
     <menuitem id="menu_tmf_entity"
               name="Entity"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_entity"/>
 
     <record id="view_tmf_entity_association_form" model="ir.ui.view">
@@ -76,6 +76,6 @@
 
     <menuitem id="menu_tmf_entity_association"
               name="Resource Association"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               action="action_tmf_entity_association"/>
 </odoo>

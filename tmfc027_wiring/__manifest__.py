@@ -15,7 +15,7 @@
         - TMF674 geographicSite -> tmf.geographic.site
         - TMF921 intent -> tmf.intent.management.resource
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.2',
     'depends': [

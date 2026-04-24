@@ -8,7 +8,7 @@
         "scaffolding for TMF634/TMF662 events plus optional TMF701 linkage."
     ),
     "category": "TMF/ODA",
-    "author": "OdooBSS",
+    "author": "Joao Nascimento",
     "license": "LGPL-3",
     "depends": [
         "tmf_service_catalog",          # TMF633 ServiceCatalog / ServiceSpecification

@@ -1,0 +1,9 @@
+services:
+  mock-oss:
+    build: .
+    container_name: mock-oss-simulator
+    env_file:
+      - config.env
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

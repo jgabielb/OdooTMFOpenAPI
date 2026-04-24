@@ -3,7 +3,7 @@
     'version': '1.0',
     'category': 'TMF/Sales',
     'summary': 'TMF679 Check Product Offering Qualification',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'license': 'LGPL-3',
     'description': 'Implementation of TMF679 Check Product Offering Qualification API v5.0.0',
     'depends': [

@@ -2,7 +2,7 @@
     'name': "TMF ShoppingCart",
     'summary': "Auto-generated implementation of Shopping Cart",
     'description': "Implements ShoppingCart API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog', 'sale'],

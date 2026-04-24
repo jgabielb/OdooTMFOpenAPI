@@ -2,7 +2,7 @@
     'name': 'TMF910 Self Care Management',
     'summary': 'TMF910 Self Care Management API',
     'description': 'Implements TMF910 Self Care Management API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'project', 'tmf_product_catalog'],

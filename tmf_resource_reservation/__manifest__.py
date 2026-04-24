@@ -2,7 +2,7 @@
     "name": "TMF716 Resource Reservation",
     "summary": "TMF716 Resource Reservation API",
     "description": "Implements TMF716 Resource Reservation API with hub notifications.",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF",
     "version": "0.1",
     "depends": ["tmf_base", "tmf_product_catalog"],

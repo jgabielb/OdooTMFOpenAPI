@@ -80,7 +80,7 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_software_compute_root" name="TMF730 Resource Software and Compute" parent="tmf_product_catalog.menu_tmf_root"/>
+    <menuitem id="menu_tmf_software_compute_root" name="TMF730 Resource Software and Compute" parent="tmf_base.menu_tmf_root"/>
     <menuitem id="menu_tmf_software_compute_resource" name="Resource" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource"/>
     <menuitem id="menu_tmf_software_compute_resource_specification" name="Resource Specification" parent="menu_tmf_software_compute_root" action="action_tmf_software_compute_resource_specification"/>
 </odoo>

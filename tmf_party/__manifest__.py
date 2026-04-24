@@ -6,7 +6,7 @@
         - Extends res.partner with TMF Mixin
         - Exposes API endpoints for Party
     """,
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'contacts'],

@@ -2,7 +2,7 @@
     'name': 'TMF644 Privacy Management',
     'summary': 'TMF644 Privacy Management API',
     'description': 'Implements TMF644 Privacy Management API endpoints.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

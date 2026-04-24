@@ -2,7 +2,7 @@
 {
     "name": "Bridge: Odoo Mail ↔ TMF Communication Message",
     "version": "19.0.1.0.0",
-    "author": "Joao Gabriel",
+    "author": "Joao Nascimento",
     "category": "TMF/Bridge",
     "summary": "Bridge: Odoo Mail ↔ TMF Communication Message",
     "depends": ["mail", "tmf_communication_message"],

@@ -306,6 +306,35 @@ class TMFOrderingController(TMFBaseController):
             vals = {}
             if 'description' in body:
                 vals['description'] = body['description']
+
+            # TMF state -> Odoo sale.order state mapping
+            if 'state' in body:
+                tmf_to_odoo = {
+                    'acknowledged': 'draft',
+                    'inProgress':   'sale',
+                    'completed':    'done',
+                    'cancelled':    'cancel',
+                }
+                target = body['state']
+                if target not in order.TMF_STATE_ALLOWED:
+                    return self._error(400, "InvalidRequest", f"Invalid state: {target}")
+                odoo_state = tmf_to_odoo.get(target)
+                if odoo_state:
+                    if odoo_state == 'cancel':
+                        order._action_cancel() if hasattr(order, '_action_cancel') else order.action_cancel()
+                    elif odoo_state == 'sale' and order.state in ('draft', 'sent'):
+                        order.action_confirm()
+                    elif odoo_state == 'done':
+                        if order.state in ('draft', 'sent'):
+                            order.action_confirm()
+                        # Odoo 19 uses `locked` boolean to mark as done/locked
+                        if hasattr(order, 'action_done'):
+                            order.action_done()
+                        elif 'locked' in order._fields:
+                            order.write({'locked': True})
+                    elif odoo_state == 'draft' and order.state == 'cancel':
+                        order.action_draft()
+
             if vals:
                 order.write(vals)
             return self._json(order.to_tmf_json())

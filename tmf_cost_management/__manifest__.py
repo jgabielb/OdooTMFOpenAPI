@@ -2,7 +2,7 @@
     'name': 'TMF764 Cost Management',
     'summary': 'TMF764 Cost Management API',
     'description': 'Implements TMF764 Cost Management API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'account', 'analytic', 'contacts', 'tmf_product_catalog'],

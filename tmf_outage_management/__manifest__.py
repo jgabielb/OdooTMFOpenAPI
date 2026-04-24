@@ -2,7 +2,7 @@
     'name': 'TMF777 Outage Management',
     'summary': 'TMF777 Outage Management API',
     'description': 'Implements TMF777 Outage Management API.',
-    'author': 'Joao Gabriel',
+    'author': 'Joao Nascimento',
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'project', 'tmf_product_catalog'],

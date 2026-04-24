@@ -2,7 +2,7 @@
     'name': "TMF Payment",
     'summary': "Auto-generated implementation of Payment",
     'description': "Implements Payment API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog', 'contacts', 'account', 'tmf_payment_method'],

@@ -2,7 +2,7 @@
     'name': "TMF Transfer Balance",
     'summary': "Auto-generated implementation of Prepay Balance Management",
     'description': "Implements Transfer Balance API with Hub Notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

@@ -2,7 +2,7 @@
     'name': "TMF710 General Test Artifact",
     'summary': "TMF710 General Test Artifact Management API",
     'description': "Implements TMF710 General Test Artifact Management API with Hub notifications.",
-    'author': "Joao Gabriel",
+    'author': "Joao Nascimento",
     'category': 'TMF',
     'version': '0.1',
     'depends': ['tmf_base', 'tmf_product_catalog'],

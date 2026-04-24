@@ -39,5 +39,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_outage" name="Outage" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_outage"/>
+    <menuitem id="menu_tmf_outage" name="Outage" parent="tmf_base.menu_tmf_root" action="action_tmf_outage"/>
 </odoo>

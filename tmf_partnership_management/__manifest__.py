@@ -5,7 +5,7 @@
     "version": "19.0.1.0.0",
     "category": "TMF",
     "license": "LGPL-3",
-    "author": "Your Company",
+    "author": "Joao Nascimento",
     "depends": ["base", "tmf_base", "product"],
     "data": [
         "security/ir.model.access.csv",

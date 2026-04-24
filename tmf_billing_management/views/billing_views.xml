@@ -32,7 +32,7 @@
     <!-- Menu -->
     <menuitem id="menu_tmf_billing"
               name="Billing"
-              parent="tmf_product_catalog.menu_tmf_root"
+              parent="tmf_base.menu_tmf_root"
               sequence="50"/>
 
     <menuitem id="menu_tmf_billing_accounts"

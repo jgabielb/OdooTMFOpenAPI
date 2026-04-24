@@ -69,7 +69,7 @@ class ProductInventoryTMFC005Wiring(models.Model):
         index=True, ondelete="set null",
     )
     product_id = fields.Many2one(
-        "product.product", string="Odoo Product",
+        "product.product", string="Odoo Product Variant",
         index=True, ondelete="set null",
     )
     stock_location_id = fields.Many2one(

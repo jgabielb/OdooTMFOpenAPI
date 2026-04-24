@@ -50,7 +50,7 @@
 
   <menuitem id="menu_tmf_party"
             name="Party Management (TMF632)"
-            parent="tmf_product_catalog.menu_tmf_root"
+            parent="tmf_base.menu_tmf_root"
             action="action_tmf_party_res_partner"
             sequence="10"/>
 </odoo>

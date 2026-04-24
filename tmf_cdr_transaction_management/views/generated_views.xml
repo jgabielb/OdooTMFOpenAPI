@@ -46,5 +46,5 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_tmf_cdr_transaction" name="CDR Transaction" parent="tmf_product_catalog.menu_tmf_root" action="action_tmf_cdr_transaction"/>
+    <menuitem id="menu_tmf_cdr_transaction" name="CDR Transaction" parent="tmf_base.menu_tmf_root" action="action_tmf_cdr_transaction"/>
 </odoo>

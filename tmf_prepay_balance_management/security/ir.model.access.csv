@@ -4,3 +4,4 @@ access_tmf654_topup,access_tmf654_topup,model_tmf654_topup_balance,,1,1,1,1
 access_tmf654_adjust,access_tmf654_adjust,model_tmf654_adjust_balance,,1,1,1,1
 access_tmf654_transfer,access_tmf654_transfer,model_tmf654_transfer_balance,,1,1,1,1
 access_tmf654_reserve,access_tmf654_reserve,model_tmf654_reserve_balance,,1,1,1,1
+tmf_prepay_balance_management.access_tmf654_balance_action,access_tmf654_balance_action,tmf_prepay_balance_management.model_tmf654_balance_action,base.group_user,1,1,1,1

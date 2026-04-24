@@ -55,7 +55,7 @@
     <field name="view_mode">list,form</field>
   </record>
 
-  <menuitem id="menu_tmf_customer_bill_root" name="TMF Billing" parent="tmf_product_catalog.menu_tmf_root" sequence="30"/>
+  <menuitem id="menu_tmf_customer_bill_root" name="TMF Billing" parent="tmf_base.menu_tmf_root" sequence="30"/>
   <menuitem id="menu_tmf_customer_bill" name="Customer Bills" parent="menu_tmf_customer_bill_root" action="action_tmf_customer_bill" sequence="10"/>
 
 </odoo>
