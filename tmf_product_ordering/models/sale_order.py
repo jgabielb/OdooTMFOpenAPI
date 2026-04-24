@@ -29,11 +29,17 @@ class SaleOrder(models.Model):
     ], string="TMF Status", compute="_compute_tmf_status", store=True, index=True)
 
     description = fields.Text(string="Order Description")
+    external_id = fields.Char(string="External ID", index=True, copy=False,
+                              help="Idempotency key from the originating system (TMF622 externalId)")
+    tmf_hold = fields.Boolean(string="TMF Hold", default=False, copy=False,
+                              help="When true the TMF state is reported as 'held'")
 
     # ---------- helpers ----------
 
     def _tmf_state_from_odoo(self):
         self.ensure_one()
+        if self.tmf_hold:
+            return "held"
         st = self.state
         if st in ("draft", "sent"):
             return "acknowledged"
@@ -125,7 +131,7 @@ class SaleOrder(models.Model):
                 "@referredType": "Individual"
             })
 
-        return {
+        payload = {
             "id": str(order_id),
             "href": self.tmf_href,  # relative
             "@type": "ProductOrder",
@@ -137,13 +143,18 @@ class SaleOrder(models.Model):
             "productOrderItem": items,
             "relatedParty": related_party,
         }
+        if self.external_id:
+            payload["externalId"] = self.external_id
+        return payload
 
     # ---------- compute ----------
 
-    @api.depends('state', 'locked')
+    @api.depends('state', 'locked', 'tmf_hold')
     def _compute_tmf_status(self):
         for order in self:
-            if order.state in ('draft', 'sent'):
+            if order.tmf_hold:
+                order.tmf_status = 'held'
+            elif order.state in ('draft', 'sent'):
                 order.tmf_status = 'acknowledged'
             elif order.state == 'sale':
                 order.tmf_status = 'completed' if order.locked else 'inProgress'

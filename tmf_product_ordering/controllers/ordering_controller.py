@@ -208,6 +208,19 @@ class TMFOrderingController(TMFBaseController):
             body = self._parse_json_body()
             if not isinstance(body, dict):
                 return self._error(400, "InvalidRequest", "Invalid JSON body")
+
+            # Idempotency: if externalId is provided and an order already exists,
+            # return the existing one with 200 instead of creating a duplicate.
+            external_id = body.get('externalId')
+            if external_id:
+                existing = request.env['sale.order'].sudo().search(
+                    [('external_id', '=', str(external_id))], limit=1,
+                )
+                if existing:
+                    payload = existing.to_tmf_json()
+                    location = self._absolute_location(payload.get('href'), fallback_id=existing.id)
+                    return self._json(payload, status=200, headers=[('Location', location)])
+
             quote = self._find_quote_from_body(body)
 
             partner = None
@@ -225,10 +238,13 @@ class TMFOrderingController(TMFBaseController):
             if not partner:
                 return self._error(500, "InternalError", "No partner available to create the order")
 
-            order = request.env['sale.order'].sudo().create({
+            order_vals = {
                 'partner_id': partner.id,
                 'description': body.get('description') or (quote.description if quote else 'Order via TMF API'),
-            })
+            }
+            if external_id:
+                order_vals['external_id'] = str(external_id)
+            order = request.env['sale.order'].sudo().create(order_vals)
 
             if quote and hasattr(quote, "sale_order_id"):
                 quote.sudo().write({"sale_order_id": order.id})
@@ -314,21 +330,33 @@ class TMFOrderingController(TMFBaseController):
                 if target not in order.TMF_STATE_ALLOWED:
                     return self._error(400, "InvalidRequest", f"Invalid state: {target}")
                 if target == 'cancelled':
+                    if order.tmf_hold:
+                        order.write({'tmf_hold': False})
                     if hasattr(order, '_action_cancel'):
                         order._action_cancel()
                     else:
                         order.action_cancel()
+                elif target == 'held':
+                    if order.state in ('draft', 'sent'):
+                        order.action_confirm()
+                    order.write({'tmf_hold': True})
                 elif target == 'inProgress':
+                    if order.tmf_hold:
+                        order.write({'tmf_hold': False})
                     if order.state in ('draft', 'sent'):
                         order.action_confirm()
                     if order.locked:
                         order.action_unlock()
                 elif target == 'completed':
+                    if order.tmf_hold:
+                        order.write({'tmf_hold': False})
                     if order.state in ('draft', 'sent'):
                         order.action_confirm()
                     if not order.locked:
                         order.write({'locked': True})
                 elif target == 'acknowledged':
+                    if order.tmf_hold:
+                        order.write({'tmf_hold': False})
                     if order.state == 'cancel':
                         order.action_draft()
 
