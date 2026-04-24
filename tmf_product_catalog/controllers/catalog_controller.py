@@ -128,6 +128,11 @@ class TMFCatalogController(TMFBaseController):
                     vals["product_number"] = data["productNumber"]
                 if data.get("relatedParty"):
                     vals["related_party_json"] = data["relatedParty"]
+                if data.get("productSpecCharacteristic"):
+                    import json as _json
+                    vals["product_spec_characteristic_json"] = _json.dumps(
+                        data["productSpecCharacteristic"]
+                    )
                 spec = request.env["tmf.product.specification"].sudo().create(vals)
                 created = self._spec_to_json(spec)
                 # Merge any extra inbound fields not mapped to DB
@@ -192,6 +197,11 @@ class TMFCatalogController(TMFBaseController):
                     vals['service_specification_json'] = data['serviceSpecification']
                 if 'resourceSpecification' in data:
                     vals['resource_specification_json'] = data['resourceSpecification']
+                if 'productSpecCharacteristic' in data:
+                    import json as _json
+                    vals['product_spec_characteristic_json'] = _json.dumps(
+                        data['productSpecCharacteristic']
+                    )
                 if vals:
                     spec.write(vals)
                 return self._json(self._select_fields(self._spec_to_json(spec), params.get('fields')))
@@ -237,6 +247,14 @@ class TMFCatalogController(TMFBaseController):
                  "@type": "ResourceSpecificationRef"}
                 for rs in s.resource_specification_ids
             ]
+        if s.product_spec_characteristic_json:
+            import json as _json
+            try:
+                payload["productSpecCharacteristic"] = _json.loads(
+                    s.product_spec_characteristic_json
+                )
+            except (ValueError, TypeError):
+                pass
         return payload
 
     # =======================================================

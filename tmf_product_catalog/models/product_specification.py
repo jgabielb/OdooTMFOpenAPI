@@ -9,7 +9,7 @@ class ProductSpecification(models.Model):
     product_number = fields.Char(string="Product Number (SKU)", help="Technical SKU")
     brand = fields.Char(string="Brand")
     description = fields.Text(string="Description")
-    
+
     version = fields.Char(string="Version", default="1.0")
     lifecycle_status = fields.Selection([
         ('design', 'In Design'),
@@ -17,15 +17,23 @@ class ProductSpecification(models.Model):
         ('retired', 'Retired')
     ], default='design', string="Status")
 
+    # TMF620 productSpecCharacteristic — list of characteristic schemas
+    # stored as JSON text following the existing pattern in this module.
+    product_spec_characteristic_json = fields.Text(
+        string="productSpecCharacteristic (JSON)",
+        help="TMF620 productSpecCharacteristic array as JSON text",
+    )
+
     def to_tmf_json(self):
         """Return TMF620 ProductSpecification representation."""
         self.ensure_one()
+        import json
 
         href = getattr(self, 'tmf_href', None)
         if not href:
             href = f"/tmf-api{self._get_tmf_api_path()}/{self.tmf_id or self.id}"
 
-        return {
+        payload = {
             "id": self.tmf_id or str(self.id),
             "href": href,
             "name": self.name,
@@ -40,6 +48,12 @@ class ProductSpecification(models.Model):
             "brand": self.brand,
             "productNumber": self.product_number,
         }
+        if self.product_spec_characteristic_json:
+            try:
+                payload["productSpecCharacteristic"] = json.loads(self.product_spec_characteristic_json)
+            except (ValueError, TypeError):
+                pass
+        return payload
     
     @api.model
     def create(self, vals):

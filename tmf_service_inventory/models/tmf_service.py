@@ -180,7 +180,7 @@ class TMFService(models.Model):
                 "note": None,
             })
 
-        if include_nulls and self.partner_id:
+        if self.partner_id:
             party_id = self.partner_id.tmf_id or str(self.partner_id.id)
             party_href = f"/tmf-api/partyManagement/v5/party/{party_id}"
             party_ref = {
