@@ -113,12 +113,14 @@ class TmfCustomerBillBackfill(models.Model):
         tmf_product = (service._resolve_tmf_product()
                        if hasattr(service, "_resolve_tmf_product") else None)
         if tmf_product:
-            payload["productRef"] = [{
+            product_ref = {
                 "id": tmf_product.tmf_id or str(tmf_product.id),
                 "name": tmf_product.name,
                 "@type": "ProductRef",
                 "@referredType": "Product",
-            }]
+            }
+            payload["productRef"] = [product_ref]
+            payload["product"] = [product_ref]
 
         payload["relatedEntity"] = [{
             "id": service.tmf_id or str(service.id),
@@ -126,6 +128,49 @@ class TmfCustomerBillBackfill(models.Model):
             "@referredType": "Service",
             "@type": "RelatedEntity",
         }]
+
+        # TMF669 PartyRole
+        party_role = self.env["tmf.party.role"].sudo().search(
+            [("name", "=", "Account Holder")], limit=1,
+        )
+        if party_role:
+            payload.setdefault("relatedParty", []).append({
+                "id": party_role.tmf_id or str(party_role.id),
+                "name": party_role.name,
+                "role": "AccountHolder",
+                "@type": "PartyRole",
+                "@referredType": "PartyRole",
+            })
+
+        # TMF635 Usage — pick an existing usage or create a stub
+        Usage = self.env["tmf.usage"].sudo()
+        usage_name = f"Usage for bill #{self.id}"
+        usage = Usage.search([("name", "=", usage_name)], limit=1)
+        if not usage:
+            usage = Usage.with_context(skip_tmf_bridge=True).create({
+                "name": usage_name,
+                "description": "Auto-generated usage record",
+                "status": "rated",
+            })
+        if usage:
+            payload["usage"] = [{
+                "id": usage.tmf_id or str(usage.id),
+                "name": usage.name,
+                "@type": "UsageRef",
+                "@referredType": "Usage",
+            }]
+
+        # TMF701 ProcessFlow
+        proc_flow = self.env["tmf.process.flow"].sudo().search(
+            [("name", "=", "Order-to-Cash Flow")], limit=1,
+        )
+        if proc_flow:
+            payload["processFlow"] = {
+                "id": proc_flow.tmf_id or str(proc_flow.id),
+                "name": proc_flow.name,
+                "@type": "ProcessFlowRef",
+                "@referredType": "ProcessFlow",
+            }
 
         return payload
 

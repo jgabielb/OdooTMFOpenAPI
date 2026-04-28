@@ -492,6 +492,40 @@ def seed(rpc):
                     log.warning("    Could not link spec: %s", e)
 
     # ------------------------------------------------------------------
+    # 4b. Create TMF637 Product per Offering (so bills can carry productRef)
+    # ------------------------------------------------------------------
+    log.info("=" * 60)
+    log.info("STEP 4b: Creating TMF637 Products (one per offering)")
+    log.info("=" * 60)
+
+    tmf_product_ids = {}  # offering_name -> tmf.product id
+    for svc_key, catalog in SERVICE_CATALOG.items():
+        for offering_name, _price in catalog["offerings"]:
+            tmpl_id = offering_ids[offering_name]
+            # Find the variant (product.product) for this template
+            variant_ids = rpc.search(
+                "product.product", [("product_tmpl_id", "=", tmpl_id)], limit=1,
+            )
+            if not variant_ids:
+                log.warning("    No product.product variant for %s", offering_name)
+                continue
+            variant_id = variant_ids[0]
+
+            tmf_prod_id, _created = rpc.find_or_create(
+                "tmf.product",
+                [("odoo_product_id", "=", variant_id)],
+                {
+                    "name": offering_name,
+                    "description": f"TMF637 Product backing {offering_name}",
+                    "is_bundle": False,
+                    "is_customer_visible": True,
+                    "status": "active",
+                    "odoo_product_id": variant_id,
+                },
+            )
+            tmf_product_ids[offering_name] = tmf_prod_id
+
+    # ------------------------------------------------------------------
     # 5. Create Accounts (PartyAccount + BillingAccount per location)
     # ------------------------------------------------------------------
     log.info("=" * 60)
@@ -664,6 +698,169 @@ def seed(rpc):
                     log.info("  Linked device %s -> service %s", serial, svc_name)
             except Exception as e:
                 log.warning("  Could not create lot for %s: %s", device_name, e)
+
+    # ------------------------------------------------------------------
+    # 8. Seed TMF669 PartyRoles, TMF701 ProcessFlow, TMF635 Usage and
+    #    rewire active bills' payloads so the TMFC031 wiring tab is full
+    # ------------------------------------------------------------------
+    log.info("=" * 60)
+    log.info("STEP 8: Seeding TMF669 / TMF701 / TMF635 + rewiring bills")
+    log.info("=" * 60)
+
+    # 8a. Party role for the customer (e.g. "Account Holder")
+    party_role_id, _ = rpc.find_or_create(
+        "tmf.party.role",
+        [("name", "=", "Account Holder")],
+        {
+            "name": "Account Holder",
+            "type_name": "PartyRole",
+        },
+    )
+    log.info("  PartyRole 'Account Holder' (id=%s)", party_role_id)
+
+    # 8b. Process flow for the bill-generation business process
+    process_flow_id, _ = rpc.find_or_create(
+        "tmf.process.flow",
+        [("name", "=", "Order-to-Cash Flow")],
+        {"name": "Order-to-Cash Flow"},
+    )
+    log.info("  ProcessFlow 'Order-to-Cash Flow' (id=%s)", process_flow_id)
+
+    # 8c. One sample tmf.usage record per active bill (data point that the bill
+    #     refers to a metered usage event — real implementations would meter)
+    bill_ids = rpc.search("tmf.customer.bill", [("partner_id", "=", partner_id)])
+    for bill_id in bill_ids:
+        try:
+            usage_name = f"Usage for bill #{bill_id}"
+            usage_id, created = rpc.find_or_create(
+                "tmf.usage",
+                [("name", "=", usage_name)],
+                {
+                    "name": usage_name,
+                    "description": "Sample usage record",
+                    "status": "rated",
+                },
+            )
+            if created:
+                log.info("  Created tmf.usage '%s' (id=%s)", usage_name, usage_id)
+        except Exception as e:
+            log.warning("  Could not create usage for bill %s: %s", bill_id, e)
+
+    # 8d. Re-write each bill's payload so it carries productRef, partyRole,
+    #     processFlow, usage. The bridge then resolves them via _resolve_tmf_refs.
+    log.info("  Rewiring %d bills with TMFC031 cross-API refs", len(bill_ids))
+    for bill_id in bill_ids:
+        try:
+            bill_data = rpc.execute(
+                "tmf.customer.bill", "read", [bill_id],
+                ["payload", "partner_id", "tmf_id", "name", "move_id"],
+            )
+            if not bill_data:
+                continue
+            bill = bill_data[0]
+            existing_payload = bill.get("payload") or {}
+            if not isinstance(existing_payload, dict):
+                existing_payload = {}
+
+            # Find a tmf.product to reference — pick any product linked to the
+            # invoice's first sale order line, or fall back to any tmf.product
+            product_ref = None
+            move_id = bill["move_id"][0] if bill.get("move_id") else False
+            tmf_prod_for_bill = None
+            if move_id:
+                lines = rpc.execute(
+                    "account.move.line", "search_read",
+                    [("move_id", "=", move_id), ("product_id", "!=", False)],
+                    {"fields": ["product_id"], "limit": 1},
+                )
+                if lines:
+                    pid = lines[0]["product_id"][0]
+                    tmf_prods = rpc.search(
+                        "tmf.product", [("odoo_product_id", "=", pid)], limit=1,
+                    )
+                    if tmf_prods:
+                        tmf_prod_for_bill = tmf_prods[0]
+            if not tmf_prod_for_bill:
+                any_tmf_prods = rpc.search("tmf.product", [], limit=1)
+                if any_tmf_prods:
+                    tmf_prod_for_bill = any_tmf_prods[0]
+            if tmf_prod_for_bill:
+                tp = rpc.execute(
+                    "tmf.product", "read", [tmf_prod_for_bill],
+                    ["tmf_id", "name"],
+                )
+                if tp:
+                    product_ref = {
+                        "id": tp[0]["tmf_id"] or str(tmf_prod_for_bill),
+                        "name": tp[0]["name"],
+                        "@type": "ProductRef",
+                        "@referredType": "Product",
+                    }
+
+            # Find a tmf.usage to reference
+            usage_recs = rpc.search(
+                "tmf.usage",
+                [("name", "=", f"Usage for bill #{bill_id}")],
+                limit=1,
+            )
+            usage_ref = None
+            if usage_recs:
+                u = rpc.execute(
+                    "tmf.usage", "read", usage_recs,
+                    ["tmf_id", "name"],
+                )
+                if u:
+                    usage_ref = {
+                        "id": u[0]["tmf_id"] or str(usage_recs[0]),
+                        "name": u[0]["name"],
+                        "@type": "UsageRef",
+                        "@referredType": "Usage",
+                    }
+
+            # Look up tmf_ids for party role + process flow
+            pr_data = rpc.execute(
+                "tmf.party.role", "read", [party_role_id], ["tmf_id", "name"],
+            )
+            pf_data = rpc.execute(
+                "tmf.process.flow", "read", [process_flow_id], ["tmf_id", "name"],
+            )
+
+            existing_related = list(existing_payload.get("relatedParty") or [])
+            if pr_data:
+                existing_related.append({
+                    "id": pr_data[0]["tmf_id"] or str(party_role_id),
+                    "name": pr_data[0]["name"],
+                    "role": "AccountHolder",
+                    "@type": "PartyRole",
+                    "@referredType": "PartyRole",
+                })
+
+            new_payload = dict(existing_payload)
+            new_payload["relatedParty"] = existing_related
+            if product_ref:
+                new_payload["productRef"] = [product_ref]
+                # also expose as 'product' since the resolver checks both keys
+                new_payload["product"] = [product_ref]
+            if usage_ref:
+                new_payload["usage"] = [usage_ref]
+            if pf_data:
+                new_payload["processFlow"] = {
+                    "id": pf_data[0]["tmf_id"] or str(process_flow_id),
+                    "name": pf_data[0]["name"],
+                    "@type": "ProcessFlowRef",
+                    "@referredType": "ProcessFlow",
+                }
+
+            rpc.write("tmf.customer.bill", [bill_id], {"payload": new_payload})
+            # Trigger the resolver
+            try:
+                rpc.execute(
+                    "tmf.customer.bill", "_resolve_tmf_refs", [bill_id],
+                )
+            except Exception:
+                pass
+        except Exception as e:
+            log.warning("  Could not rewire bill %s: %s", bill_id, e)
 
     # ------------------------------------------------------------------
     # Summary

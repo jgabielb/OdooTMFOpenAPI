@@ -218,14 +218,14 @@ class TMFServiceBilling(models.Model):
         # TMF637 productRef — trace service → order line → product → tmf.product
         tmf_product = self._resolve_tmf_product()
         if tmf_product:
-            payload["productRef"] = [
-                {
-                    "id": tmf_product.tmf_id or str(tmf_product.id),
-                    "name": tmf_product.name,
-                    "@type": "ProductRef",
-                    "@referredType": "Product",
-                },
-            ]
+            product_ref = {
+                "id": tmf_product.tmf_id or str(tmf_product.id),
+                "name": tmf_product.name,
+                "@type": "ProductRef",
+                "@referredType": "Product",
+            }
+            payload["productRef"] = [product_ref]
+            payload["product"] = [product_ref]  # alt key the resolver also checks
 
         # Add service ref
         payload["relatedEntity"] = [
@@ -236,6 +236,50 @@ class TMFServiceBilling(models.Model):
                 "@type": "RelatedEntity",
             },
         ]
+
+        # TMF669 PartyRole — append "Account Holder" role for the customer party
+        party_role = self.env["tmf.party.role"].sudo().search(
+            [("name", "=", "Account Holder")], limit=1,
+        )
+        if party_role:
+            payload["relatedParty"].append({
+                "id": party_role.tmf_id or str(party_role.id),
+                "name": party_role.name,
+                "role": "AccountHolder",
+                "@type": "PartyRole",
+                "@referredType": "PartyRole",
+            })
+
+        # TMF635 Usage — link a stub usage record (created on the fly if absent)
+        Usage = self.env["tmf.usage"].sudo()
+        usage_name = f"Usage for service {self.tmf_id or self.id}"
+        usage = Usage.search([("name", "=", usage_name)], limit=1)
+        if not usage:
+            usage = Usage.with_context(skip_tmf_bridge=True).create({
+                "name": usage_name,
+                "description": "Auto-generated usage record",
+                "status": "rated",
+            })
+        if usage:
+            payload["usage"] = [{
+                "id": usage.tmf_id or str(usage.id),
+                "name": usage.name,
+                "@type": "UsageRef",
+                "@referredType": "Usage",
+            }]
+
+        # TMF701 ProcessFlow — reference the canonical Order-to-Cash flow
+        proc_flow = self.env["tmf.process.flow"].sudo().search(
+            [("name", "=", "Order-to-Cash Flow")], limit=1,
+        )
+        if proc_flow:
+            payload["processFlow"] = {
+                "id": proc_flow.tmf_id or str(proc_flow.id),
+                "name": proc_flow.name,
+                "@type": "ProcessFlowRef",
+                "@referredType": "ProcessFlow",
+            }
+
         bill_vals["payload"] = payload
 
         bill = TMFBill.create(bill_vals)
