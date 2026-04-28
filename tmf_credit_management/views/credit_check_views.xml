@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_tmf_credit_rating_check_list" model="ir.ui.view">
+        <field name="name">tmf.credit.rating.check.list</field>
+        <field name="model">tmf.credit.rating.check</field>
+        <field name="arch" type="xml">
+            <list string="Credit Rating Checks">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="requested_amount"/>
+                <field name="requested_unit"/>
+                <field name="credit_score"/>
+                <field name="credit_rating_result"/>
+                <field name="state"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tmf_credit_rating_check_form" model="ir.ui.view">
+        <field name="name">tmf.credit.rating.check.form</field>
+        <field name="model">tmf.credit.rating.check</field>
+        <field name="arch" type="xml">
+            <form string="Credit Rating Check">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="requested_amount"/>
+                            <field name="requested_unit"/>
+                            <field name="credit_score"/>
+                            <field name="credit_rating_result"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tmf_credit_rating_check" model="ir.actions.act_window">
+        <field name="name">Credit Rating Checks</field>
+        <field name="res_model">tmf.credit.rating.check</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tmf_credit_management"
+              name="Credit Management"
+              parent="tmf_base.menu_tmf_root"
+              sequence="55"/>
+    <menuitem id="menu_tmf_credit_rating_check"
+              name="Credit Rating Checks"
+              parent="menu_tmf_credit_management"
+              action="action_tmf_credit_rating_check"
+              sequence="10"/>
+</odoo>

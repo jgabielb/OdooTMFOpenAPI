@@ -91,6 +91,15 @@ class TMFPartyController(TMFBaseController):
 
         Partner = request.env['res.partner'].sudo()
 
+        # Extract email from contactMedium (TMF632 v5 shape: characteristic.emailAddress)
+        email = ""
+        for medium in (payload.get('contactMedium') or []):
+            if (medium.get('mediumType') or '').lower() == 'email':
+                ch = medium.get('characteristic') or {}
+                email = (ch.get('emailAddress') or ch.get('email') or '').strip().lower()
+                if email:
+                    break
+
         # Document-based matching (user preference: document is the primary key)
         doc = payload.get('document') if isinstance(payload.get('document'), dict) else {}
         doc_number = (doc.get('number') or doc.get('documentNumber') or '').strip()
@@ -105,6 +114,20 @@ class TMFPartyController(TMFBaseController):
             partner = Partner.search(dom, limit=1)
             _logger.info("TMF632 create_individual document match: found=%s", partner.id if partner else None)
 
+        # Duplicate-email guard: if no document is provided AND the email is
+        # already present on a different individual partner, reject with 422.
+        # When a document IS provided, document-match wins (same person re-creating).
+        if email and not partner:
+            existing = Partner.search([
+                ('email', '=ilike', email),
+                ('is_company', '=', False),
+            ], limit=1)
+            if existing:
+                return self._error(
+                    422, "DUPLICATE_PARTY",
+                    f"An individual with email '{email}' already exists",
+                )
+
         vals = {
             'is_company': False,
             'tmf_managed': True,
@@ -117,6 +140,8 @@ class TMFPartyController(TMFBaseController):
             vals['tmf_document_number'] = doc_number
         if doc_type:
             vals['tmf_document_type'] = doc_type
+        if email:
+            vals['email'] = email
 
         if partner and partner.exists():
             # Reuse existing CRM contact by document

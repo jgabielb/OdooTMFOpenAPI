@@ -30,21 +30,27 @@ class TestProductDesign:
         assert r.status_code == 200
 
     def test_product_spec_exposes_characteristics(self, tmf):
-        r = tmf.get("/tmf-api/productCatalogManagement/v5/productSpecification?limit=5")
+        # Pull a wider set so we don't miss seeded specs sitting after page 1.
+        r = tmf.get("/tmf-api/productCatalogManagement/v5/productSpecification?limit=50")
         if r.status_code != 200:
             pytest.xfail("productSpecification endpoint unavailable")
         specs = r.json()
         if not specs:
             pytest.xfail("No product specifications seeded")
-        spec_id = specs[0]["id"]
-        r = tmf.get(f"/tmf-api/productCatalogManagement/v5/productSpecification/{spec_id}")
-        assert r.status_code == 200
-        body = r.json()
-        # characteristic schema is what makes a spec useful — if empty, feature is missing
-        if not body.get("productSpecCharacteristic"):
-            pytest.xfail("productSpecCharacteristic not yet populated on specs")
-        for ch in body["productSpecCharacteristic"]:
-            assert "name" in ch
+
+        # Walk every spec individually — the listing endpoint may not include
+        # the productSpecCharacteristic field; the individual GET should.
+        for spec in specs:
+            full = tmf.get(
+                f"/tmf-api/productCatalogManagement/v5/productSpecification/{spec['id']}"
+            ).json()
+            chars = full.get("productSpecCharacteristic")
+            if chars:
+                assert isinstance(chars, list) and len(chars) >= 1
+                for ch in chars:
+                    assert "name" in ch
+                return
+        pytest.xfail("productSpecCharacteristic not populated on any returned spec")
 
     @pytest.mark.xfail(reason="Bundle offerings + bundledProductOffering not yet modeled")
     def test_bundle_offering_declares_children(self, tmf):

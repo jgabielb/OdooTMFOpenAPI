@@ -238,6 +238,11 @@ class TMFOrderingController(TMFBaseController):
             if not partner:
                 return self._error(500, "InternalError", "No partner available to create the order")
 
+            # TMF645 credit-block enforcement
+            if 'credit_blocked' in partner._fields and partner.credit_blocked:
+                return self._error(422, "CREDIT_BLOCK_ACTIVE",
+                                   f"Party {partner.id} is credit-blocked")
+
             order_vals = {
                 'partner_id': partner.id,
                 'description': body.get('description') or (quote.description if quote else 'Order via TMF API'),
@@ -255,9 +260,72 @@ class TMFOrderingController(TMFBaseController):
             _fallback_tmf_prod, fallback_odoo_prod = self._get_fallback_product()
 
             for item in items:
-                qty = item.get('quantity') or 1
+                action = (item.get('action') or 'add').lower()
 
-                # For now: use fallback Odoo product (CTK doesn’t require real catalog mapping)
+                # ---- modify: change an existing service's offering ----
+                if action == 'modify':
+                    target_ref = item.get('product') or {}
+                    target_id = target_ref.get('id')
+                    new_offering = item.get('productOffering') or {}
+                    new_offering_id = new_offering.get('id')
+                    if not target_id:
+                        _logger.warning("TMF622 modify: missing product.id on item")
+                        continue
+                    Service = request.env['tmf.service'].sudo()
+                    svc = Service.search([('tmf_id', '=', str(target_id))], limit=1) \
+                        or (Service.browse(int(target_id))
+                            if str(target_id).isdigit() else Service)
+                    if not svc:
+                        _logger.warning("TMF622 modify: service %s not found", target_id)
+                        continue
+                    if new_offering_id:
+                        ProdSpec = request.env['tmf.product.specification'].sudo()
+                        new_spec = ProdSpec.search(
+                            [('tmf_id', '=', str(new_offering_id))], limit=1
+                        ) or (ProdSpec.browse(int(new_offering_id))
+                              if str(new_offering_id).isdigit() else ProdSpec)
+                        if new_spec:
+                            svc.write({'product_specification_id': new_spec.id})
+                    # Drop a trace order line so billing/audit can see the modify
+                    odoo_prod = self._resolve_order_line_product(item, fallback_odoo_prod)
+                    SOL = request.env['sale.order.line'].sudo()
+                    SOL.create({
+                        'order_id': order.id,
+                        'product_id': odoo_prod.id,
+                        'product_uom_qty': item.get('quantity') or 1,
+                        'name': f"[modify] service {target_id}",
+                    })
+                    continue
+
+                # ---- delete: terminate the referenced service ----
+                if action == 'delete':
+                    target_ref = item.get('product') or {}
+                    target_id = target_ref.get('id')
+                    if not target_id:
+                        _logger.warning("TMF622 delete: missing product.id on item")
+                        continue
+                    Service = request.env['tmf.service'].sudo()
+                    svc = Service.search([('tmf_id', '=', str(target_id))], limit=1) \
+                        or (Service.browse(int(target_id))
+                            if str(target_id).isdigit() else Service)
+                    if svc:
+                        svc.write({'state': 'terminated'})
+                    odoo_prod = self._resolve_order_line_product(item, fallback_odoo_prod)
+                    SOL = request.env['sale.order.line'].sudo()
+                    SOL.create({
+                        'order_id': order.id,
+                        'product_id': odoo_prod.id,
+                        'product_uom_qty': item.get('quantity') or 1,
+                        'name': f"[delete] service {target_id}",
+                    })
+                    continue
+
+                # ---- noChange: skip silently ----
+                if action == 'nochange':
+                    continue
+
+                # ---- default: action == 'add' ----
+                qty = item.get('quantity') or 1
                 odoo_prod = self._resolve_order_line_product(item, fallback_odoo_prod)
 
                 SOL = request.env['sale.order.line'].sudo()

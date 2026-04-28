@@ -52,6 +52,40 @@ SERVICE_CATALOG = {
             ("Internet 200Mbps", 24990),
             ("Internet 500Mbps", 34990),
         ],
+        "characteristics": [
+            {
+                "name": "downlinkSpeed",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "200Mbps", "isDefault": False, "valueType": "string"},
+                    {"value": "500Mbps", "isDefault": True,  "valueType": "string"},
+                ],
+            },
+            {
+                "name": "technology",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "FTTH-GPON", "isDefault": True, "valueType": "string"},
+                ],
+            },
+            {
+                "name": "staticIP",
+                "valueType": "boolean",
+                "configurable": True,
+                "minCardinality": 0,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "false", "isDefault": True, "valueType": "boolean"},
+                    {"value": "true",  "isDefault": False, "valueType": "boolean"},
+                ],
+            },
+        ],
     },
     "tv": {
         "svc_spec": "IPTV Multiscreen CFS",
@@ -60,6 +94,40 @@ SERVICE_CATALOG = {
         "product_spec": "TV Digital Plan",
         "offerings": [
             ("TV Full HD 120ch", 14990),
+        ],
+        "characteristics": [
+            {
+                "name": "channelCount",
+                "valueType": "integer",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "120", "isDefault": True, "valueType": "integer"},
+                ],
+            },
+            {
+                "name": "resolution",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "FullHD", "isDefault": True, "valueType": "string"},
+                    {"value": "4K",     "isDefault": False, "valueType": "string"},
+                ],
+            },
+            {
+                "name": "multiscreenCount",
+                "valueType": "integer",
+                "configurable": True,
+                "minCardinality": 0,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "1", "isDefault": True, "valueType": "integer"},
+                    {"value": "3", "isDefault": False, "valueType": "integer"},
+                ],
+            },
         ],
     },
     "voice": {
@@ -70,6 +138,29 @@ SERVICE_CATALOG = {
         "offerings": [
             ("Telefonia Fija Ilimitada", 7990),
         ],
+        "characteristics": [
+            {
+                "name": "callPlan",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "Unlimited-Local", "isDefault": True, "valueType": "string"},
+                ],
+            },
+            {
+                "name": "internationalCalls",
+                "valueType": "boolean",
+                "configurable": True,
+                "minCardinality": 0,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "false", "isDefault": True, "valueType": "boolean"},
+                    {"value": "true",  "isDefault": False, "valueType": "boolean"},
+                ],
+            },
+        ],
     },
     "mobile": {
         "svc_spec": "Mobile Data+Voice CFS",
@@ -79,6 +170,39 @@ SERVICE_CATALOG = {
         "offerings": [
             ("Movil 50GB + Llamadas", 19990),
         ],
+        "characteristics": [
+            {
+                "name": "dataAllowanceGB",
+                "valueType": "integer",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "50", "isDefault": True, "valueType": "integer"},
+                ],
+            },
+            {
+                "name": "voiceMinutes",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "Unlimited", "isDefault": True, "valueType": "string"},
+                ],
+            },
+            {
+                "name": "roamingEnabled",
+                "valueType": "boolean",
+                "configurable": True,
+                "minCardinality": 0,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "false", "isDefault": True, "valueType": "boolean"},
+                    {"value": "true",  "isDefault": False, "valueType": "boolean"},
+                ],
+            },
+        ],
     },
     "ott": {
         "svc_spec": "OTT Streaming CFS",
@@ -87,6 +211,30 @@ SERVICE_CATALOG = {
         "product_spec": "Streaming Digital Plan",
         "offerings": [
             ("Pack Streaming Premium", 9990),
+        ],
+        "characteristics": [
+            {
+                "name": "includedServices",
+                "valueType": "string",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 5,
+                "productSpecCharacteristicValue": [
+                    {"value": "Netflix",      "isDefault": True, "valueType": "string"},
+                    {"value": "DisneyPlus",   "isDefault": True, "valueType": "string"},
+                    {"value": "AmazonPrime",  "isDefault": True, "valueType": "string"},
+                ],
+            },
+            {
+                "name": "concurrentStreams",
+                "valueType": "integer",
+                "configurable": False,
+                "minCardinality": 1,
+                "maxCardinality": 1,
+                "productSpecCharacteristicValue": [
+                    {"value": "4", "isDefault": True, "valueType": "integer"},
+                ],
+            },
         ],
     },
 }
@@ -296,6 +444,19 @@ def seed(rpc):
                 log.info("    Linked specs to %s", catalog["product_spec"])
             except Exception as e:
                 log.warning("    Could not link specs (fields may not exist): %s", e)
+
+        # Always (re)write characteristics so the seed is idempotent
+        if catalog.get("characteristics"):
+            try:
+                import json as _json
+                rpc.write("tmf.product.specification", [spec_id], {
+                    "product_spec_characteristic_json": _json.dumps(catalog["characteristics"]),
+                })
+                log.info("    Seeded %d characteristics on %s",
+                         len(catalog["characteristics"]), catalog["product_spec"])
+            except Exception as e:
+                log.warning("    Could not seed characteristics on %s: %s",
+                            catalog["product_spec"], e)
 
     # ------------------------------------------------------------------
     # 4. Create Product Offerings (product.template) with prices

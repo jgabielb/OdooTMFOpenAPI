@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tmf_credit_rating_check_user,tmf.credit.rating.check user,model_tmf_credit_rating_check,base.group_user,1,1,1,1
+access_tmf_credit_rating_check_public,tmf.credit.rating.check public,model_tmf_credit_rating_check,base.group_public,1,0,0,0
+access_tmf_credit_rating_check_portal,tmf.credit.rating.check portal,model_tmf_credit_rating_check,base.group_portal,1,0,0,0
