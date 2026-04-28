@@ -708,12 +708,20 @@ def seed(rpc):
     log.info("=" * 60)
 
     # 8a. Party role for the customer (e.g. "Account Holder")
+    import json as _json
+    engaged_party = _json.dumps({
+        "id": str(partner_id),
+        "name": "Empresa Demo SpA",
+        "@type": "PartyRef",
+        "@referredType": "Organization",
+    })
     party_role_id, _ = rpc.find_or_create(
         "tmf.party.role",
         [("name", "=", "Account Holder")],
         {
             "name": "Account Holder",
             "type_name": "PartyRole",
+            "engaged_party_json": engaged_party,
         },
     )
     log.info("  PartyRole 'Account Holder' (id=%s)", party_role_id)
@@ -731,18 +739,18 @@ def seed(rpc):
     bill_ids = rpc.search("tmf.customer.bill", [("partner_id", "=", partner_id)])
     for bill_id in bill_ids:
         try:
-            usage_name = f"Usage for bill #{bill_id}"
+            usage_desc = f"Usage for bill #{bill_id}"
             usage_id, created = rpc.find_or_create(
                 "tmf.usage",
-                [("name", "=", usage_name)],
+                [("description", "=", usage_desc)],
                 {
-                    "name": usage_name,
-                    "description": "Sample usage record",
+                    "description": usage_desc,
                     "status": "rated",
                 },
+                name_field="description",
             )
             if created:
-                log.info("  Created tmf.usage '%s' (id=%s)", usage_name, usage_id)
+                log.info("  Created tmf.usage '%s' (id=%s)", usage_desc, usage_id)
         except Exception as e:
             log.warning("  Could not create usage for bill %s: %s", bill_id, e)
 
@@ -768,9 +776,10 @@ def seed(rpc):
             move_id = bill["move_id"][0] if bill.get("move_id") else False
             tmf_prod_for_bill = None
             if move_id:
-                lines = rpc.execute(
+                lines = rpc.models.execute_kw(
+                    rpc.db, rpc.uid, rpc.password,
                     "account.move.line", "search_read",
-                    [("move_id", "=", move_id), ("product_id", "!=", False)],
+                    [[("move_id", "=", move_id), ("product_id", "!=", False)]],
                     {"fields": ["product_id"], "limit": 1},
                 )
                 if lines:
@@ -800,19 +809,19 @@ def seed(rpc):
             # Find a tmf.usage to reference
             usage_recs = rpc.search(
                 "tmf.usage",
-                [("name", "=", f"Usage for bill #{bill_id}")],
+                [("description", "=", f"Usage for bill #{bill_id}")],
                 limit=1,
             )
             usage_ref = None
             if usage_recs:
                 u = rpc.execute(
                     "tmf.usage", "read", usage_recs,
-                    ["tmf_id", "name"],
+                    ["tmf_id", "description"],
                 )
                 if u:
                     usage_ref = {
                         "id": u[0]["tmf_id"] or str(usage_recs[0]),
-                        "name": u[0]["name"],
+                        "name": u[0]["description"],
                         "@type": "UsageRef",
                         "@referredType": "Usage",
                     }
@@ -851,14 +860,9 @@ def seed(rpc):
                     "@referredType": "ProcessFlow",
                 }
 
+            # write() on tmf.customer.bill triggers _resolve_tmf_refs internally
+            # via the bridge override, so a single write is enough.
             rpc.write("tmf.customer.bill", [bill_id], {"payload": new_payload})
-            # Trigger the resolver
-            try:
-                rpc.execute(
-                    "tmf.customer.bill", "_resolve_tmf_refs", [bill_id],
-                )
-            except Exception:
-                pass
         except Exception as e:
             log.warning("  Could not rewire bill %s: %s", bill_id, e)
 

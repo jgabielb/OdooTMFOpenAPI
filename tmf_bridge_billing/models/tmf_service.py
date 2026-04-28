@@ -238,9 +238,25 @@ class TMFServiceBilling(models.Model):
         ]
 
         # TMF669 PartyRole — append "Account Holder" role for the customer party
-        party_role = self.env["tmf.party.role"].sudo().search(
-            [("name", "=", "Account Holder")], limit=1,
-        )
+        # Auto-create the role on first use, anchored to the bill's partner.
+        PartyRole = self.env["tmf.party.role"].sudo()
+        party_role = PartyRole.search([("name", "=", "Account Holder")], limit=1)
+        if not party_role and self.partner_id:
+            try:
+                import json as _json
+                party_role = PartyRole.with_context(skip_tmf_bridge=True).create({
+                    "name": "Account Holder",
+                    "type_name": "PartyRole",
+                    "engaged_party_json": _json.dumps({
+                        "id": self.partner_id.tmf_id or str(self.partner_id.id),
+                        "name": self.partner_id.name,
+                        "@type": "PartyRef",
+                        "@referredType": "Individual"
+                            if self.partner_id.company_type == "person" else "Organization",
+                    }),
+                })
+            except Exception:
+                _logger.exception("Could not auto-create PartyRole 'Account Holder'")
         if party_role:
             payload["relatedParty"].append({
                 "id": party_role.tmf_id or str(party_role.id),
@@ -250,20 +266,20 @@ class TMFServiceBilling(models.Model):
                 "@referredType": "PartyRole",
             })
 
-        # TMF635 Usage — link a stub usage record (created on the fly if absent)
+        # TMF635 Usage — link a stub usage record (created on the fly if absent).
+        # tmf.usage has no `name` field; key off description instead.
         Usage = self.env["tmf.usage"].sudo()
-        usage_name = f"Usage for service {self.tmf_id or self.id}"
-        usage = Usage.search([("name", "=", usage_name)], limit=1)
+        usage_desc = f"Usage for service {self.tmf_id or self.id}"
+        usage = Usage.search([("description", "=", usage_desc)], limit=1)
         if not usage:
             usage = Usage.with_context(skip_tmf_bridge=True).create({
-                "name": usage_name,
-                "description": "Auto-generated usage record",
+                "description": usage_desc,
                 "status": "rated",
             })
         if usage:
             payload["usage"] = [{
                 "id": usage.tmf_id or str(usage.id),
-                "name": usage.name,
+                "name": usage.description,
                 "@type": "UsageRef",
                 "@referredType": "Usage",
             }]

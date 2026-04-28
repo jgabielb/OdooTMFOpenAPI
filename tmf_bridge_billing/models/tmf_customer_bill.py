@@ -129,10 +129,25 @@ class TmfCustomerBillBackfill(models.Model):
             "@type": "RelatedEntity",
         }]
 
-        # TMF669 PartyRole
-        party_role = self.env["tmf.party.role"].sudo().search(
-            [("name", "=", "Account Holder")], limit=1,
-        )
+        # TMF669 PartyRole — auto-create on first use, anchored to the partner
+        PartyRole = self.env["tmf.party.role"].sudo()
+        party_role = PartyRole.search([("name", "=", "Account Holder")], limit=1)
+        if not party_role and partner:
+            try:
+                import json as _json
+                party_role = PartyRole.with_context(skip_tmf_bridge=True).create({
+                    "name": "Account Holder",
+                    "type_name": "PartyRole",
+                    "engaged_party_json": _json.dumps({
+                        "id": partner.tmf_id or str(partner.id),
+                        "name": partner.name,
+                        "@type": "PartyRef",
+                        "@referredType": "Individual"
+                            if partner.company_type == "person" else "Organization",
+                    }),
+                })
+            except Exception:
+                _logger.exception("Could not auto-create PartyRole 'Account Holder'")
         if party_role:
             payload.setdefault("relatedParty", []).append({
                 "id": party_role.tmf_id or str(party_role.id),
@@ -142,20 +157,19 @@ class TmfCustomerBillBackfill(models.Model):
                 "@referredType": "PartyRole",
             })
 
-        # TMF635 Usage — pick an existing usage or create a stub
+        # TMF635 Usage — tmf.usage has no `name` field; key off description.
         Usage = self.env["tmf.usage"].sudo()
-        usage_name = f"Usage for bill #{self.id}"
-        usage = Usage.search([("name", "=", usage_name)], limit=1)
+        usage_desc = f"Usage for bill #{self.id}"
+        usage = Usage.search([("description", "=", usage_desc)], limit=1)
         if not usage:
             usage = Usage.with_context(skip_tmf_bridge=True).create({
-                "name": usage_name,
-                "description": "Auto-generated usage record",
+                "description": usage_desc,
                 "status": "rated",
             })
         if usage:
             payload["usage"] = [{
                 "id": usage.tmf_id or str(usage.id),
-                "name": usage.name,
+                "name": usage.description,
                 "@type": "UsageRef",
                 "@referredType": "Usage",
             }]
