@@ -28,6 +28,7 @@
         "security/ir.model.access.csv",
         "views/tmf_account_views.xml",
         "views/portfolio_billing_views.xml",
+        "views/tmf_customer_bill_views.xml",
     ],
     "installable": True,
     "license": "LGPL-3",
