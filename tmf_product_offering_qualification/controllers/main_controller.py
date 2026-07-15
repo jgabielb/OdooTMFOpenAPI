@@ -262,14 +262,16 @@ class TMFController(http.Controller):
                 qir = it.get("qualificationItemResult")
                 if qir not in allowed_item_results:
                     qir = "qualified"
-                norm_items.append(
-                    {
-                        "id": it.get("id") or str(uuid.uuid4()),
-                        "product": it.get("product") or {},
-                        "qualificationItemResult": qir,
-                        "state": it.get("state") or "done",
-                    }
-                )
+                norm_item = {
+                    "id": it.get("id") or str(uuid.uuid4()),
+                    "product": it.get("product") or {},
+                    "qualificationItemResult": qir,
+                    "state": it.get("state") or "done",
+                }
+                # preserve the offering ref so ODA wiring can resolve it
+                if isinstance(it.get("productOffering"), dict):
+                    norm_item["productOffering"] = it["productOffering"]
+                norm_items.append(norm_item)
             data["checkProductOfferingQualificationItem"] = norm_items
 
             if hasattr(Model, "create_from_json"):

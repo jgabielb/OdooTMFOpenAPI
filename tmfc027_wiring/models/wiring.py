@@ -256,6 +256,10 @@ class CheckPOQTMFC027Wiring(models.Model):
             prod = item.get("product") or {}
             if isinstance(prod, dict) and prod.get("id"):
                 product_refs.append(prod)
+            # canonical TMF679 shape nests the offering inside the product
+            nested_po = prod.get("productOffering") if isinstance(prod, dict) else None
+            if isinstance(nested_po, dict) and nested_po.get("id"):
+                offering_refs.append(nested_po)
         rec = super().create_from_json(data)
         rec.with_context(skip_tmf_wiring=True).write({
             "payload": data,

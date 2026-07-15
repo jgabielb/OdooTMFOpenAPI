@@ -13,8 +13,10 @@ Usage:
 
 import argparse
 import json
+import os
 import sys
 import uuid
+import xmlrpc.client
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -494,6 +496,71 @@ def verify_tmfc031(base: str):
 # Odoo JSON-RPC field check (no auth needed for public records)
 # ---------------------------------------------------------------------------
 
+class OdooRPC:
+    """Authenticated XML-RPC access for asserting side-car wiring fields.
+
+    Credentials come from --db/--login/--password CLI args or the
+    ODOO_DB / ODOO_LOGIN / ODOO_PASSWORD environment variables (an Odoo
+    API key works as the password). The database is autodiscovered via
+    db.list() when the server exposes it and only one database exists.
+    Defaults to admin/admin, which matches a stock dev install.
+    """
+
+    def __init__(self):
+        self.base = DEFAULT_BASE
+        self.db = os.environ.get("ODOO_DB", "")
+        self.login = os.environ.get("ODOO_LOGIN", "admin")
+        self.password = os.environ.get("ODOO_PASSWORD", "admin")
+        self.uid = None
+        self.models = None
+        self._failed = ""
+
+    def configure(self, base, db=None, login=None, password=None):
+        self.base = base
+        if db:
+            self.db = db
+        if login:
+            self.login = login
+        if password:
+            self.password = password
+
+    def _connect(self):
+        if self.uid or self._failed:
+            return
+        try:
+            if not self.db:
+                dbs = xmlrpc.client.ServerProxy(self.base + "/xmlrpc/2/db").list()
+                if len(dbs) == 1:
+                    self.db = dbs[0]
+                else:
+                    self._failed = (f"server has {len(dbs)} databases — "
+                                    "set --db or ODOO_DB")
+                    return
+            common = xmlrpc.client.ServerProxy(self.base + "/xmlrpc/2/common")
+            uid = common.authenticate(self.db, self.login, self.password, {})
+            if not uid:
+                self._failed = (f"authentication failed for '{self.login}' on "
+                                f"'{self.db}' — set ODOO_LOGIN/ODOO_PASSWORD or "
+                                "--login/--password (an API key works as password)")
+                return
+            self.uid = uid
+            self.models = xmlrpc.client.ServerProxy(self.base + "/xmlrpc/2/object")
+        except Exception as e:
+            self._failed = f"Odoo RPC unavailable: {e}"
+
+    def search_read(self, model, domain, fields, limit=1):
+        self._connect()
+        if not self.uid:
+            raise Fail(self._failed)
+        return self.models.execute_kw(
+            self.db, self.uid, self.password, model, "search_read",
+            [domain], {"fields": fields, "limit": limit},
+        )
+
+
+ODOO_RPC = OdooRPC()
+
+
 def _check_odoo_field(
     base: str,
     comp: str,
@@ -503,33 +570,9 @@ def _check_odoo_field(
     description: str,
     optional: bool = False,
 ):
-    """
-    Uses Odoo's JSON-RPC /web/dataset/call_kw to read a field value.
-    Falls back gracefully if auth is required.
-    """
-    url = base + "/web/dataset/call_kw"
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "call",
-        "params": {
-            "model": model,
-            "method": "search_read",
-            "args": [domain],
-            "kwargs": {"fields": [field, "id"], "limit": 1},
-        },
-    }
+    """Assert a side-car relational field is populated, via authenticated XML-RPC."""
     try:
-        r = requests.post(url, headers=HEADERS, json=payload, timeout=10)
-        body = r.json()
-        error = body.get("error")
-        if error:
-            # Auth required — skip gracefully
-            msg = error.get("data", {}).get("message", str(error))
-            note = "(needs Odoo auth — skip)" if "Access" in msg or "session" in msg.lower() else msg[:120]
-            results.append(Result(comp, description, True, f"skipped: {note}"))
-            print(f"  \033[33m~\033[0m {description}  (skipped: {note})")
-            return
-        records = body.get("result") or []
+        records = ODOO_RPC.search_read(model, domain, [field, "id"]) or []
         if not records:
             status = "optional — no record found" if optional else "record not found in DB"
             if optional:
@@ -551,9 +594,13 @@ def _check_odoo_field(
                 print(f"  \033[33m~\033[0m {description}  ({status})")
             else:
                 fail(comp, description, status)
-    except Exception as e:
+    except Fail as e:
+        # RPC not available/authenticated — skip gracefully, as before
         results.append(Result(comp, description, True, f"skipped: {e}"))
         print(f"  \033[33m~\033[0m {description}  (skipped: {e})")
+    except Exception as e:
+        # authenticated but the read itself failed (bad model/field) — real failure
+        fail(comp, description, str(e)[:200])
 
 
 # ---------------------------------------------------------------------------
@@ -725,10 +772,14 @@ def main():
     parser = argparse.ArgumentParser(description="Verify TMFC wiring against live Odoo.")
     parser.add_argument("--base-url", default=DEFAULT_BASE, help=f"Odoo base URL (default: {DEFAULT_BASE})")
     parser.add_argument("--only", default="", help="Comma-separated components to run, e.g. tmfc001,tmfc031,smoke")
+    parser.add_argument("--db", default="", help="Odoo database (default: ODOO_DB env or autodiscovered)")
+    parser.add_argument("--login", default="", help="Odoo login for field assertions (default: ODOO_LOGIN env or 'admin')")
+    parser.add_argument("--password", default="", help="Odoo password or API key (default: ODOO_PASSWORD env or 'admin')")
     args = parser.parse_args()
 
     base = args.base_url.rstrip("/")
     only = {x.strip().lower() for x in args.only.split(",") if x.strip()} if args.only else set()
+    ODOO_RPC.configure(base, args.db, args.login, args.password)
 
     print(f"\n\033[1mWiring Verification  ->  {base}\033[0m")
 
