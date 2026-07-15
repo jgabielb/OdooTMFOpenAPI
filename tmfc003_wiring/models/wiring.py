@@ -145,21 +145,28 @@ class SaleOrderTMFC003Wiring(models.Model):
     # Orchestration trigger
     # ------------------------------------------------------------------
 
+    # tmf_status is a stored computed field (from state/locked/tmf_hold), so the
+    # transition can be caused by any of these keys — watch them all and compare
+    # the recomputed value after write.
+    _TMFC003_TRIGGER_KEYS = ("tmf_status", "state", "locked", "tmf_hold")
+
     def write(self, vals):
-        """Intercept tmf_status → inProgress to launch delivery orchestration."""
+        """Intercept the tmf_status transition to inProgress to launch delivery."""
         if self.env.context.get("skip_tmf_wiring"):
             return super().write(vals)
 
-        previous_status = {}
-        if "tmf_status" in vals:
-            previous_status = {rec.id: (rec.tmf_status or "") for rec in self}
+        watch = any(k in vals for k in self._TMFC003_TRIGGER_KEYS)
+        previous_status = (
+            {rec.id: (rec.tmf_status or "") for rec in self} if watch else {}
+        )
 
         res = super().write(vals)
 
-        if "tmf_status" in vals and vals["tmf_status"] == "inProgress":
+        if watch:
             for rec in self:
                 prev = previous_status.get(rec.id, "")
-                if prev != "inProgress" and not rec.env.context.get("skip_tmfc003_orchestration"):
+                if (rec.tmf_status == "inProgress" and prev != "inProgress"
+                        and not rec.env.context.get("skip_tmfc003_orchestration")):
                     rec._tmfc003_start_delivery_orchestration()
 
         return res
@@ -318,10 +325,15 @@ class SaleOrderTMFC003Wiring(models.Model):
         old_delivery_state = self.tmfc003_delivery_state
 
         if new_delivery_state != old_delivery_state or new_tmf_status != old_tmf_status:
-            self.with_context(**ctx).write({
+            agg_vals = {
                 "tmfc003_delivery_state": new_delivery_state,
                 "tmf_status": new_tmf_status,
-            })
+            }
+            # tmf_status is computed from state/locked; lock the order so the
+            # 'completed' status survives recomputation (Odoo 19 'done').
+            if new_tmf_status == "completed" and "locked" in self._fields:
+                agg_vals["locked"] = True
+            self.with_context(**ctx).write(agg_vals)
             _logger.info(
                 "TMFC003: sale.order %s delivery_state=%s tmf_status=%s",
                 self.tmf_id or self.id, new_delivery_state, new_tmf_status,
