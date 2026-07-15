@@ -7,6 +7,17 @@ from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
+RESOURCE_SPEC_EVENTS = {
+    "ResourceSpecificationCreateEvent", "ResourceSpecificationChangeEvent",
+    "ResourceSpecificationAttributeValueChangeEvent",
+    "ResourceSpecificationStateChangeEvent", "ResourceSpecificationDeleteEvent",
+}
+ENTITY_SPEC_EVENTS = {
+    "EntitySpecificationCreateEvent", "EntitySpecificationChangeEvent",
+    "EntitySpecificationAttributeValueChangeEvent",
+    "EntitySpecificationStateChangeEvent", "EntitySpecificationDeleteEvent",
+}
+
 
 class TMFC006ListenerController(http.Controller):
     """Listener endpoints for TMFC006 subscribed events.
@@ -14,7 +25,7 @@ class TMFC006ListenerController(http.Controller):
     Stable URLs delegating to ``tmfc006.wiring.tools``.
     """
 
-    def _apply(self, handler):
+    def _apply(self, allowed, handler):
         raw = request.httprequest.data or b"{}"
         if isinstance(raw, bytes):
             raw = raw.decode("utf-8")
@@ -22,9 +33,20 @@ class TMFC006ListenerController(http.Controller):
             payload = json.loads(raw or "{}")
         except Exception:
             payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        ev = str(payload.get("eventType") or "").strip()
+        if not ev:
+            return request.make_response(
+                json.dumps({"error": "Missing mandatory attribute: eventType"}),
+                status=400, headers=[("Content-Type", "application/json")])
+        if ev not in allowed:
+            return request.make_response(
+                json.dumps({"error": f"Listener event '{ev}' not supported"}),
+                status=404, headers=[("Content-Type", "application/json")])
         tools = request.env["tmfc006.wiring.tools"].sudo()
         try:
-            getattr(tools, handler)(payload if isinstance(payload, dict) else {})
+            getattr(tools, handler)(payload)
         except Exception as exc:
             _logger.exception("TMFC006 listener %s failed", handler)
             return request.make_response(
@@ -37,9 +59,9 @@ class TMFC006ListenerController(http.Controller):
     @http.route(["/tmfc006/listener/resourceSpecification"],  # TMF634
                 type="http", auth="none", methods=["POST"], csrf=False)
     def listener_resource_specification(self):
-        return self._apply("_handle_resource_catalog_event")
+        return self._apply(RESOURCE_SPEC_EVENTS, "_handle_resource_catalog_event")
 
     @http.route(["/tmfc006/listener/entitySpecification"],  # TMF662
                 type="http", auth="none", methods=["POST"], csrf=False)
     def listener_entity_specification(self):
-        return self._apply("_handle_entity_catalog_event")
+        return self._apply(ENTITY_SPEC_EVENTS, "_handle_entity_catalog_event")
