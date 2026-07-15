@@ -43,6 +43,41 @@ class TMFC011ResourceOrder(models.Model):
         column2="resource_spec_id",
         string="TMFC011 Resource Specifications",
     )
+    tmfc011_inventory_resource_ids = fields.Many2many(
+        comodel_name="stock.lot",
+        relation="tmfc011_resource_order_lot_rel",
+        column1="resource_order_id",
+        column2="lot_id",
+        string="TMFC011 Inventory Resources (TMF639)",
+    )
+    tmfc011_resource_function_ids = fields.Many2many(
+        comodel_name="tmf.resource.function",
+        relation="tmfc011_resource_order_function_rel",
+        column1="resource_order_id",
+        column2="function_id",
+        string="TMFC011 Resource Functions (TMF664)",
+    )
+    tmfc011_activation_resource_ids = fields.Many2many(
+        comodel_name="tmf702.resource",
+        relation="tmfc011_resource_order_tmf702_rel",
+        column1="resource_order_id",
+        column2="tmf702_resource_id",
+        string="TMFC011 Activation Resources (TMF702)",
+    )
+    tmfc011_resource_pool_ids = fields.Many2many(
+        comodel_name="tmf.resource.pool",
+        relation="tmfc011_resource_order_pool_rel",
+        column1="resource_order_id",
+        column2="pool_id",
+        string="TMFC011 Resource Pools (TMF685)",
+    )
+    tmfc011_work_order_ids = fields.Many2many(
+        comodel_name="tmf.work",
+        relation="tmfc011_resource_order_work_rel",
+        column1="resource_order_id",
+        column2="work_id",
+        string="TMFC011 Work Orders (TMF697)",
+    )
 
     def _tmfc011_resolve_refs(self):
         ctx = {"skip_tmf_wiring": True}
@@ -73,7 +108,7 @@ class TMFC011ResourceOrder(models.Model):
                     if roles:
                         updates["tmfc011_party_role_ids"] = [(6, 0, roles.ids)]
 
-            spec_refs = []
+            spec_refs, resource_refs = [], []
             for item in rec.order_item_ids:
                 res = item.resource_id
                 if not res:
@@ -82,10 +117,17 @@ class TMFC011ResourceOrder(models.Model):
                 ref_id = char.get("resourceSpecificationId") or res.tmf_resource_id
                 if ref_id:
                     spec_refs.append(str(ref_id))
+                if res.tmf_resource_id:
+                    resource_refs.append(str(res.tmf_resource_id))
             if spec_refs:
                 specs = ResourceSpec.search([("tmf_id", "in", spec_refs)])
                 if specs:
                     updates["tmfc011_resource_specification_ids"] = [(6, 0, specs.ids)]
+            if resource_refs:
+                lots = self.env["stock.lot"].sudo().search(
+                    [("tmf_id", "in", resource_refs)])
+                if lots:
+                    updates["tmfc011_inventory_resource_ids"] = [(6, 0, lots.ids)]
 
             if updates:
                 rec.with_context(**ctx).write(updates)

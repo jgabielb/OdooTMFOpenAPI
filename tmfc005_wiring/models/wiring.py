@@ -11,6 +11,13 @@ TMFC005_LISTENER_EVENTS = {
     "productOfferingPriceDeleteEvent",
     "partyRoleDeleteEvent",
     "agreementDeleteEvent",
+    "billingAccountDeleteEvent",
+    "permissionDeleteEvent",
+    "geographicSiteDeleteEvent",
+    "geographicLocationDeleteEvent",
+    "individualDeleteEvent",
+    "organizationDeleteEvent",
+    "productOrderDeleteEvent",
 }
 
 
@@ -131,6 +138,11 @@ class ProductInventoryTMFC005Wiring(models.Model):
     resource_ids = fields.Many2many(
         "tmf.resource", "tmfc005_product_resource_rel",
         "product_id", "resource_id", string="Realizing Resources (TMF639)",
+    )
+    permission_ref_json = fields.Json(default=list, string="Permission refs JSON (TMF672)")
+    permission_ids = fields.Many2many(
+        "tmf.permission", "tmfc005_product_permission_rel",
+        "product_id", "permission_id", string="Permissions (TMF672)",
     )
     process_flow_ids = fields.Many2many(
         "tmf.process.flow", "tmfc005_product_process_flow_rel",
@@ -574,6 +586,35 @@ class TMFC005WiringTools(models.AbstractModel):
         self._cleanup_product_refs(ref_id, relation_field="agreement_ids", json_field="agreement_ref_json")
         self._cleanup_product_refs(ref_id, json_field="agreement")
 
+    def _reconcile_billing_account_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, singular_field="billing_account_id",
+                                   json_field="billing_account_ref_json")
+
+    def _reconcile_permission_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, relation_field="permission_ids",
+                                   json_field="permission_ref_json")
+
+    def _reconcile_geographic_site_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, singular_field="geographic_site_id",
+                                   json_field="place_ref_json")
+
+    def _reconcile_geographic_location_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, singular_field="geographic_location_id",
+                                   json_field="place_ref_json")
+
+    def _reconcile_party_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, relation_field="related_partner_ids",
+                                   json_field="related_party_ref_json")
+
+    def _reconcile_product_order_delete(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        self._cleanup_product_refs(ref_id, json_field="product_order_ref_json")
+
     def handle_event(self, event_name, payload=None):
         handlers = {
             "resourceDeleteEvent": self._reconcile_resource_delete,
@@ -583,6 +624,13 @@ class TMFC005WiringTools(models.AbstractModel):
             "productOfferingPriceDeleteEvent": self._reconcile_product_offering_price_delete,
             "partyRoleDeleteEvent": self._reconcile_party_role_delete,
             "agreementDeleteEvent": self._reconcile_agreement_delete,
+            "billingAccountDeleteEvent": self._reconcile_billing_account_delete,
+            "permissionDeleteEvent": self._reconcile_permission_delete,
+            "geographicSiteDeleteEvent": self._reconcile_geographic_site_delete,
+            "geographicLocationDeleteEvent": self._reconcile_geographic_location_delete,
+            "individualDeleteEvent": self._reconcile_party_delete,
+            "organizationDeleteEvent": self._reconcile_party_delete,
+            "productOrderDeleteEvent": self._reconcile_product_order_delete,
         }
         handler = handlers.get(event_name)
         if handler:

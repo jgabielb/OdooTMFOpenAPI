@@ -197,6 +197,10 @@ class TMFServiceController(http.Controller):
             if spec_rec and spec_rec.exists():
                 vals["product_specification_id"] = spec_rec.id
 
+        # place -> place_json (optional)
+        if payload.get("place") is not None:
+            vals["place_json"] = json.dumps(payload["place"])
+
         # supportingResource -> resource_id (optional)
         sr = (payload.get("supportingResource") or [])
         if sr:
@@ -207,6 +211,14 @@ class TMFServiceController(http.Controller):
                     lot = request.env['stock.lot'].sudo().browse(int(rid))
                 if lot and lot.exists():
                     vals["resource_id"] = lot.id
+                    # Reject if resource is already claimed (not available)
+                    if 'resource_status' in lot._fields:
+                        status = lot.resource_status or 'available'
+                        if status not in ('available', 'standby'):
+                            return self._error(
+                                422, "Unprocessable Entity",
+                                f"Resource {rid} is not available (status={status})"
+                            )
 
         rec = request.env['tmf.service'].sudo().create(vals)
 
@@ -309,6 +321,13 @@ class TMFServiceController(http.Controller):
                         lot = request.env['stock.lot'].sudo().browse(int(rid))
                     if lot and lot.exists():
                         vals["resource_id"] = lot.id
+
+        if "place" in patch:
+            vals["place_json"] = json.dumps(patch["place"] or [])
+
+        if "relocationFeasibility" in patch:
+            feas = str(patch["relocationFeasibility"] or "allowed").lower()
+            vals["relocation_feasibility"] = feas if feas in ("allowed", "denied") else "allowed"
 
         if vals:
             service.write(vals)

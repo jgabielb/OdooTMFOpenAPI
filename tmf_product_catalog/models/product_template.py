@@ -12,6 +12,15 @@ class ProductTemplate(models.Model):
         help="The technical definition behind this commercial offering"
     )
 
+    # Bundle: this offering wraps child offerings
+    bundled_offering_ids = fields.Many2many(
+        'product.template',
+        'product_template_bundle_rel',
+        'bundle_id',
+        'component_id',
+        string="Bundled Component Offerings",
+    )
+
     lifecycle_status = fields.Selection([
         ('design', 'In Design'),
         ('active', 'Active'),
@@ -42,7 +51,7 @@ class ProductTemplate(models.Model):
             "@type": "ProductOffering",
             # minimal TMF fields – you can add more later
             "lifecycleStatus": self.lifecycle_status.capitalize() if self.lifecycle_status else None,
-            "isBundle": False,  # or compute if you support bundles
+            "isBundle": bool(self.bundled_offering_ids),
             "productSpecification": (
                 {
                     "id": self.product_specification_id.tmf_id
@@ -51,6 +60,14 @@ class ProductTemplate(models.Model):
                     "@referredType": "ProductSpecification",
                 } if self.product_specification_id else None
             ),
+            "bundledProductOffering": [
+                {
+                    "id": c.tmf_id or str(c.id),
+                    "name": c.name,
+                    "@type": "BundledProductOffering",
+                }
+                for c in self.bundled_offering_ids
+            ] if self.bundled_offering_ids else [],
         }
 
     # ------------- EVENT HOOKS FOR /hub (TMF620) -------------

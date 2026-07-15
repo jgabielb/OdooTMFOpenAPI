@@ -224,6 +224,53 @@ class TMFC008ServiceWiring(models.Model):
         help="Resolved TMF672 Permission records related to this Service.",
     )
 
+    # ------------------------------------------------------------------
+    # TMF701 lifecycle flow provisioning (TMFC008 exposed processFlow/taskFlow)
+    # ------------------------------------------------------------------
+
+    def _tmfc008_ensure_process_flows(self):
+        """Provision one TMF701 process flow + task flow per Service (idempotent)."""
+        ProcessFlow = self.env["tmf.process.flow"].sudo()
+        TaskFlow = self.env["tmf.task.flow"].sudo()
+        for rec in self:
+            key = rec.tmf_id or str(rec.id)
+            process_flow = rec.tmfc008_process_flow_ids[:1] or ProcessFlow.search(
+                [("tmf_id", "=", f"tmfc008-service-{key}")], limit=1)
+            if not process_flow:
+                process_flow = ProcessFlow.create({
+                    "tmf_id": f"tmfc008-service-{key}",
+                    "name": f"Service flow {rec.name or key}",
+                    "description": f"Auto-generated TMFC008 lifecycle flow for Service {key}",
+                    "state": "inProgress",
+                })
+            task_flow = rec.tmfc008_task_flow_ids[:1] or TaskFlow.search(
+                [("tmf_id", "=", f"tmfc008-service-task-{key}")], limit=1)
+            if not task_flow:
+                task_flow = TaskFlow.create({
+                    "tmf_id": f"tmfc008-service-task-{key}",
+                    "name": f"Service task {rec.name or key}",
+                    "description": f"Auto-generated TMFC008 task flow for Service {key}",
+                    "state": "inProgress",
+                    "process_flow_id": process_flow.id,
+                })
+            updates = {}
+            if process_flow and process_flow.id not in rec.tmfc008_process_flow_ids.ids:
+                updates["tmfc008_process_flow_ids"] = [(4, process_flow.id)]
+            if task_flow and task_flow.id not in rec.tmfc008_task_flow_ids.ids:
+                updates["tmfc008_task_flow_ids"] = [(4, task_flow.id)]
+            if updates:
+                rec.with_context(skip_tmf_wiring=True).write(updates)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        if not self.env.context.get("skip_tmf_wiring"):
+            try:
+                recs._tmfc008_ensure_process_flows()
+            except Exception:
+                _logger.exception("TMFC008: process flow provisioning failed")
+        return recs
+
 
 class TMFC008WiringTools(models.AbstractModel):
     """Wiring/tools layer for TMFC008 listener callbacks.

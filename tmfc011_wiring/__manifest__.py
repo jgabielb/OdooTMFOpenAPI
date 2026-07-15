@@ -14,6 +14,11 @@
         "tmf_resource_catalog",
         "tmf_customer",
         "tmf_party_role",
+        "tmf_resource_inventory",      # stock.lot resources (TMF639)
+        "tmf_resource_function",       # tmf.resource.function (TMF664)
+        "tmf_resource_activation",     # tmf702.resource/monitor (TMF702)
+        "tmf_resource_pool_management",  # tmf.resource.pool (TMF685)
+        "tmf_work_management",         # tmf.work / WorkOrder (TMF697)
     ],
     "data": [
         "security/ir.model.access.csv",

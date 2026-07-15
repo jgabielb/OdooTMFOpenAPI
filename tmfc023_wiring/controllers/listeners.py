@@ -28,6 +28,21 @@ AGREEMENT_EVENTS = {
     "PartyPrivacyAgreementStateChangeEvent",
     "PartyPrivacyAgreementDeleteEvent",
 }
+PARTY_EVENTS = {
+    "IndividualCreateEvent", "IndividualAttributeValueChangeEvent",
+    "IndividualStateChangeEvent", "IndividualDeleteEvent",
+    "OrganizationCreateEvent", "OrganizationAttributeValueChangeEvent",
+    "OrganizationStateChangeEvent", "OrganizationDeleteEvent",
+}
+PARTY_ROLE_EVENTS = {"PartyRoleCreateEvent"}
+DOCUMENT_EVENTS = {
+    "DocumentChangeEvent", "DocumentAttributeValueChangeEvent",
+    "DocumentSpecificationAttributeValueChangeEvent",
+}
+PROCESS_FLOW_EVENTS = {
+    "ProcessFlowCreateEvent", "ProcessFlowStateChangeEvent",
+    "TaskFlowCreateEvent", "TaskFlowStateChangeEvent",
+}
 
 
 class TMFC023ListenerController(http.Controller):
@@ -100,6 +115,68 @@ class TMFC023ListenerController(http.Controller):
         if ev not in AGREEMENT_EVENTS:
             return self._json_response({"error": f"Listener event '{ev}' not supported"}, status=404)
         self._refresh(self._extract_id(payload))
+        return self._json_response({}, status=201)
+
+    def _validated(self, allowed):
+        payload = self._parse_json()
+        ev = self._event_type(payload)
+        if not ev:
+            return None, self._json_response(
+                {"error": "Missing mandatory attribute: eventType"}, status=400)
+        if ev not in allowed:
+            return None, self._json_response(
+                {"error": f"Listener event '{ev}' not supported"}, status=404)
+        return payload, None
+
+    @http.route(f"{TMFC023_LISTENER_BASE}/party",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_party(self, **_p):
+        payload, err = self._validated(PARTY_EVENTS)
+        if err:
+            return err
+        self._refresh(self._extract_id(payload))
+        return self._json_response({}, status=201)
+
+    @http.route(f"{TMFC023_LISTENER_BASE}/partyRole",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_party_role(self, **_p):
+        payload, err = self._validated(PARTY_ROLE_EVENTS)
+        if err:
+            return err
+        self._refresh(self._extract_id(payload))
+        return self._json_response({}, status=201)
+
+    @http.route(f"{TMFC023_LISTENER_BASE}/document",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_document(self, **_p):
+        payload, err = self._validated(DOCUMENT_EVENTS)
+        if err:
+            return err
+        self._refresh(self._extract_id(payload))
+        return self._json_response({}, status=201)
+
+    @http.route(f"{TMFC023_LISTENER_BASE}/processFlow",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_process_flow(self, **_p):
+        payload, err = self._validated(PROCESS_FLOW_EVENTS)
+        if err:
+            return err
+        # flow events: sync local TMF701 flow state by tmf_id
+        resource = payload.get("event") if isinstance(payload.get("event"), dict) else payload
+        if isinstance(resource, dict):
+            for v in (resource.values() if "id" not in resource else [resource]):
+                if isinstance(v, dict) and v.get("id") and v.get("state"):
+                    for model in ("tmf.process.flow", "tmf.task.flow"):
+                        rec = request.env[model].sudo().search(
+                            [("tmf_id", "=", str(v["id"]))], limit=1)
+                        if rec:
+                            try:
+                                rec.with_context(skip_tmf_wiring=True).write(
+                                    {"state": v["state"]})
+                            except Exception:
+                                pass
+                            break
+                    break
         return self._json_response({}, status=201)
 
     @http.route(TMFC023_HUB_BASE,

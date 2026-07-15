@@ -50,8 +50,14 @@ class CustomerBillTMFC031Wiring(models.Model):
         index=True, ondelete="set null"
     )
 
-    def _resolve_tmf_refs(self):
+    _TMFC031_WIRING_KEYS = frozenset((
+        "related_party_json", "product_json", "usage_json", "payload", "tmf_id",
+    ))
+
+    def _resolve_tmf_refs(self, changed_keys=None):
+        """Rebuild relational links from raw TMF JSON refs (JSON is source of truth)."""
         ctx = {"skip_tmf_wiring": True}
+        explicit = changed_keys or set()
         for rec in self:
             updates = {}
             payload = rec.payload or {}
@@ -67,6 +73,13 @@ class CustomerBillTMFC031Wiring(models.Model):
             )
             effective_usage_json = rec.usage_json or payload.get("usage") or []
 
+            def _rebuild(field_name, model, items, triggered):
+                if not items and not triggered:
+                    return
+                ids = _resolve_ids(self.env, model, items)
+                if set(ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, ids)]
+
             # TMF666 billingAccount — from payload
             if not rec.billing_account_id:
                 ba = payload.get("billingAccount") or {}
@@ -78,31 +91,21 @@ class CustomerBillTMFC031Wiring(models.Model):
                     if match:
                         updates["billing_account_id"] = match.id
 
-            # TMF632 relatedParty → res.partner
-            if not rec.related_partner_ids and effective_party_json:
-                ids = _resolve_ids(self.env, "res.partner", effective_party_json)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
-
-            # TMF637 product → tmf.product
-            if not rec.product_ids and effective_product_json:
-                ids = _resolve_ids(self.env, "tmf.product", effective_product_json)
-                if ids:
-                    updates["product_ids"] = [(6, 0, ids)]
-
-            # TMF635 usage → tmf.usage
-            if not rec.usage_ids and effective_usage_json:
-                ids = _resolve_ids(self.env, "tmf.usage", effective_usage_json)
-                if ids:
-                    updates["usage_ids"] = [(6, 0, ids)]
+            _rebuild("related_partner_ids", "res.partner", effective_party_json,
+                     bool(explicit & {"related_party_json", "payload"}))
+            _rebuild("product_ids", "tmf.product", effective_product_json,
+                     bool(explicit & {"product_json", "payload"}))
+            _rebuild("usage_ids", "tmf.usage", effective_usage_json,
+                     bool(explicit & {"usage_json", "payload"}))
 
             # TMF669 partyRole — first match from relatedParty with PartyRole @type
-            if not rec.party_role_id and effective_party_json:
-                items = [i for i in effective_party_json
-                         if isinstance(i, dict) and i.get("@type") in ("PartyRole", "PartyRoleRef")]
-                ids = _resolve_ids(self.env, "tmf.party.role", items)
-                if ids:
-                    updates["party_role_id"] = ids[0]
+            role_items = [i for i in effective_party_json
+                          if isinstance(i, dict) and i.get("@type") in ("PartyRole", "PartyRoleRef")]
+            role_ids = _resolve_ids(self.env, "tmf.party.role", role_items)
+            if role_ids and rec.party_role_id.id != role_ids[0]:
+                updates["party_role_id"] = role_ids[0]
+            elif not role_items and explicit & {"related_party_json", "payload"} and rec.party_role_id:
+                updates["party_role_id"] = False
 
             # TMF701 processFlow — from payload
             if not rec.process_flow_id:
@@ -128,9 +131,9 @@ class CustomerBillTMFC031Wiring(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if not self.env.context.get("skip_tmf_wiring"):
-            wiring_keys = {"related_party_json", "product_json", "usage_json", "payload", "tmf_id"}
-            if wiring_keys & set(vals.keys()):
-                self._resolve_tmf_refs()
+            changed = self._TMFC031_WIRING_KEYS & set(vals.keys())
+            if changed:
+                self._resolve_tmf_refs(changed_keys=changed)
         return res
 
 
@@ -154,8 +157,11 @@ class AppliedBillingRateTMFC031Wiring(models.Model):
         "rate_id", "product_id", string="Products (TMF637)"
     )
 
-    def _resolve_tmf_refs(self):
+    _TMFC031_RATE_KEYS = frozenset(("related_party_json", "product_json", "payload"))
+
+    def _resolve_tmf_refs(self, changed_keys=None):
         ctx = {"skip_tmf_wiring": True}
+        explicit = changed_keys or set()
         for rec in self:
             updates = {}
 
@@ -170,15 +176,17 @@ class AppliedBillingRateTMFC031Wiring(models.Model):
                     if match:
                         updates["billing_account_id"] = match.id
 
-            if not rec.related_partner_ids and rec.related_party_json:
-                ids = _resolve_ids(self.env, "res.partner", rec.related_party_json)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
+            def _rebuild(field_name, model, items, triggered):
+                if not items and not triggered:
+                    return
+                ids = _resolve_ids(self.env, model, items)
+                if set(ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, ids)]
 
-            if not rec.product_ids and rec.product_json:
-                ids = _resolve_ids(self.env, "tmf.product", rec.product_json)
-                if ids:
-                    updates["product_ids"] = [(6, 0, ids)]
+            _rebuild("related_partner_ids", "res.partner", rec.related_party_json,
+                     "related_party_json" in explicit)
+            _rebuild("product_ids", "tmf.product", rec.product_json,
+                     "product_json" in explicit)
 
             if updates:
                 rec.with_context(**ctx).write(updates)
@@ -193,7 +201,7 @@ class AppliedBillingRateTMFC031Wiring(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if not self.env.context.get("skip_tmf_wiring"):
-            wiring_keys = {"related_party_json", "product_json", "payload"}
-            if wiring_keys & set(vals.keys()):
-                self._resolve_tmf_refs()
+            changed = self._TMFC031_RATE_KEYS & set(vals.keys())
+            if changed:
+                self._resolve_tmf_refs(changed_keys=changed)
         return res

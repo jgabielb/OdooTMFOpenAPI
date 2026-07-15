@@ -13,6 +13,7 @@
         "tmf_resource_catalog",
         "tmf_customer",
         "tmf_party_role",
+        "tmf_entity_catalog",
     ],
     "data": [
         "security/ir.model.access.csv",

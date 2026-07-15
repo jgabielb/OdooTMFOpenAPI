@@ -20,6 +20,7 @@
         "tmf_geographic_address",
         "tmf_geographic_site",
         "tmf_geographic_location",
+        "tmf_permission",
         "tmf_process_flow",
         "stock",
     ],

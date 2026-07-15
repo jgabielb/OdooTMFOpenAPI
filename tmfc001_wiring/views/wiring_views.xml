@@ -23,6 +23,12 @@
                     <group string="TMF651 — Agreements">
                         <field name="agreement_ids" widget="many2many_tags" nolabel="1"/>
                     </group>
+                    <group string="TMF651 — Agreement Specifications">
+                        <field name="agreement_specification_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                    <group string="TMF662 — Entity Specifications">
+                        <field name="entity_specification_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
                     <group string="TMF673/674/675 — Place">
                         <field name="geographic_address_id"/>
                         <field name="geographic_site_id"/>
@@ -32,6 +38,8 @@
                         <field name="related_party_json" widget="json" nolabel="1"/>
                         <field name="place_json" widget="json" nolabel="1"/>
                         <field name="agreement_json" widget="json" nolabel="1"/>
+                        <field name="agreement_specification_json" widget="json" nolabel="1"/>
+                        <field name="entity_specification_json" widget="json" nolabel="1"/>
                     </group>
                 </page>
             </xpath>

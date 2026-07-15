@@ -40,6 +40,22 @@ class TMFC050ProductRecommendation(models.Model):
         "tmf.party.role", "tmfc050_party_role_rel", "rec_id", "party_role_id",
         string="TMFC050 Party Roles",
     )
+    tmfc050_product_offering_ids = fields.Many2many(
+        "product.template", "tmfc050_offering_rel", "rec_id", "offering_id",
+        string="TMFC050 Recommended Offerings (TMF620)",
+    )
+    tmfc050_category_ids = fields.Many2many(
+        "tmf.product.category", "tmfc050_category_rel", "rec_id", "category_id",
+        string="TMFC050 Categories (TMF620)",
+    )
+    tmfc050_product_order_ids = fields.Many2many(
+        "sale.order", "tmfc050_product_order_rel", "rec_id", "order_id",
+        string="TMFC050 Product Orders (TMF622)",
+    )
+    tmfc050_shopping_cart_ids = fields.Many2many(
+        "tmf.shopping.cart", "tmfc050_cart_rel", "rec_id", "cart_id",
+        string="TMFC050 Shopping Carts (TMF663)",
+    )
 
     def _tmfc050_resolve_refs(self):
         ctx = {"skip_tmf_wiring": True}
@@ -60,6 +76,40 @@ class TMFC050ProductRecommendation(models.Model):
                 r = PartyRole.search([("tmf_id", "in", role_refs)])
                 if r:
                     updates["tmfc050_party_role_ids"] = [(6, 0, r.ids)]
+
+            def _rebuild(field_name, model, refs):
+                ids = [str((i or {}).get("id") or "").strip()
+                       for i in refs if isinstance(i, dict) and i.get("id")]
+                if not ids:
+                    return
+                found = self.env[model].sudo().search([("tmf_id", "in", ids)])
+                if found and set(found.ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, found.ids)]
+
+            def _listify(value):
+                value = _loads(value)
+                if isinstance(value, dict):
+                    return [value]
+                return value if isinstance(value, list) else []
+
+            # recommendationItem[].offering / .productOffering → TMF620
+            offering_refs = []
+            for item in _listify(rec.recommendation_item):
+                if not isinstance(item, dict):
+                    continue
+                po = item.get("productOffering") or item.get("offering")
+                if isinstance(po, dict):
+                    offering_refs.append(po)
+                elif isinstance(po, list):
+                    offering_refs.extend(p for p in po if isinstance(p, dict))
+            _rebuild("tmfc050_product_offering_ids", "product.template", offering_refs)
+            _rebuild("tmfc050_category_ids", "tmf.product.category",
+                     _listify(rec.category))
+            _rebuild("tmfc050_product_order_ids", "sale.order",
+                     _listify(rec.product_order))
+            _rebuild("tmfc050_shopping_cart_ids", "tmf.shopping.cart",
+                     _listify(rec.shopping_cart))
+
             if updates:
                 rec.with_context(**ctx).write(updates)
         return True
@@ -96,4 +146,9 @@ class TMFC050WiringTools(models.AbstractModel):
 
     @api.model
     def _handle_party_role_event(self, payload):
+        return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_product_catalog_event(self, payload):
+        """TMF620 catalog events (only YAML-subscribed source): re-resolve refs."""
         return self._handle_party_event(payload)

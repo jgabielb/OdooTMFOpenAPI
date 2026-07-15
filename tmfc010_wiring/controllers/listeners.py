@@ -25,6 +25,11 @@ PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent",
     "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+ENTITY_SPEC_EVENTS = {
+    "EntitySpecificationCreateEvent", "EntitySpecificationChangeEvent",
+    "EntitySpecificationAttributeValueChangeEvent",
+    "EntitySpecificationStateChangeEvent", "EntitySpecificationDeleteEvent",
+}
 
 
 class TMFC010ListenerController(http.Controller):
@@ -65,6 +70,12 @@ class TMFC010ListenerController(http.Controller):
                 type="http", auth="public", methods=["POST"], csrf=False)
     def listener_party_role(self, **_p):
         return self._dispatch(self._parse_json(), PARTY_ROLE_EVENTS, "_handle_party_role_event", "partyRole")
+
+    @http.route(f"{TMFC010_LISTENER_BASE}/entitySpecification",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_entity_specification(self, **_p):
+        return self._dispatch(self._parse_json(), ENTITY_SPEC_EVENTS,
+                              "_handle_entity_specification_event", "entitySpecification")
 
     @http.route(TMFC010_HUB_BASE,
                 type="http", auth="public", methods=["GET", "POST"], csrf=False)

@@ -1,4 +1,5 @@
 import json
+
 from odoo import api, fields, models
 
 
@@ -16,6 +17,32 @@ def _resolve_ids(env, model, items, id_field="tmf_id"):
     return env[model].sudo().search([(id_field, "in", ref_ids)]).ids
 
 
+def _refs_contain(items, ref_id):
+    """True when any dict entry in a TMF ref list carries the given id."""
+    for item in (items or []):
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == ref_id:
+            return True
+    return False
+
+
+PARTY_ROLE_TYPES = ("PartyRole", "PartyRoleRef")
+
+PLACE_TYPE_MODELS = {
+    "GeographicAddress": "tmf.geographic.address",
+    "GeographicAddressRef": "tmf.geographic.address",
+    "GeographicSite": "tmf.geographic.site",
+    "GeographicSiteRef": "tmf.geographic.site",
+    "GeographicLocation": "tmf.geographic.location",
+    "GeographicLocationRef": "tmf.geographic.location",
+}
+
+PLACE_FIELD_MODELS = (
+    ("geographic_address_id", "tmf.geographic.address"),
+    ("geographic_site_id", "tmf.geographic.site"),
+    ("geographic_location_id", "tmf.geographic.location"),
+)
+
+
 class ProductOfferingTMFC001Wiring(models.Model):
     """TMFC001 dependent API wiring for ProductOffering (product.template)."""
     _inherit = "product.template"
@@ -24,8 +51,14 @@ class ProductOfferingTMFC001Wiring(models.Model):
     related_party_json = fields.Json(default=list, string="Related Parties JSON (TMF632/669)")
     place_json = fields.Json(default=list, string="Place refs JSON (TMF673/674/675)")
     agreement_json = fields.Json(default=list, string="Agreement refs JSON (TMF651)")
+    agreement_specification_json = fields.Json(
+        default=list, string="Agreement Spec refs JSON (TMF651)")
     service_specification_json = fields.Json(default=list, string="Service Spec refs JSON (TMF633)")
     resource_specification_json = fields.Json(default=list, string="Resource Spec refs JSON (TMF634)")
+    # TMF662: holds EntitySpecificationRef and AssociationSpecificationRef entries;
+    # only entitySpecification resolves relationally (no local associationSpecification model).
+    entity_specification_json = fields.Json(
+        default=list, string="Entity/Association Spec refs JSON (TMF662)")
 
     # Resolved relational fields (populated by _resolve_tmf_refs)
     related_partner_ids = fields.Many2many(
@@ -48,6 +81,14 @@ class ProductOfferingTMFC001Wiring(models.Model):
         "tmf.agreement", "tmf_offering_agreement_rel",
         "offering_id", "agreement_id", string="Agreements (TMF651)"
     )
+    agreement_specification_ids = fields.Many2many(
+        "tmf.agreement.specification", "tmf_offering_agreement_spec_rel",
+        "offering_id", "spec_id", string="Agreement Specifications (TMF651)"
+    )
+    entity_specification_ids = fields.Many2many(
+        "tmf.entity.specification", "tmf_offering_entity_spec_rel",
+        "offering_id", "spec_id", string="Entity Specifications (TMF662)"
+    )
     geographic_address_id = fields.Many2one(
         "tmf.geographic.address", string="Geographic Address (TMF673)",
         index=True, ondelete="set null"
@@ -61,75 +102,75 @@ class ProductOfferingTMFC001Wiring(models.Model):
         index=True, ondelete="set null"
     )
 
-    def _resolve_tmf_refs(self):
-        """Resolve TMF JSON reference IDs to local Odoo records."""
+    # (json_field, m2m_field, target model) pairs resolved 1:1 by tmf_id
+    _TMFC001_SIMPLE_REFS = (
+        ("service_specification_json", "service_specification_ids", "tmf.service.specification"),
+        ("resource_specification_json", "resource_specification_ids", "tmf.resource.specification"),
+        ("agreement_json", "agreement_ids", "tmf.agreement"),
+        ("agreement_specification_json", "agreement_specification_ids",
+         "tmf.agreement.specification"),
+        ("entity_specification_json", "entity_specification_ids", "tmf.entity.specification"),
+    )
+
+    _TMFC001_WIRING_KEYS = frozenset((
+        "related_party_json", "place_json", "agreement_json", "agreement_specification_json",
+        "service_specification_json", "resource_specification_json", "entity_specification_json",
+    ))
+
+    def _resolve_tmf_refs(self, changed_keys=None):
+        """Rebuild relational links from the raw TMF JSON refs.
+
+        JSON is the source of truth: when a JSON field was explicitly written
+        (its key is in ``changed_keys``) the matching relational field is rebuilt
+        even if that clears it. When called without ``changed_keys`` (record
+        creation, bulk reconciliation) empty JSON leaves relational links
+        untouched so manually curated links survive.
+        """
         ctx = {"skip_tmf_wiring": True}
         for rec in self:
             updates = {}
 
-            # TMF632 relatedParty → res.partner (exclude PartyRole entries)
-            if not rec.related_partner_ids and rec.related_party_json:
-                items = [i for i in (rec.related_party_json or [])
-                         if isinstance(i, dict) and i.get("@type") not in ("PartyRole", "PartyRoleRef")]
-                ids = _resolve_ids(self.env, "res.partner", items)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
+            def _rebuild(json_field, m2m_field, model, items=None):
+                data = rec[json_field] or []
+                if not data and (changed_keys is None or json_field not in changed_keys):
+                    return
+                if items is None:
+                    items = [i for i in data if isinstance(i, dict)]
+                ids = _resolve_ids(self.env, model, items)
+                if set(ids) != set(rec[m2m_field].ids):
+                    updates[m2m_field] = [(6, 0, ids)]
 
-            # TMF669 partyRole → tmf.party.role
-            if not rec.related_party_role_ids and rec.related_party_json:
-                items = [i for i in (rec.related_party_json or [])
-                         if isinstance(i, dict) and i.get("@type") in ("PartyRole", "PartyRoleRef")]
-                ids = _resolve_ids(self.env, "tmf.party.role", items)
-                if ids:
-                    updates["related_party_role_ids"] = [(6, 0, ids)]
+            # TMF632 relatedParty → res.partner / TMF669 partyRole entries → tmf.party.role
+            party_data = [i for i in (rec.related_party_json or []) if isinstance(i, dict)]
+            _rebuild("related_party_json", "related_partner_ids", "res.partner",
+                     [i for i in party_data if i.get("@type") not in PARTY_ROLE_TYPES])
+            _rebuild("related_party_json", "related_party_role_ids", "tmf.party.role",
+                     [i for i in party_data if i.get("@type") in PARTY_ROLE_TYPES])
 
-            # TMF633 serviceSpecification → tmf.service.specification
-            if not rec.service_specification_ids and rec.service_specification_json:
-                ids = _resolve_ids(self.env, "tmf.service.specification", rec.service_specification_json)
-                if ids:
-                    updates["service_specification_ids"] = [(6, 0, ids)]
+            for json_field, m2m_field, model in self._TMFC001_SIMPLE_REFS:
+                _rebuild(json_field, m2m_field, model)
 
-            # TMF634 resourceSpecification → tmf.resource.specification
-            if not rec.resource_specification_ids and rec.resource_specification_json:
-                ids = _resolve_ids(self.env, "tmf.resource.specification", rec.resource_specification_json)
-                if ids:
-                    updates["resource_specification_ids"] = [(6, 0, ids)]
-
-            # TMF651 agreement → tmf.agreement
-            if not rec.agreement_ids and rec.agreement_json:
-                ids = _resolve_ids(self.env, "tmf.agreement", rec.agreement_json)
-                if ids:
-                    updates["agreement_ids"] = [(6, 0, ids)]
-
-            # TMF673/674/675 place → geographic models — batch by type then assign first match
-            if rec.place_json and not all([rec.geographic_address_id, rec.geographic_site_id, rec.geographic_location_id]):
-                addr_ids, site_ids, loc_ids = [], [], []
-                for item in (rec.place_json or []):
+            # TMF673/674/675 place → one Many2one per geographic model (first match)
+            place = rec.place_json or []
+            if place or (changed_keys and "place_json" in changed_keys):
+                buckets = {model: [] for _, model in PLACE_FIELD_MODELS}
+                for item in place:
                     if not isinstance(item, dict):
                         continue
                     ref_id = str(item.get("id") or "").strip()
-                    if not ref_id:
-                        continue
-                    at_type = item.get("@type", "")
-                    if at_type in ("GeographicAddress", "GeographicAddressRef"):
-                        addr_ids.append(ref_id)
-                    elif at_type in ("GeographicSite", "GeographicSiteRef"):
-                        site_ids.append(ref_id)
-                    elif at_type in ("GeographicLocation", "GeographicLocationRef"):
-                        loc_ids.append(ref_id)
-
-                if addr_ids and not rec.geographic_address_id:
-                    match = self.env["tmf.geographic.address"].sudo().search([("tmf_id", "in", addr_ids)], limit=1)
-                    if match:
-                        updates["geographic_address_id"] = match.id
-                if site_ids and not rec.geographic_site_id:
-                    match = self.env["tmf.geographic.site"].sudo().search([("tmf_id", "in", site_ids)], limit=1)
-                    if match:
-                        updates["geographic_site_id"] = match.id
-                if loc_ids and not rec.geographic_location_id:
-                    match = self.env["tmf.geographic.location"].sudo().search([("tmf_id", "in", loc_ids)], limit=1)
-                    if match:
-                        updates["geographic_location_id"] = match.id
+                    model = PLACE_TYPE_MODELS.get(item.get("@type", ""))
+                    if ref_id and model:
+                        buckets[model].append(ref_id)
+                for m2o_field, model in PLACE_FIELD_MODELS:
+                    ids = buckets[model]
+                    match = (self.env[model].sudo().search([("tmf_id", "in", ids)], limit=1)
+                             if ids else self.env[model].sudo())
+                    new_id = match.id if match else False
+                    if ids and not match and (changed_keys is None
+                                              or "place_json" not in changed_keys):
+                        continue  # unresolvable yet; keep whatever is there
+                    if new_id != rec[m2o_field].id:
+                        updates[m2o_field] = new_id
 
             if updates:
                 rec.with_context(**ctx).write(updates)
@@ -144,12 +185,9 @@ class ProductOfferingTMFC001Wiring(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if not self.env.context.get("skip_tmf_wiring"):
-            wiring_keys = {
-                "related_party_json", "place_json", "agreement_json",
-                "service_specification_json", "resource_specification_json",
-            }
-            if wiring_keys & set(vals.keys()):
-                self._resolve_tmf_refs()
+            changed = self._TMFC001_WIRING_KEYS & set(vals.keys())
+            if changed:
+                self._resolve_tmf_refs(changed_keys=changed)
         return res
 
 
@@ -160,6 +198,8 @@ class ProductSpecificationTMFC001Wiring(models.Model):
     related_party_json = fields.Json(default=list, string="Related Parties JSON (TMF632)")
     service_specification_json = fields.Json(default=list, string="Service Spec refs JSON (TMF633)")
     resource_specification_json = fields.Json(default=list, string="Resource Spec refs JSON (TMF634)")
+    entity_specification_json = fields.Json(
+        default=list, string="Entity/Association Spec refs JSON (TMF662)")
 
     related_partner_ids = fields.Many2many(
         "res.partner", "tmf_product_spec_partner_rel",
@@ -173,27 +213,36 @@ class ProductSpecificationTMFC001Wiring(models.Model):
         "tmf.resource.specification", "tmf_product_spec_resource_spec_rel",
         "spec_id", "res_id", string="Resource Specifications (TMF634)"
     )
+    entity_specification_ids = fields.Many2many(
+        "tmf.entity.specification", "tmf_product_spec_entity_spec_rel",
+        "spec_id", "ent_id", string="Entity Specifications (TMF662)"
+    )
 
-    def _resolve_tmf_refs(self):
+    _TMFC001_SIMPLE_REFS = (
+        ("related_party_json", "related_partner_ids", "res.partner"),
+        ("service_specification_json", "service_specification_ids", "tmf.service.specification"),
+        ("resource_specification_json", "resource_specification_ids", "tmf.resource.specification"),
+        ("entity_specification_json", "entity_specification_ids", "tmf.entity.specification"),
+    )
+
+    _TMFC001_WIRING_KEYS = frozenset((
+        "related_party_json", "service_specification_json", "resource_specification_json",
+        "entity_specification_json",
+    ))
+
+    def _resolve_tmf_refs(self, changed_keys=None):
+        """Rebuild relational links from raw TMF JSON refs (see ProductOffering wiring)."""
         ctx = {"skip_tmf_wiring": True}
         for rec in self:
             updates = {}
-
-            if not rec.related_partner_ids and rec.related_party_json:
-                ids = _resolve_ids(self.env, "res.partner", rec.related_party_json)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
-
-            if not rec.service_specification_ids and rec.service_specification_json:
-                ids = _resolve_ids(self.env, "tmf.service.specification", rec.service_specification_json)
-                if ids:
-                    updates["service_specification_ids"] = [(6, 0, ids)]
-
-            if not rec.resource_specification_ids and rec.resource_specification_json:
-                ids = _resolve_ids(self.env, "tmf.resource.specification", rec.resource_specification_json)
-                if ids:
-                    updates["resource_specification_ids"] = [(6, 0, ids)]
-
+            for json_field, m2m_field, model in self._TMFC001_SIMPLE_REFS:
+                data = rec[json_field] or []
+                if not data and (changed_keys is None or json_field not in changed_keys):
+                    continue
+                ids = _resolve_ids(self.env, model,
+                                   [i for i in data if isinstance(i, dict)])
+                if set(ids) != set(rec[m2m_field].ids):
+                    updates[m2m_field] = [(6, 0, ids)]
             if updates:
                 rec.with_context(**ctx).write(updates)
 
@@ -207,9 +256,9 @@ class ProductSpecificationTMFC001Wiring(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if not self.env.context.get("skip_tmf_wiring"):
-            wiring_keys = {"related_party_json", "service_specification_json", "resource_specification_json"}
-            if wiring_keys & set(vals.keys()):
-                self._resolve_tmf_refs()
+            changed = self._TMFC001_WIRING_KEYS & set(vals.keys())
+            if changed:
+                self._resolve_tmf_refs(changed_keys=changed)
         return res
 
 
@@ -234,6 +283,10 @@ class TMFC001WiringTools(models.AbstractModel):
             event = payload["event"]
             if isinstance(event.get("resource"), dict):
                 return event["resource"]
+            # TMF event envelopes may key the resource by its type name
+            for value in event.values():
+                if isinstance(value, dict) and value.get("id"):
+                    return value
         if isinstance(payload.get("resource"), dict):
             return payload["resource"]
         return payload
@@ -243,123 +296,121 @@ class TMFC001WiringTools(models.AbstractModel):
         ref_id = str(resource.get("id") or payload.get("id") or "").strip()
         return ref_id
 
+    # ------------------------------------------------------------------
+    # Generic reconciliation
+    # ------------------------------------------------------------------
+
+    def _referencing_records(self, model_name, json_field, m2m_field, ref_id):
+        """Records linking ref_id through the relational field or the raw JSON."""
+        Model = self.env[model_name].sudo().with_context(active_test=False)
+        recs = Model.search([(m2m_field + ".tmf_id", "=", ref_id)])
+        candidates = Model.search([(json_field, "!=", False)]) - recs
+        recs |= candidates.filtered(lambda r: _refs_contain(r[json_field], ref_id))
+        return recs
+
+    def _reconcile_simple(self, ref_model, ref_id, targets):
+        """Re-resolve (resource exists) or prune (resource deleted) TMF refs.
+
+        targets: iterable of (model_name, json_field, m2m_field).
+        """
+        exists = bool(self.env[ref_model].sudo().search([("tmf_id", "=", ref_id)], limit=1))
+        for model_name, json_field, m2m_field in targets:
+            recs = self._referencing_records(model_name, json_field, m2m_field, ref_id)
+            if exists:
+                recs._resolve_tmf_refs(changed_keys={json_field})
+                continue
+            for rec in recs:
+                json_refs = [item for item in (rec[json_field] or [])
+                             if str((item or {}).get("id") or "").strip() != ref_id]
+                kept = rec[m2m_field].filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
+                rec.with_context(skip_tmf_wiring=True).write({
+                    m2m_field: [(6, 0, kept.ids)],
+                    json_field: json_refs,
+                })
+
+    # ------------------------------------------------------------------
+    # Event handlers (invoked from the TMFC001 listener routes)
+    # ------------------------------------------------------------------
+
     def _reconcile_service_specification_refs(self, payload=None):
         ref_id = self._extract_resource_id(payload or {})
         if not ref_id:
             return
-        spec = self.env["tmf.service.specification"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
-        offering_model = self.env["product.template"].sudo()
-        product_spec_model = self.env["tmf.product.specification"].sudo()
-        if spec:
-            offers = offering_model.search([("service_specification_json", "!=", False)])
-            product_specs = product_spec_model.search([("service_specification_json", "!=", False)])
-            for rec in offers:
-                rec._resolve_tmf_refs()
-            for rec in product_specs:
-                rec._resolve_tmf_refs()
-            return
-        offers = offering_model.search([("service_specification_ids", "in", [spec.id])]) if spec else offering_model.search([])
-        for rec in offers:
-            kept = rec.service_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
-            json_refs = [item for item in (rec.service_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
-            rec.with_context(skip_tmf_wiring=True).write({
-                "service_specification_ids": [(6, 0, kept.ids)],
-                "service_specification_json": json_refs,
-            })
-        product_specs = product_spec_model.search([])
-        for rec in product_specs:
-            if ref_id not in [r.tmf_id or str(r.id) for r in rec.service_specification_ids]:
-                continue
-            kept = rec.service_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
-            json_refs = [item for item in (rec.service_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
-            rec.with_context(skip_tmf_wiring=True).write({
-                "service_specification_ids": [(6, 0, kept.ids)],
-                "service_specification_json": json_refs,
-            })
+        self._reconcile_simple("tmf.service.specification", ref_id, (
+            ("product.template", "service_specification_json", "service_specification_ids"),
+            ("tmf.product.specification", "service_specification_json",
+             "service_specification_ids"),
+        ))
 
     def _reconcile_resource_specification_refs(self, payload=None):
         ref_id = self._extract_resource_id(payload or {})
         if not ref_id:
             return
-        spec = self.env["tmf.resource.specification"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
-        offering_model = self.env["product.template"].sudo()
-        product_spec_model = self.env["tmf.product.specification"].sudo()
-        if spec:
-            offers = offering_model.search([("resource_specification_json", "!=", False)])
-            product_specs = product_spec_model.search([("resource_specification_json", "!=", False)])
-            for rec in offers:
-                rec._resolve_tmf_refs()
-            for rec in product_specs:
-                rec._resolve_tmf_refs()
+        self._reconcile_simple("tmf.resource.specification", ref_id, (
+            ("product.template", "resource_specification_json", "resource_specification_ids"),
+            ("tmf.product.specification", "resource_specification_json",
+             "resource_specification_ids"),
+        ))
+
+    def _reconcile_entity_specification_refs(self, payload=None):
+        ref_id = self._extract_resource_id(payload or {})
+        if not ref_id:
             return
-        offers = offering_model.search([])
-        for rec in offers:
-            if ref_id not in [r.tmf_id or str(r.id) for r in rec.resource_specification_ids]:
-                continue
-            kept = rec.resource_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
-            json_refs = [item for item in (rec.resource_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
-            rec.with_context(skip_tmf_wiring=True).write({
-                "resource_specification_ids": [(6, 0, kept.ids)],
-                "resource_specification_json": json_refs,
-            })
-        product_specs = product_spec_model.search([])
-        for rec in product_specs:
-            if ref_id not in [r.tmf_id or str(r.id) for r in rec.resource_specification_ids]:
-                continue
-            kept = rec.resource_specification_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id)
-            json_refs = [item for item in (rec.resource_specification_json or []) if str((item or {}).get("id") or "").strip() != ref_id]
-            rec.with_context(skip_tmf_wiring=True).write({
-                "resource_specification_ids": [(6, 0, kept.ids)],
-                "resource_specification_json": json_refs,
-            })
+        self._reconcile_simple("tmf.entity.specification", ref_id, (
+            ("product.template", "entity_specification_json", "entity_specification_ids"),
+            ("tmf.product.specification", "entity_specification_json",
+             "entity_specification_ids"),
+        ))
 
     def _reconcile_related_party_refs(self, payload=None):
+        """TMF632 individual/organization delete events: prune party links."""
         ref_id = self._extract_resource_id(payload or {})
         if not ref_id:
             return
-        partner = self.env["res.partner"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
-        partner_id = partner.id if partner else None
-        for rec in self.env["product.template"].sudo().search([]):
-            current_ids = rec.related_partner_ids.ids
-            if partner_id and partner_id not in current_ids:
-                continue
-            json_refs = [item for item in (rec.related_party_json or [])
-                         if str((item or {}).get("id") or "").strip() != ref_id
-                         or (item or {}).get("@type") in ("PartyRole", "PartyRoleRef")]
-            kept_ids = rec.related_partner_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
-            rec.with_context(skip_tmf_wiring=True).write({
-                "related_partner_ids": [(6, 0, kept_ids)],
-                "related_party_json": json_refs,
-            })
-        for rec in self.env["tmf.product.specification"].sudo().search([]):
-            current_ids = rec.related_partner_ids.ids
-            if partner_id and partner_id not in current_ids:
-                continue
-            json_refs = [item for item in (rec.related_party_json or [])
-                         if str((item or {}).get("id") or "").strip() != ref_id]
-            kept_ids = rec.related_partner_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
-            rec.with_context(skip_tmf_wiring=True).write({
-                "related_partner_ids": [(6, 0, kept_ids)],
-                "related_party_json": json_refs,
-            })
+        for model_name in ("product.template", "tmf.product.specification"):
+            Model = self.env[model_name].sudo().with_context(active_test=False)
+            recs = Model.search([("related_partner_ids.tmf_id", "=", ref_id)])
+            candidates = Model.search([("related_party_json", "!=", False)]) - recs
+            recs |= candidates.filtered(lambda r: any(
+                isinstance(i, dict)
+                and str(i.get("id") or "").strip() == ref_id
+                and i.get("@type") not in PARTY_ROLE_TYPES
+                for i in (r.related_party_json or [])
+            ))
+            for rec in recs:
+                json_refs = [item for item in (rec.related_party_json or [])
+                             if not (isinstance(item, dict)
+                                     and str(item.get("id") or "").strip() == ref_id
+                                     and item.get("@type") not in PARTY_ROLE_TYPES)]
+                kept = rec.related_partner_ids.filtered(
+                    lambda p: (p.tmf_id or str(p.id)) != ref_id)
+                rec.with_context(skip_tmf_wiring=True).write({
+                    "related_partner_ids": [(6, 0, kept.ids)],
+                    "related_party_json": json_refs,
+                })
 
     def _reconcile_party_role_refs(self, payload=None):
+        """TMF669 partyRole delete events: prune role links on offerings."""
         ref_id = self._extract_resource_id(payload or {})
         if not ref_id:
             return
-        role = self.env["tmf.party.role"].sudo().search([("tmf_id", "=", ref_id)], limit=1)
-        role_id = role.id if role else None
-        for rec in self.env["product.template"].sudo().search([]):
-            current_ids = rec.related_party_role_ids.ids
-            if role_id and role_id not in current_ids:
-                continue
+        Model = self.env["product.template"].sudo().with_context(active_test=False)
+        recs = Model.search([("related_party_role_ids.tmf_id", "=", ref_id)])
+        candidates = Model.search([("related_party_json", "!=", False)]) - recs
+        recs |= candidates.filtered(lambda r: any(
+            isinstance(i, dict)
+            and str(i.get("id") or "").strip() == ref_id
+            and i.get("@type") in PARTY_ROLE_TYPES
+            for i in (r.related_party_json or [])
+        ))
+        for rec in recs:
             json_refs = [item for item in (rec.related_party_json or [])
-                         if not (
-                             str((item or {}).get("id") or "").strip() == ref_id and
-                             (item or {}).get("@type") in ("PartyRole", "PartyRoleRef")
-                         )]
-            kept_ids = rec.related_party_role_ids.filtered(lambda r: (r.tmf_id or str(r.id)) != ref_id).ids
+                         if not (isinstance(item, dict)
+                                 and str(item.get("id") or "").strip() == ref_id
+                                 and item.get("@type") in PARTY_ROLE_TYPES)]
+            kept = rec.related_party_role_ids.filtered(
+                lambda role: (role.tmf_id or str(role.id)) != ref_id)
             rec.with_context(skip_tmf_wiring=True).write({
-                "related_party_role_ids": [(6, 0, kept_ids)],
+                "related_party_role_ids": [(6, 0, kept.ids)],
                 "related_party_json": json_refs,
             })

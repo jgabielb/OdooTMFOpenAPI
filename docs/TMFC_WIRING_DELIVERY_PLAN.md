@@ -1,5 +1,18 @@
 # TMFC Wiring Delivery Plan — OdooBSS
 
+> **Status update (2026-07-14):** the full YAML-driven wiring pass executed the
+> remaining scope of Sprints 1–8 in one program: hardening (CTK feature
+> detection, rebuild-on-change resolvers, Odoo 19 listener fixes), new base API
+> surfaces (TMF697/649/769, TMF633/634 catalog resources, catalogBatchEvent,
+> TMF638 state events), YAML-complete listeners and dependent-ref wiring for
+> all 34 spec'd components, and a repo-wide listener/hub smoke runner
+> (`tools/verify_wiring.py --only smoke`). Per-component evidence lives in
+> `TMFC_WIRING_CHECKLIST.md` ("Full wiring pass — 2026-07-14") and the
+> reclassification in `TMFC_IMPLEMENTATION_STATUS.md`. Remaining follow-ups:
+> live CTK re-runs per touched base API, per-component end-to-end
+> `verify_tmfcNNN()` runners beyond tmfc001/027/031, and the TMFC062 spec
+> re-check once TM Forum publishes it.
+
 This plan turns the ODA/TMFC gap analysis into an executable delivery roadmap.
 
 It is intentionally organized around **repeatable wiring work**, not just around API availability.

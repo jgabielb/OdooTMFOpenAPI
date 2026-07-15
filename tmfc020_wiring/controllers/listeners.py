@@ -27,6 +27,8 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent",
     "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
+    # TMFC020 YAML subscribed events (TMF669 user-role notifications)
+    "UserRoleCreationNotification", "UserRoleChangeNotification",
 }
 RESOURCE_EVENTS = {
     "ResourceCreateEvent", "ResourceAttributeValueChangeEvent",

@@ -9,6 +9,8 @@
         "tmf_party_privacy_agreement",
         "tmf_party",
         "tmf_digital_identity_management",
+        "tmf_product_catalog",
+        "tmf_document",
     ],
     "data": [],
     "installable": True,

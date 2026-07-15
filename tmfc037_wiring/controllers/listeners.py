@@ -16,6 +16,22 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+SERVICE_CATALOG_EVENTS = {
+    "ServiceSpecificationChangeEvent", "ServiceSpecificationCreateEvent",
+    "ServiceSpecificationAttributeValueChangeEvent", "ServiceSpecificationDeleteEvent",
+}
+SERVICE_INVENTORY_EVENTS = {
+    "ServiceCreateEvent", "ServiceAttributeValueChangeEvent",
+    "ServiceStateChangeEvent", "ServiceDeleteEvent",
+}
+RESOURCE_INVENTORY_EVENTS = {
+    "ResourceCreateEvent", "ResourceAttributeValueChangeEvent",
+    "ResourceStateChangeEvent", "ResourceDeleteEvent",
+}
+PROCESS_FLOW_EVENTS = {
+    "ProcessFlowCreateEvent", "ProcessFlowStateChangeEvent",
+    "TaskFlowCreateEvent", "TaskFlowStateChangeEvent",
+}
 
 
 class TMFC037ListenerController(http.Controller):
@@ -48,6 +64,22 @@ class TMFC037ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/serviceCatalog", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_service_catalog(self, **_p):
+        return self._dispatch(self._parse(), SERVICE_CATALOG_EVENTS, "_handle_service_catalog_event")
+
+    @http.route(f"{BASE_L}/serviceInventory", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_service_inventory(self, **_p):
+        return self._dispatch(self._parse(), SERVICE_INVENTORY_EVENTS, "_handle_service_inventory_event")
+
+    @http.route(f"{BASE_L}/resourceInventory", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_resource_inventory(self, **_p):
+        return self._dispatch(self._parse(), RESOURCE_INVENTORY_EVENTS, "_handle_resource_inventory_event")
+
+    @http.route(f"{BASE_L}/processFlow", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_process_flow(self, **_p):
+        return self._dispatch(self._parse(), PROCESS_FLOW_EVENTS, "_handle_process_flow_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

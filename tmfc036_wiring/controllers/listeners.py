@@ -16,6 +16,31 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+PRODUCT_CATALOG_EVENTS = {
+    "ProductOfferingCreateEvent", "ProductOfferingAttributeValueChangeEvent",
+    "ProductOfferingStateChangeEvent", "ProductOfferingDeleteEvent",
+    "ProductSpecificationCreateEvent", "ProductSpecificationAttributeValueChangeEvent",
+    "ProductSpecificationStateChangeEvent", "ProductSpecificationDeleteEvent",
+    "ProductOfferingPriceCreateEvent", "ProductOfferingPriceAttributeValueChangeEvent",
+    "ProductOfferingPriceStateChangeEvent", "ProductOfferingPriceDeleteEvent",
+}
+PRODUCT_ORDER_EVENTS = {
+    "ProductOrderCreateEvent", "ProductOrderAttributeValueChangeEvent",
+    "ProductOrderStateChangeEvent", "ProductOrderDeleteEvent",
+    "ProductOrderInformationRequiredEvent",
+}
+AGREEMENT_EVENTS = {
+    "AgreementCreateEvent", "AgreementAttributeValueChangeEvent",
+    "AgreementStateChangeEvent", "AgreementDeleteEvent",
+    "AgreementSpecificationCreateEvent",
+    "AgreementSpecificationAttributeValueChangeEvent",
+    "AgreementSpecificationStateChangeEvent", "AgreementSpecificationDeleteEvent",
+}
+QUOTE_EVENTS = {
+    "QuoteCreateEvent", "QuoteAttributeValueChangeEvent",
+    "QuoteStateChangeEvent", "QuoteDeleteEvent",
+    "QuoteInformationRequiredEvent",
+}
 
 
 class TMFC036ListenerController(http.Controller):
@@ -48,6 +73,22 @@ class TMFC036ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/productCatalog", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_product_catalog(self, **_p):
+        return self._dispatch(self._parse(), PRODUCT_CATALOG_EVENTS, "_handle_product_catalog_event")
+
+    @http.route(f"{BASE_L}/productOrder", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_product_order(self, **_p):
+        return self._dispatch(self._parse(), PRODUCT_ORDER_EVENTS, "_handle_product_order_event")
+
+    @http.route(f"{BASE_L}/agreement", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_agreement(self, **_p):
+        return self._dispatch(self._parse(), AGREEMENT_EVENTS, "_handle_agreement_event")
+
+    @http.route(f"{BASE_L}/quote", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_quote(self, **_p):
+        return self._dispatch(self._parse(), QUOTE_EVENTS, "_handle_quote_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

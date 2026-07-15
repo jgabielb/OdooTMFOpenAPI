@@ -14,6 +14,8 @@
         "tmf_customer",
         "tmf_party_role",
         "tmf_product_catalog",
+        "tmf_product_inventory",  # tmf.product (TMF637)
+        "tmf_document",           # tmf.document (TMF667)
     ],
     "data": [
         "security/ir.model.access.csv",

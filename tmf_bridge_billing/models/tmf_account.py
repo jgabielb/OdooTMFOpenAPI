@@ -8,14 +8,12 @@ class TMFAccountBilling(models.Model):
     billing_account_id = fields.Many2one(
         "tmf.account",
         string="Billing Account",
-        domain="[('resource_type', '=', 'BillingAccount'), ('partner_id', '=', partner_id)]",
         ondelete="set null",
         help="The BillingAccount associated with this PartyAccount",
     )
     party_account_id = fields.Many2one(
         "tmf.account",
         string="Party Account",
-        domain="[('resource_type', '=', 'PartyAccount'), ('partner_id', '=', partner_id)]",
         ondelete="set null",
         help="The PartyAccount this BillingAccount belongs to",
     )

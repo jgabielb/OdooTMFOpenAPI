@@ -52,16 +52,41 @@ class TestProductDesign:
                 return
         pytest.xfail("productSpecCharacteristic not populated on any returned spec")
 
-    @pytest.mark.xfail(reason="Bundle offerings + bundledProductOffering not yet modeled")
     def test_bundle_offering_declares_children(self, tmf):
-        r = tmf.get(
-            "/tmf-api/productCatalogManagement/v5/productOffering?isBundle=true&limit=1"
-        )
+        # Ensure at least 2 component offerings exist to build a bundle from.
+        r = tmf.get("/tmf-api/productCatalogManagement/v5/productOffering?limit=10")
         assert r.status_code == 200
-        bundles = r.json()
-        assert bundles, "No bundle offerings returned"
-        assert "bundledProductOffering" in bundles[0]
-        assert len(bundles[0]["bundledProductOffering"]) >= 1
+        offerings = r.json()
+        if len(offerings) < 2:
+            pytest.skip("Need at least 2 offerings to seed a bundle")
+
+        comp1, comp2 = offerings[0], offerings[1]
+        bundle_body = {
+            "@type": "ProductOffering",
+            "name": "Test-Bundle-Doblepack",
+            "lifecycleStatus": "Active",
+            "bundledProductOffering": [
+                {"id": comp1["id"], "@type": "BundledProductOffering"},
+                {"id": comp2["id"], "@type": "BundledProductOffering"},
+            ],
+        }
+        rb = tmf.post(
+            "/tmf-api/productCatalogManagement/v5/productOffering", json=bundle_body
+        )
+        assert rb.status_code == 201, rb.text
+        created = rb.json()
+        assert created.get("isBundle") is True, "isBundle must be True for a bundle offering"
+        assert "bundledProductOffering" in created
+        assert len(created["bundledProductOffering"]) >= 1
+
+        # Also verify the GET ?isBundle=true filter returns it
+        r2 = tmf.get(
+            "/tmf-api/productCatalogManagement/v5/productOffering?isBundle=true&limit=5"
+        )
+        assert r2.status_code == 200
+        bundles = r2.json()
+        assert bundles, "isBundle=true filter returned no results"
+        assert all(b.get("isBundle") is True for b in bundles)
 
     def test_offering_with_resource_spec_prescribes_device(self, tmf):
         r = tmf.get("/tmf-api/productCatalogManagement/v5/productSpecification?limit=20")

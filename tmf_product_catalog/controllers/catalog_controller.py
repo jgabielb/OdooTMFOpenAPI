@@ -45,6 +45,7 @@ class TMFCatalogController(TMFBaseController):
                 "create": "CatalogCreateEvent",
                 "update": "CatalogAttributeValueChangeEvent",
                 "delete": "CatalogDeleteEvent",
+                "batch": "CatalogBatchEvent",
             },
             "category": {
                 "create": "CategoryCreateEvent",
@@ -80,20 +81,6 @@ class TMFCatalogController(TMFBaseController):
             return self._error(400, "BAD_REQUEST", "Invalid JSON body")
         return request.make_response("", status=201)
 
-    def _listener_apply(self, handler_name):
-        try:
-            payload = self._parse_json_body()
-        except Exception:
-            payload = None
-        if not isinstance(payload, dict):
-            return self._error(400, "BAD_REQUEST", "Invalid JSON body")
-        try:
-            request.env["tmfc001.wiring.tools"].sudo()[handler_name](payload)
-        except Exception as e:
-            _logger.exception("TMFC001 listener %s failed", handler_name)
-            return self._error(400, "CALLBACK_ERROR", str(e))
-        return request.make_response("", status=201)
-
     # -------------------------------------------------------------------------
     # Status helpers
     # -------------------------------------------------------------------------
@@ -126,7 +113,8 @@ class TMFCatalogController(TMFBaseController):
                     vals["brand"] = data["brand"]
                 if data.get("productNumber"):
                     vals["product_number"] = data["productNumber"]
-                if data.get("relatedParty"):
+                spec_fields = request.env["tmf.product.specification"].sudo()._fields
+                if data.get("relatedParty") and "related_party_json" in spec_fields:
                     vals["related_party_json"] = data["relatedParty"]
                 if data.get("productSpecCharacteristic"):
                     import json as _json
@@ -191,11 +179,11 @@ class TMFCatalogController(TMFBaseController):
                     vals['lifecycle_status'] = self._SPEC_STATUS_IN.get(
                         data['lifecycleStatus'], 'design'
                     )
-                if 'relatedParty' in data:
+                if 'relatedParty' in data and 'related_party_json' in spec._fields:
                     vals['related_party_json'] = data['relatedParty']
-                if 'serviceSpecification' in data:
+                if 'serviceSpecification' in data and 'service_specification_json' in spec._fields:
                     vals['service_specification_json'] = data['serviceSpecification']
-                if 'resourceSpecification' in data:
+                if 'resourceSpecification' in data and 'resource_specification_json' in spec._fields:
                     vals['resource_specification_json'] = data['resourceSpecification']
                 if 'productSpecCharacteristic' in data:
                     import json as _json
@@ -230,18 +218,18 @@ class TMFCatalogController(TMFBaseController):
             "lastUpdate": s.write_date.isoformat() + "Z" if s.write_date else None,
             "@type": "ProductSpecification",
         }
-        if s.related_partner_ids:
+        if "related_partner_ids" in s._fields and s.related_partner_ids:
             payload["relatedParty"] = [
                 {"id": p.tmf_id or str(p.id), "name": p.name, "@type": "RelatedParty"}
                 for p in s.related_partner_ids
             ]
-        if s.service_specification_ids:
+        if "service_specification_ids" in s._fields and s.service_specification_ids:
             payload["serviceSpecification"] = [
                 {"id": ss.tmf_id, "href": ss.href, "name": ss.name,
                  "@type": "ServiceSpecificationRef"}
                 for ss in s.service_specification_ids
             ]
-        if s.resource_specification_ids:
+        if "resource_specification_ids" in s._fields and s.resource_specification_ids:
             payload["resourceSpecification"] = [
                 {"id": rs.tmf_id, "href": rs.href, "name": rs.name,
                  "@type": "ResourceSpecificationRef"}
@@ -281,12 +269,38 @@ class TMFCatalogController(TMFBaseController):
                     if spec:
                         vals["product_specification_id"] = spec.id
                 offering = request.env["product.template"].sudo().create(vals)
-                if data.get("relatedParty"):
-                    offering.sudo().write({"related_party_json": data["relatedParty"]})
+                sidecar_vals = {}
+                for payload_key, field_name in (
+                    ("relatedParty", "related_party_json"),
+                    ("place", "place_json"),
+                    ("agreement", "agreement_json"),
+                    ("serviceSpecification", "service_specification_json"),
+                    ("resourceSpecification", "resource_specification_json"),
+                ):
+                    if data.get(payload_key) and field_name in offering._fields:
+                        sidecar_vals[field_name] = data[payload_key]
+                if sidecar_vals:
+                    offering.sudo().write(sidecar_vals)
+                if data.get("bundledProductOffering"):
+                    component_ids = []
+                    for ref in data["bundledProductOffering"]:
+                        ref_id = str((ref or {}).get("id") or "").strip()
+                        if not ref_id:
+                            continue
+                        comp = request.env["product.template"].sudo().search(
+                            [("tmf_id", "=", ref_id)], limit=1
+                        )
+                        if not comp and ref_id.isdigit():
+                            comp = request.env["product.template"].sudo().browse(int(ref_id))
+                        if comp and comp.exists():
+                            component_ids.append(comp.id)
+                    if component_ids:
+                        offering.sudo().write({"bundled_offering_ids": [(6, 0, component_ids)]})
                 created = self._offering_to_json(offering)
                 for k, v in data.items():
                     if k not in ("id", "href", "@type", "name", "lifecycleStatus",
-                                 "productSpecification", "relatedParty"):
+                                 "productSpecification", "relatedParty",
+                                 "bundledProductOffering"):
                         created.setdefault(k, v)
                 return self._json(created, status=201)
             except Exception as e:
@@ -296,6 +310,10 @@ class TMFCatalogController(TMFBaseController):
         domain = [('active', '=', True)]
         if params.get('name'):
             domain.append(('name', '=', params['name']))
+        if params.get('isBundle') == 'true':
+            domain.append(('bundled_offering_ids', '!=', False))
+        elif params.get('isBundle') == 'false':
+            domain.append(('bundled_offering_ids', '=', False))
 
         limit, offset = self._paginate_params(params)
         env = request.env['product.template'].sudo()
@@ -325,18 +343,31 @@ class TMFCatalogController(TMFBaseController):
                     vals['lifecycle_status'] = self._OFF_STATUS_IN.get(
                         data['lifecycleStatus'].lower(), 'active'
                     )
-                if 'relatedParty' in data:
-                    vals['related_party_json'] = data['relatedParty']
-                if 'place' in data:
-                    vals['place_json'] = data['place']
-                if 'agreement' in data:
-                    vals['agreement_json'] = data['agreement']
-                if 'serviceSpecification' in data:
-                    vals['service_specification_json'] = data['serviceSpecification']
-                if 'resourceSpecification' in data:
-                    vals['resource_specification_json'] = data['resourceSpecification']
+                for payload_key, field_name in (
+                    ('relatedParty', 'related_party_json'),
+                    ('place', 'place_json'),
+                    ('agreement', 'agreement_json'),
+                    ('serviceSpecification', 'service_specification_json'),
+                    ('resourceSpecification', 'resource_specification_json'),
+                ):
+                    if payload_key in data and field_name in offering._fields:
+                        vals[field_name] = data[payload_key]
                 if vals:
                     offering.write(vals)
+                if 'bundledProductOffering' in data:
+                    component_ids = []
+                    for ref in (data['bundledProductOffering'] or []):
+                        ref_id = str((ref or {}).get("id") or "").strip()
+                        if not ref_id:
+                            continue
+                        comp = request.env["product.template"].sudo().search(
+                            [("tmf_id", "=", ref_id)], limit=1
+                        )
+                        if not comp and ref_id.isdigit():
+                            comp = request.env["product.template"].sudo().browse(int(ref_id))
+                        if comp and comp.exists():
+                            component_ids.append(comp.id)
+                    offering.write({"bundled_offering_ids": [(6, 0, component_ids)]})
                 return self._json(self._select_fields(
                     self._offering_to_json(offering), params.get('fields')
                 ))
@@ -359,10 +390,19 @@ class TMFCatalogController(TMFBaseController):
             "name": o.name,
             "lifecycleStatus": self._OFF_STATUS_OUT.get(o.lifecycle_status, "Active"),
             "lastUpdate": o.write_date.isoformat() + "Z" if o.write_date else None,
-            "isBundle": False,
+            "isBundle": bool(o.bundled_offering_ids),
             "@type": "ProductOffering",
             "productOfferingPrice": [],
         }
+        if o.bundled_offering_ids:
+            result["bundledProductOffering"] = [
+                {
+                    "id": c.tmf_id or str(c.id),
+                    "name": c.name,
+                    "@type": "BundledProductOffering",
+                }
+                for c in o.bundled_offering_ids
+            ]
         if o.product_specification_id:
             result["productSpecification"] = {
                 "id": o.product_specification_id.tmf_id or str(o.product_specification_id.id),
@@ -373,40 +413,44 @@ class TMFCatalogController(TMFBaseController):
                 "@type": "ProductSpecificationRef",
                 "@referredType": "ProductSpecification",
             }
-        related_party = [
-            {"id": p.tmf_id or str(p.id), "name": p.name, "@type": "RelatedParty"}
-            for p in o.related_partner_ids
-        ] + [
-            {"id": r.tmf_id, "href": r.href, "name": r.name, "@type": "PartyRoleRef"}
-            for r in o.related_party_role_ids
-        ]
+        related_party = []
+        if "related_partner_ids" in o._fields:
+            related_party += [
+                {"id": p.tmf_id or str(p.id), "name": p.name, "@type": "RelatedParty"}
+                for p in o.related_partner_ids
+            ]
+        if "related_party_role_ids" in o._fields:
+            related_party += [
+                {"id": r.tmf_id, "href": r.href, "name": r.name, "@type": "PartyRoleRef"}
+                for r in o.related_party_role_ids
+            ]
         if related_party:
             result["relatedParty"] = related_party
-        if o.service_specification_ids:
+        if "service_specification_ids" in o._fields and o.service_specification_ids:
             result["serviceSpecification"] = [
                 {"id": ss.tmf_id, "href": ss.href, "name": ss.name,
                  "@type": "ServiceSpecificationRef"}
                 for ss in o.service_specification_ids
             ]
-        if o.resource_specification_ids:
+        if "resource_specification_ids" in o._fields and o.resource_specification_ids:
             result["resourceSpecification"] = [
                 {"id": rs.tmf_id, "href": rs.href, "name": rs.name,
                  "@type": "ResourceSpecificationRef"}
                 for rs in o.resource_specification_ids
             ]
-        if o.agreement_ids:
+        if "agreement_ids" in o._fields and o.agreement_ids:
             result["agreement"] = [
                 {"id": a.tmf_id, "href": a.href, "name": a.name, "@type": "AgreementRef"}
                 for a in o.agreement_ids
             ]
         place = []
-        if o.geographic_address_id:
+        if "geographic_address_id" in o._fields and o.geographic_address_id:
             place.append({"id": o.geographic_address_id.tmf_id,
                           "href": o.geographic_address_id.href, "@type": "GeographicAddressRef"})
-        if o.geographic_site_id:
+        if "geographic_site_id" in o._fields and o.geographic_site_id:
             place.append({"id": o.geographic_site_id.tmf_id,
                           "href": o.geographic_site_id.href, "@type": "GeographicSiteRef"})
-        if o.geographic_location_id:
+        if "geographic_location_id" in o._fields and o.geographic_location_id:
             place.append({"id": o.geographic_location_id.tmf_id,
                           "href": o.geographic_location_id.href,
                           "@type": "GeographicLocationRef"})
@@ -735,6 +779,9 @@ class TMFCatalogController(TMFBaseController):
                     'status': data.get('status') or 'completed',
                     'url': data.get('url') or '',
                 })
+                if rec.status == 'completed':
+                    # TMFC001: a completed batch import mutates the catalog wholesale
+                    self._publish_event('catalog', 'batch', self._import_job_to_json(rec))
                 return self._json(self._import_job_to_json(rec), status=201)
             except Exception as e:
                 return self._error(400, 'BAD_REQUEST', str(e))
@@ -777,6 +824,8 @@ class TMFCatalogController(TMFBaseController):
                     'status': data.get('status') or 'completed',
                     'url': data.get('url') or '',
                 })
+                if rec.status == 'completed':
+                    self._publish_event('catalog', 'batch', self._export_job_to_json(rec))
                 return self._json(self._export_job_to_json(rec), status=201)
             except Exception as e:
                 return self._error(400, 'BAD_REQUEST', str(e))
@@ -960,55 +1009,8 @@ class TMFCatalogController(TMFBaseController):
     def listen_pop_delete(self, **params):
         return self._listener_ok()
 
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationCreateEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_service_spec_create(self, **params):
-        return self._listener_apply('_reconcile_service_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationAttributeValueChangeEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_service_spec_attr(self, **params):
-        return self._listener_apply('_reconcile_service_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationStateChangeEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_service_spec_state(self, **params):
-        return self._listener_apply('_reconcile_service_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/serviceSpecificationDeleteEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_service_spec_delete(self, **params):
-        return self._listener_apply('_reconcile_service_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationCreateEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_resource_spec_create(self, **params):
-        return self._listener_apply('_reconcile_resource_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationChangeEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_resource_spec_change(self, **params):
-        return self._listener_apply('_reconcile_resource_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/resourceSpecificationDeleteEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_resource_spec_delete(self, **params):
-        return self._listener_apply('_reconcile_resource_specification_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/individualDeleteEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_individual_delete(self, **params):
-        return self._listener_apply('_reconcile_related_party_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/organizationDeleteEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_organization_delete(self, **params):
-        return self._listener_apply('_reconcile_related_party_refs')
-
-    @http.route('/tmf-api/productCatalogManagement/v5/listener/partyRoleDeleteEvent',
-                type='http', auth='public', methods=['POST'], csrf=False)
-    def listen_party_role_delete(self, **params):
-        return self._listener_apply('_reconcile_party_role_refs')
+    # Cross-API listener routes (TMF633/632/669 events) live in tmfc001_wiring,
+    # which owns the side-car fields they reconcile.
 
     @http.route('/tmf-api/productCatalogManagement/v5/listener/catalogCreateEvent',
                 type='http', auth='public', methods=['POST'], csrf=False)

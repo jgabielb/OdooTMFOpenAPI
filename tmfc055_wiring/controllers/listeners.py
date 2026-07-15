@@ -16,6 +16,9 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+SERVICE_CATALOG_EVENTS = {
+    "ServiceSpecificationCreateEvent", "ServiceSpecificationDeleteEvent",
+}
 
 
 class TMFC055ListenerController(http.Controller):
@@ -48,6 +51,10 @@ class TMFC055ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/serviceCatalog", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_service_catalog(self, **_p):
+        return self._dispatch(self._parse(), SERVICE_CATALOG_EVENTS, "_handle_service_catalog_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

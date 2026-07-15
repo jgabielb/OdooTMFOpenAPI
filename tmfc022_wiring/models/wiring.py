@@ -67,6 +67,23 @@ class PartyPrivacyAgreementTMFC022Wiring(models.Model):
         help="Digital identities related to this privacy agreement.",
     )
 
+    tmfc022_product_offering_ids = fields.Many2many(
+        "product.template",
+        "tmfc022_privacy_offering_rel",
+        "privacy_id",
+        "offering_id",
+        string="Product Offerings (TMF620)",
+        help="Offerings referenced from the privacy agreement items.",
+    )
+    tmfc022_document_ids = fields.Many2many(
+        "tmf.document",
+        "tmfc022_privacy_document_rel",
+        "privacy_id",
+        "document_id",
+        string="Documents (TMF667)",
+        help="TMF667 Documents referenced by this privacy agreement.",
+    )
+
     def _resolve_tmf_refs(self):
         """Resolve TMF JSON references into relational links.
 
@@ -92,6 +109,29 @@ class PartyPrivacyAgreementTMFC022Wiring(models.Model):
             identity_ids = _resolve_ids(self.env, "tmf.digital.identity", profiles)
             if identity_ids:
                 updates["privacy_identity_ids"] = [(6, 0, identity_ids)]
+
+            # agreementItem → TMF620 offering refs / TMF667 document refs
+            items = _loads(rec.agreement_item) or []
+            if isinstance(items, dict):
+                items = [items]
+            offering_refs, document_refs = [], []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                po = item.get("productOffering") or item.get("offering") or []
+                if isinstance(po, dict):
+                    po = [po]
+                offering_refs.extend(r for r in po if isinstance(r, dict))
+                doc = item.get("document") or []
+                if isinstance(doc, dict):
+                    doc = [doc]
+                document_refs.extend(r for r in doc if isinstance(r, dict))
+            offering_ids = _resolve_ids(self.env, "product.template", offering_refs)
+            if offering_ids:
+                updates["tmfc022_product_offering_ids"] = [(6, 0, offering_ids)]
+            document_ids = _resolve_ids(self.env, "tmf.document", document_refs)
+            if document_ids:
+                updates["tmfc022_document_ids"] = [(6, 0, document_ids)]
 
             if updates:
                 rec.with_context(**ctx).write(updates)

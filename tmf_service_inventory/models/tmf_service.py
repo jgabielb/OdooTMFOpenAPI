@@ -100,6 +100,23 @@ class TMFService(models.Model):
     )
     stock_picking_id = fields.Many2one("stock.picking", string="Related Picking", ondelete="set null")
 
+    # Stores the TMF ID of the applied promotion — Char avoids a cross-module
+    # Many2one dependency on tmf_promotion_management.
+    applied_promotion_tmf_id = fields.Char(string="Applied Promotion (TMF ID)")
+
+    # Characteristics stamped from the product spec at order confirmation time.
+    service_characteristic_json = fields.Text(string="Service Characteristics (JSON)")
+
+    # Physical installation address stored as TMF place JSON array.
+    place_json = fields.Text(string="Place (JSON)")
+
+    # Feasibility gate for relocation — 'denied' blocks address-change modify orders.
+    relocation_feasibility = fields.Selection(
+        [('allowed', 'Allowed'), ('denied', 'Denied')],
+        default='allowed',
+        string="Relocation Feasibility",
+    )
+
     def _get_tmf_api_path(self):
         return "/serviceInventoryManagement/v5/service"
 
@@ -234,6 +251,39 @@ class TMFService(models.Model):
                     "@referredType": "Service",
                 })
 
+        if self.applied_promotion_tmf_id:
+            promo_name = ""
+            try:
+                promo = self.env['tmf.promotion'].sudo().search(
+                    [('tmf_id', '=', self.applied_promotion_tmf_id)], limit=1
+                )
+                promo_name = promo.name if promo else ""
+            except Exception:
+                pass
+            data["appliedPromotion"] = [{
+                "id": self.applied_promotion_tmf_id,
+                "name": promo_name,
+                "@type": "PromotionRef",
+                "@referredType": "Promotion",
+            }]
+
+        if self.service_characteristic_json:
+            import json as _json
+            try:
+                data["serviceCharacteristic"] = _json.loads(self.service_characteristic_json)
+            except Exception:
+                pass
+
+        if self.place_json:
+            import json as _json
+            try:
+                data["place"] = _json.loads(self.place_json)
+            except Exception:
+                pass
+
+        if self.relocation_feasibility == 'denied':
+            data["relocationFeasibility"] = "denied"
+
         if not include_nulls:
             data = {k: v for k, v in data.items() if v is not None}
 
@@ -242,6 +292,11 @@ class TMFService(models.Model):
     @api.model
     def create(self, vals):
         rec = super().create(vals)
+        if rec.resource_id and 'resource_status' in rec.resource_id._fields:
+            try:
+                rec.resource_id.sudo().write({'resource_status': 'reserved'})
+            except Exception:
+                pass
         rec._sync_stock_picking()
         try:
             rec.env['tmf.hub.subscription']._notify_subscribers(
@@ -256,11 +311,14 @@ class TMFService(models.Model):
     def write(self, vals):
         res = super().write(vals)
         self._sync_stock_picking()
+        # TMFC008/TMF638: state transitions publish ServiceStateChangeEvent,
+        # other updates publish ServiceAttributeValueChangeEvent.
+        event_type = 'state_change' if 'state' in vals else 'update'
         for rec in self:
             try:
                 rec.env['tmf.hub.subscription']._notify_subscribers(
                     api_name='service',
-                    event_type='update',
+                    event_type=event_type,
                     resource_json=rec.to_tmf_json(),
                 )
             except Exception:

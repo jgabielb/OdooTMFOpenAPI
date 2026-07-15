@@ -1,42 +1,45 @@
 # -*- coding: utf-8 -*-
+import json
+import logging
+
 from odoo import http
 from odoo.http import request
+
+_logger = logging.getLogger(__name__)
 
 
 class TMFC006ListenerController(http.Controller):
     """Listener endpoints for TMFC006 subscribed events.
 
-    Pass 1 creates stable URLs and delegates to `tmfc006.wiring.tools` without
-    enforcing aggressive reconciliation. This lets other TMFCs and external
-    systems rely on these callbacks while we incrementally harden the logic.
+    Stable URLs delegating to ``tmfc006.wiring.tools``.
     """
 
-    @http.route(
-        [
-            "/tmfc006/listener/resourceSpecification",  # TMF634 ResourceCatalogManagement
-        ],
-        type="http",
-        auth="none",
-        methods=["POST"],
-        csrf=False,
-    )
-    def listener_resource_specification(self):
-        payload = request.jsonrequest or {}
+    def _apply(self, handler):
+        raw = request.httprequest.data or b"{}"
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        try:
+            payload = json.loads(raw or "{}")
+        except Exception:
+            payload = {}
         tools = request.env["tmfc006.wiring.tools"].sudo()
-        tools._handle_resource_catalog_event(payload)
-        return {"status": "accepted"}
+        try:
+            getattr(tools, handler)(payload if isinstance(payload, dict) else {})
+        except Exception as exc:
+            _logger.exception("TMFC006 listener %s failed", handler)
+            return request.make_response(
+                json.dumps({"error": str(exc)}), status=400,
+                headers=[("Content-Type", "application/json")])
+        return request.make_response(
+            json.dumps({"status": "accepted"}), status=201,
+            headers=[("Content-Type", "application/json")])
 
-    @http.route(
-        [
-            "/tmfc006/listener/entitySpecification",  # TMF662 EntityCatalogManagement
-        ],
-        type="http",
-        auth="none",
-        methods=["POST"],
-        csrf=False,
-    )
+    @http.route(["/tmfc006/listener/resourceSpecification"],  # TMF634
+                type="http", auth="none", methods=["POST"], csrf=False)
+    def listener_resource_specification(self):
+        return self._apply("_handle_resource_catalog_event")
+
+    @http.route(["/tmfc006/listener/entitySpecification"],  # TMF662
+                type="http", auth="none", methods=["POST"], csrf=False)
     def listener_entity_specification(self):
-        payload = request.jsonrequest or {}
-        tools = request.env["tmfc006.wiring.tools"].sudo()
-        tools._handle_entity_catalog_event(payload)
-        return {"status": "accepted"}
+        return self._apply("_handle_entity_catalog_event")

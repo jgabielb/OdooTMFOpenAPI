@@ -57,3 +57,79 @@ class TMFC011WiringTools(models.AbstractModel):
         except Exception:
             pass
         return True
+
+    def _extract_resource(self, payload):
+        if not isinstance(payload, dict):
+            return {}
+        ev = payload.get("event")
+        if isinstance(ev, dict):
+            if isinstance(ev.get("resource"), dict):
+                return ev["resource"]
+            for value in ev.values():
+                if isinstance(value, dict) and value.get("id"):
+                    return value
+        if isinstance(payload.get("resource"), dict):
+            return payload["resource"]
+        return payload
+
+    def _sync_states_and_link(self, model_name, resource, id_field="tmf_id",
+                              link_field=None):
+        """Sync administrative/operational/usage state and link to referencing orders."""
+        ref_id = str((resource or {}).get("id") or "").strip()
+        if not ref_id:
+            return
+        rec = self.env[model_name].sudo().search([(id_field, "=", ref_id)], limit=1)
+        if rec:
+            vals = {}
+            for src, dst in (("administrativeState", "administrative_state"),
+                             ("operationalState", "operational_state"),
+                             ("usageState", "usage_state"),
+                             ("state", "state")):
+                if resource.get(src) and dst in rec._fields:
+                    vals[dst] = resource[src]
+            if vals:
+                try:
+                    rec.with_context(skip_tmf_wiring=True).write(vals)
+                except Exception:
+                    pass
+        # link to resource orders referenced in the event payload
+        if rec and link_field:
+            order_refs = resource.get("resourceOrder") or []
+            if isinstance(order_refs, dict):
+                order_refs = [order_refs]
+            order_ids = [str((o or {}).get("id") or "").strip()
+                         for o in order_refs if isinstance(o, dict)]
+            order_ids = [o for o in order_ids if o]
+            if order_ids:
+                orders = self.env["tmf.resource.order"].sudo().search(
+                    [("tmf_id", "in", order_ids)])
+                for order in orders:
+                    if rec.id not in order[link_field].ids:
+                        order.with_context(skip_tmf_wiring=True).write(
+                            {link_field: [(4, rec.id)]})
+
+    @api.model
+    def _handle_resource_function_event(self, payload):
+        """TMF664 resourceFunction / monitor / heal / scale / migrate events."""
+        try:
+            self._sync_states_and_link(
+                "tmf.resource.function", self._extract_resource(payload),
+                link_field="tmfc011_resource_function_ids")
+        except Exception:
+            pass
+        return True
+
+    @api.model
+    def _handle_activation_resource_event(self, payload):
+        """TMF702 resource change / monitor events."""
+        try:
+            resource = self._extract_resource(payload)
+            self._sync_states_and_link(
+                "tmf702.resource", resource,
+                link_field="tmfc011_activation_resource_ids")
+            # monitor events reference the tmf702.monitor resource instead
+            self._sync_states_and_link("tmf702.monitor", resource,
+                                       id_field="tmf702_id")
+        except Exception:
+            pass
+        return True

@@ -16,6 +16,14 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+PRODUCT_CATALOG_EVENTS = {
+    "ProductSpecificationCreateEvent", "ProductSpecificationDeleteEvent",
+}
+SERVICE_TEST_EVENTS = {
+    "ServiceTestSpecificationCreateEvent",
+    "ServiceTestSpecificationAttributeValueChangeEvent",
+    "ServiceTestSpecificationChangeEvent", "ServiceTestSpecificationDeleteEvent",
+}
 
 
 class TMFC054ListenerController(http.Controller):
@@ -48,6 +56,14 @@ class TMFC054ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/productCatalog", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_product_catalog(self, **_p):
+        return self._dispatch(self._parse(), PRODUCT_CATALOG_EVENTS, "_handle_product_catalog_event")
+
+    @http.route(f"{BASE_L}/serviceTest", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_service_test(self, **_p):
+        return self._dispatch(self._parse(), SERVICE_TEST_EVENTS, "_handle_service_test_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

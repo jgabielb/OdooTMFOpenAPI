@@ -31,6 +31,7 @@ class StockLot(models.Model):
         ('active', 'Active'),
         ('busy', 'Busy'),
     ], default='idle')
+    warranty_end_date = fields.Date(string="Warranty End Date")
     current_location_id = fields.Many2one(
         "stock.location",
         string="Current Location",
@@ -70,42 +71,42 @@ class StockLot(models.Model):
     def to_tmf_json(self):
         self.ensure_one()
 
-        href = getattr(self, 'tmf_href', None)
-        if not href:
-            href = f"/tmf-api{self._get_tmf_api_path()}/{self.tmf_id or self.id}"
+        tmf_id = getattr(self, 'tmf_id', None) or str(self.id)
+        href = getattr(self, 'tmf_href', None) or (
+            f"/tmf-api{self._get_tmf_api_path()}/{tmf_id}"
+        )
 
         spec = None
         if self.product_id:
-            spec_id = self.product_id.tmf_id or str(self.product_id.id)
+            # product.product may not carry tmf_id — fall back to numeric id
+            prod_tmf_id = getattr(self.product_id, 'tmf_id', None) or str(self.product_id.id)
             spec = {
-                "id": spec_id,
+                "id": prod_tmf_id,
                 "name": self.product_id.name,
-                # Provide href as shown in examples :contentReference[oaicite:16]{index=16}
-                "href": f"/tmf-api/resourceCatalogManagement/v4/resourceSpecification/{spec_id}",
+                "href": f"/tmf-api/resourceCatalogManagement/v4/resourceSpecification/{prod_tmf_id}",
                 "@referredType": "PhysicalResourceSpecification",
             }
 
+        loc = getattr(self, 'current_location_id', None)
+
         return {
-            "id": self.tmf_id or str(self.id),
+            "id": tmf_id,
             "href": href,
             "name": self.name or self.display_name,
-
-            # Polymorphism/extension meta-attributes :contentReference[oaicite:17]{index=17}
             "@type": "Equipment",
             "@baseType": "Resource",
-
-            "resourceStatus": self.resource_status or "installed",
-            "administrativeState": self.administrative_state or "unlocked",
-            "operationalState": self.operational_state or "enable",
-            "usageState": self.usage_state or "idle",
-
-            "serialNumber": self.name or self.ref,
+            "resourceStatus": getattr(self, 'resource_status', None) or "installed",
+            "administrativeState": getattr(self, 'administrative_state', None) or "unlocked",
+            "operationalState": getattr(self, 'operational_state', None) or "enable",
+            "usageState": getattr(self, 'usage_state', None) or "idle",
+            "serialNumber": self.name or getattr(self, 'ref', None),
+            "warrantyEndDate": self.warranty_end_date.isoformat() if self.warranty_end_date else None,
             "resourceSpecification": spec,
             "place": [{
-                "id": str(self.current_location_id.id),
-                "name": self.current_location_id.display_name,
+                "id": str(loc.id),
+                "name": loc.display_name,
                 "@referredType": "Location",
-            }] if self.current_location_id else None,
+            }] if loc else None,
         }
 
     # ---------- Event hooks for /hub ----------

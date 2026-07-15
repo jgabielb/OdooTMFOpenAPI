@@ -19,6 +19,9 @@ TMFC027_LISTENER_EVENTS = {
     "ProductSpecificationDeleteEvent",
     "checkServiceQualificationStateChangeEvent",
     "queryServiceQualificationStateChangeEvent",
+    # TMF645 spec-cased variants
+    "CheckServiceQualificationStateChangeEvent",
+    "QueryServiceQualificationStateChangeEvent",
 }
 
 
@@ -141,35 +144,21 @@ class CheckPOQTMFC027Wiring(models.Model):
             if isinstance(effective_place_json, dict):
                 effective_place_json = [effective_place_json]
 
-            if not rec.related_partner_ids and effective_party_json:
-                ids = _resolve_ids(self.env, "res.partner", effective_party_json)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
+            def _rebuild(field_name, model, items, id_field="tmf_id"):
+                # rebuild-if-different: refs present in JSON/payload are authoritative
+                if not items:
+                    return
+                ids = _resolve_ids(self.env, model, items, id_field=id_field)
+                if ids and set(ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, ids)]
 
-            if not rec.product_ids and effective_product_json:
-                ids = _resolve_ids(self.env, "tmf.product", effective_product_json)
-                if ids:
-                    updates["product_ids"] = [(6, 0, ids)]
-
-            if not rec.product_offering_ids and effective_offering_json:
-                ids = _resolve_ids(self.env, "product.template", effective_offering_json)
-                if ids:
-                    updates["product_offering_ids"] = [(6, 0, ids)]
-
-            if not rec.service_qualification_ids and effective_service_qualification_json:
-                ids = _resolve_ids(self.env, "tmf.service.qualification", effective_service_qualification_json)
-                if ids:
-                    updates["service_qualification_ids"] = [(6, 0, ids)]
-
-            if not rec.agreement_ids and effective_agreement_json:
-                ids = _resolve_ids(self.env, "tmf.agreement", effective_agreement_json)
-                if ids:
-                    updates["agreement_ids"] = [(6, 0, ids)]
-
-            if not rec.product_order_ids and effective_order_json:
-                ids = _resolve_ids(self.env, "sale.order", effective_order_json, id_field="tmf_id")
-                if ids:
-                    updates["product_order_ids"] = [(6, 0, ids)]
+            _rebuild("related_partner_ids", "res.partner", effective_party_json)
+            _rebuild("product_ids", "tmf.product", effective_product_json)
+            _rebuild("product_offering_ids", "product.template", effective_offering_json)
+            _rebuild("service_qualification_ids", "tmf.service.qualification",
+                     effective_service_qualification_json)
+            _rebuild("agreement_ids", "tmf.agreement", effective_agreement_json)
+            _rebuild("product_order_ids", "sale.order", effective_order_json)
 
             if not rec.billing_account_id:
                 ba = payload.get("billingAccount") or {}
@@ -181,10 +170,10 @@ class CheckPOQTMFC027Wiring(models.Model):
                     if match:
                         updates["billing_account_id"] = match.id
 
-            if not rec.party_role_id and effective_party_json:
+            if effective_party_json:
                 items = [i for i in (effective_party_json or []) if isinstance(i, dict) and i.get("@type") in ("PartyRole", "PartyRoleRef")]
                 ids = _resolve_ids(self.env, "tmf.party.role", items)
-                if ids:
+                if ids and rec.party_role_id.id != ids[0]:
                     updates["party_role_id"] = ids[0]
 
             if not rec.geographic_address_id or not rec.geographic_site_id:
@@ -353,35 +342,25 @@ class QueryPOQTMFC027Wiring(models.Model):
         for rec in self:
             updates = {}
 
-            if not rec.related_partner_ids and rec.related_party_json:
-                ids = _resolve_ids(self.env, "res.partner", rec.related_party_json)
-                if ids:
-                    updates["related_partner_ids"] = [(6, 0, ids)]
+            def _rebuild(field_name, model, items):
+                # rebuild-if-different: JSON refs are authoritative when present
+                if not items:
+                    return
+                ids = _resolve_ids(self.env, model, items)
+                if ids and set(ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, ids)]
 
-            if not rec.product_ids and rec.product_json:
-                ids = _resolve_ids(self.env, "tmf.product", rec.product_json)
-                if ids:
-                    updates["product_ids"] = [(6, 0, ids)]
+            _rebuild("related_partner_ids", "res.partner", rec.related_party_json)
+            _rebuild("product_ids", "tmf.product", rec.product_json)
+            _rebuild("product_offering_ids", "product.template", rec.product_offering_json)
+            _rebuild("service_qualification_ids", "tmf.service.qualification",
+                     rec.service_qualification_json)
+            _rebuild("agreement_ids", "tmf.agreement", rec.agreement_json)
 
-            if not rec.product_offering_ids and rec.product_offering_json:
-                ids = _resolve_ids(self.env, "product.template", rec.product_offering_json)
-                if ids:
-                    updates["product_offering_ids"] = [(6, 0, ids)]
-
-            if not rec.service_qualification_ids and rec.service_qualification_json:
-                ids = _resolve_ids(self.env, "tmf.service.qualification", rec.service_qualification_json)
-                if ids:
-                    updates["service_qualification_ids"] = [(6, 0, ids)]
-
-            if not rec.agreement_ids and rec.agreement_json:
-                ids = _resolve_ids(self.env, "tmf.agreement", rec.agreement_json)
-                if ids:
-                    updates["agreement_ids"] = [(6, 0, ids)]
-
-            if not rec.party_role_id and rec.related_party_json:
+            if rec.related_party_json:
                 items = [i for i in (rec.related_party_json or []) if isinstance(i, dict) and i.get("@type") in ("PartyRole", "PartyRoleRef")]
                 ids = _resolve_ids(self.env, "tmf.party.role", items)
-                if ids:
+                if ids and rec.party_role_id.id != ids[0]:
                     updates["party_role_id"] = ids[0]
 
             if updates:

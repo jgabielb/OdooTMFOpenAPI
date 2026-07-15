@@ -4,7 +4,8 @@ from odoo.http import request
 from odoo.exceptions import ValidationError
 import json
 
-API_BASE = "/tmf-api/promotionManagement/v4"
+API_BASE    = "/tmf-api/promotionManagement/v4"
+API_BASE_V5 = "/tmf-api/promotionManagement/v5"
 
 
 def _json_response(payload, status=200, headers=None):
@@ -28,7 +29,8 @@ class TMF671PromotionController(http.Controller):
     # -------------------------
     # Promotions
     # -------------------------
-    @http.route(f"{API_BASE}/promotion", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([f"{API_BASE}/promotion", f"{API_BASE_V5}/promotion"],
+                type="http", auth="public", methods=["GET"], csrf=False)
     def list_promotions(self, **query):
         # GET /promotion?fields=...&{filtering} :contentReference[oaicite:10]{index=10}
         # Minimal: ignore filtering/fields for now (CTK usually tolerates partial)
@@ -36,20 +38,25 @@ class TMF671PromotionController(http.Controller):
         data = [r.to_tmf(API_BASE) for r in recs]
         return _json_response(data, status=200)
 
-    @http.route(f"{API_BASE}/promotion/<string:tmf_id>", type="http", auth="public", methods=["GET"], csrf=False)
+    @http.route([f"{API_BASE}/promotion/<string:tmf_id>",
+                 f"{API_BASE_V5}/promotion/<string:tmf_id>"],
+                type="http", auth="public", methods=["GET"], csrf=False)
     def retrieve_promotion(self, tmf_id, **query):
         rec = request.env["tmf.promotion"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
         if not rec:
             return _json_response({"error": "NotFound", "message": "Promotion not found"}, status=404)
         return _json_response(rec.to_tmf(API_BASE), status=200)
 
-    @http.route(f"{API_BASE}/promotion", type="http", auth="public", methods=["POST"], csrf=False)
+    @http.route([f"{API_BASE}/promotion", f"{API_BASE_V5}/promotion"],
+                type="http", auth="public", methods=["POST"], csrf=False)
     def create_promotion(self, **kwargs):
         payload = _get_json_body()
         rec = request.env["tmf.promotion"].sudo().from_tmf_create(payload, API_BASE)
         return _json_response(rec.to_tmf(API_BASE), status=201, headers=[("Location", rec.href)])
 
-    @http.route(f"{API_BASE}/promotion/<string:tmf_id>", type="http", auth="public", methods=["PATCH"], csrf=False)
+    @http.route([f"{API_BASE}/promotion/<string:tmf_id>",
+                 f"{API_BASE_V5}/promotion/<string:tmf_id>"],
+                type="http", auth="public", methods=["PATCH"], csrf=False)
     def patch_promotion(self, tmf_id, **kwargs):
         # merge-patch mandatory :contentReference[oaicite:11]{index=11}
         content_type = (request.httprequest.content_type or "").lower()
@@ -67,7 +74,9 @@ class TMF671PromotionController(http.Controller):
         rec.apply_merge_patch(patch, API_BASE)
         return _json_response(rec.to_tmf(API_BASE), status=200)
 
-    @http.route(f"{API_BASE}/promotion/<string:tmf_id>", type="http", auth="public", methods=["DELETE"], csrf=False)
+    @http.route([f"{API_BASE}/promotion/<string:tmf_id>",
+                 f"{API_BASE_V5}/promotion/<string:tmf_id>"],
+                type="http", auth="public", methods=["DELETE"], csrf=False)
     def delete_promotion(self, tmf_id, **kwargs):
         rec = request.env["tmf.promotion"].sudo().search([("tmf_id", "=", tmf_id)], limit=1)
         if not rec:

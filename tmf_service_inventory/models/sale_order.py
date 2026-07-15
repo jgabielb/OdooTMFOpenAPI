@@ -1,5 +1,6 @@
 # sale_order.py
 from odoo import models, fields
+import json as _json
 
 
 class SaleOrder(models.Model):
@@ -15,7 +16,7 @@ class SaleOrder(models.Model):
 
             qty = int(line.product_uom_qty)
             for i in range(qty):
-                self.env['tmf.service'].create({
+                svc_vals = {
                     'name': f"{spec.name} - {self.partner_id.name}",
                     'partner_id': self.partner_id.id,
                     'product_specification_id': spec.id,
@@ -32,6 +33,11 @@ class SaleOrder(models.Model):
 
                     'service_date': fields.Datetime.now(),
                     'start_date': fields.Datetime.now(),
-                })
+                }
+                if spec.product_spec_characteristic_json:
+                    svc_vals['service_characteristic_json'] = (
+                        spec.product_spec_characteristic_json
+                    )
+                self.env['tmf.service'].create(svc_vals)
 
         return res

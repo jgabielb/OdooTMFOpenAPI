@@ -14,6 +14,16 @@
         "tmf_service_inventory",  # tmf.service (TMF638)
         "tmf_resource_order",     # tmf.resource.order (TMF652)
         "tmf_process_flow",       # tmf.process.flow / tmf.task.flow (TMF701)
+        "tmf_party_role",         # tmf.party.role (TMF669)
+        "tmf_service_qualification",     # tmf.service.qualification (TMF645)
+        "tmf_communication_message",     # tmf.communication.message (TMF681)
+        "tmf_work_management",    # tmf.work / TMF697 WorkOrder representation
+        "tmf_appointment",        # tmf.appointment (TMF646)
+        "tmf_service_test",       # tmf.service.test (TMF653)
+        "tmf_service_activation_configuration",  # tmf640.monitor (TMF640)
+        "tmf_geographic_address",   # TMF673
+        "tmf_geographic_site",      # TMF674
+        "tmf_geographic_location",  # TMF675
     ],
     "data": [
         "security/ir.model.access.csv",

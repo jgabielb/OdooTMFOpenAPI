@@ -1,30 +1,65 @@
 # -*- coding: utf-8 -*-
+import json
+
 from odoo import http
 from odoo.http import request
 
 
 class TMFC006HubController(http.Controller):
-    """Minimal hub registration facade for TMFC006.
+    """Hub registration façade for TMFC006 backed by ``tmf.hub.subscription``."""
 
-    We keep TMF API URLs stable and reuse the generic `tmf.hub.subscription`
-    model used by other TMFC wiring addons. This controller exists mainly to
-    give the TMFC006 checklist an evidence-backed hub entry point.
-    """
+    def _parse(self):
+        raw = request.httprequest.data or b"{}"
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        try:
+            return json.loads(raw or "{}")
+        except Exception:
+            return {}
 
-    @http.route(
-        [
-            "/tmfc006/hub/serviceCatalog",
-            "/tmfc006/hub/serviceQuality",
-        ],
-        type="http",
-        auth="none",
-        methods=["POST"],
-        csrf=False,
-    )
+    def _resp(self, p=None, status=201):
+        return request.make_response(json.dumps(p or {}), status=status,
+                                     headers=[("Content-Type", "application/json")])
+
+    @http.route(["/tmfc006/hub/serviceCatalog",
+                 "/tmfc006/hub/serviceQuality"],
+                type="http", auth="none", methods=["GET", "POST"], csrf=False)
     def register_hub(self):
-        payload = request.jsonrequest or {}
-        subscription_model = request.env["tmf.hub.subscription"].sudo()
-        # Pass 1: trust payload to contain at least callback and query fields; we do not
-        # enforce schema beyond what `tmf.hub.subscription` already validates.
-        subscription = subscription_model.create(payload)
-        return {"id": subscription.id}
+        if request.httprequest.method == "GET":
+            subs = request.env["tmf.hub.subscription"].sudo().search(
+                [("name", "like", "tmfc006-")])
+            return self._resp([{"id": str(s.id), "name": s.name, "callback": s.callback,
+                                "query": s.query or "", "api_name": s.api_name}
+                               for s in subs], status=200)
+        data = self._parse()
+        cb = data.get("callback")
+        if not cb:
+            return self._resp({"error": "Missing mandatory attribute: callback"}, status=400)
+        default_api = ("serviceLevelSpecification"
+                       if request.httprequest.path.endswith("serviceQuality")
+                       else "serviceSpecification")
+        api_name = data.get("api_name") or default_api
+        rec = request.env["tmf.hub.subscription"].sudo().create({
+            "name": f"tmfc006-{api_name}-{cb}", "api_name": api_name, "callback": cb,
+            "query": data.get("query", ""), "event_type": data.get("event_type") or "any",
+            "content_type": "application/json",
+        })
+        return self._resp({"id": str(rec.id), "callback": rec.callback,
+                           "query": rec.query or ""}, status=201)
+
+    @http.route(["/tmfc006/hub/serviceCatalog/<string:sid>",
+                 "/tmfc006/hub/serviceQuality/<string:sid>"],
+                type="http", auth="none", methods=["GET", "DELETE"], csrf=False)
+    def hub_detail(self, sid):
+        rec = None
+        if str(sid).isdigit():
+            rec = request.env["tmf.hub.subscription"].sudo().browse(int(sid))
+            if not rec.exists() or not rec.name.startswith("tmfc006-"):
+                rec = None
+        if not rec:
+            return self._resp({"error": f"Hub subscription {sid} not found"}, status=404)
+        if request.httprequest.method == "DELETE":
+            rec.unlink()
+            return request.make_response("", status=204)
+        return self._resp({"id": str(rec.id), "name": rec.name, "callback": rec.callback,
+                           "query": rec.query or "", "api_name": rec.api_name}, status=200)

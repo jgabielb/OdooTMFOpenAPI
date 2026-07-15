@@ -172,7 +172,7 @@ class TMFAccount(models.Model):
         vals = dict(vals)
         vals["last_update"] = fields.Datetime.now()
         res = super().write(vals)
-        if "related_party_json" in vals or "partner_id" in vals:
+        if "related_party_json" in vals:
             self._sync_partner_link()
         self._notify("update")
         return res

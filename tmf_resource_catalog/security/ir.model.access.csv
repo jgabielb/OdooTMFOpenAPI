@@ -1,3 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_resource_catalog,tmf.resource.catalog,model_tmf_resource_catalog,base.group_user,1,1,1,1
 access_tmf_resource_specification,tmf.resource.specification,model_tmf_resource_specification,base.group_user,1,1,1,1
+access_tmf_resource_category,tmf.resource.category,model_tmf_resource_category,base.group_user,1,1,1,1
+access_tmf_resource_candidate,tmf.resource.candidate,model_tmf_resource_candidate,base.group_user,1,1,1,1
+access_tmf_resource_catalog_import_job,tmf.resource.catalog.import.job,model_tmf_resource_catalog_import_job,base.group_user,1,1,1,1
+access_tmf_resource_catalog_export_job,tmf.resource.catalog.export.job,model_tmf_resource_catalog_export_job,base.group_user,1,1,1,1

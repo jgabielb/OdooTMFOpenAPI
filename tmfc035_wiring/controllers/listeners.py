@@ -25,6 +25,12 @@ PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent",
     "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+PROCESS_FLOW_EVENTS = {
+    "ProcessFlowCreateEvent", "ProcessFlowStateChangeEvent",
+    "ProcessFlowAttributeValueChangeEvent", "ProcessFlowDeleteEvent",
+    "TaskFlowCreateEvent", "TaskFlowStateChangeEvent",
+    "TaskFlowAttributeValueChangeEvent", "TaskFlowDeleteEvent",
+}
 
 
 class TMFC035ListenerController(http.Controller):
@@ -65,6 +71,12 @@ class TMFC035ListenerController(http.Controller):
                 type="http", auth="public", methods=["POST"], csrf=False)
     def listener_party_role(self, **_p):
         return self._dispatch(self._parse_json(), PARTY_ROLE_EVENTS, "_handle_party_role_event", "partyRole")
+
+    @http.route(f"{TMFC035_LISTENER_BASE}/processFlow",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_process_flow(self, **_p):
+        return self._dispatch(self._parse_json(), PROCESS_FLOW_EVENTS,
+                              "_handle_process_flow_event", "processFlow")
 
     @http.route(TMFC035_HUB_BASE,
                 type="http", auth="public", methods=["GET", "POST"], csrf=False)

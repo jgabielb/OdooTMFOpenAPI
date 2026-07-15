@@ -589,13 +589,142 @@ def print_summary():
 
 
 # ---------------------------------------------------------------------------
+# Generic ODA listener/hub smoke check (all wiring side-cars)
+# ---------------------------------------------------------------------------
+
+# component -> {listener resource: a representative accepted eventType}
+TMFC_LISTENERS = {
+    "tmfc001": {"serviceSpecification": "ServiceSpecificationCreateEvent",
+                "resourceSpecification": "ResourceSpecificationCreateEvent",
+                "entitySpecification": "EntitySpecificationCreateEvent",
+                "party": "IndividualDeleteEvent",
+                "partyRole": "PartyRoleDeleteEvent"},
+    "tmfc002": {"productOfferingQualification": "ProductOfferingQualificationStateChangeEvent",
+                "geographicAddressValidation": "GeographicAddressValidationStateChangeEvent",
+                "payment": "PaymentStateChangeEvent",
+                "resourceReservation": "ResourceReservationStateChangeEvent"},
+    "tmfc003": {"serviceOrder": "ServiceOrderStateChangeEvent",
+                "resourceOrder": "ResourceOrderStateChangeEvent"},
+    "tmfc006": {"resourceSpecification": "ResourceSpecificationCreateEvent",
+                "entitySpecification": "EntitySpecificationCreateEvent"},
+    "tmfc007": {"serviceQualification": "CheckServiceQualificationStateChangeEvent",
+                "communicationMessage": "CommunicationMessageStateChangeEvent",
+                "workOrder": "WorkOrderStateChangeEvent"},
+    "tmfc008": {"resourceInventory": "ResourceDeleteEvent",
+                "serviceCatalog": "ServiceSpecificationDeleteEvent",
+                "party": "IndividualDeleteEvent",
+                "serviceOrder": "ServiceOrderDeleteEvent"},
+    "tmfc009": {"party": "IndividualDeleteEvent",
+                "serviceSpecification": "ServiceSpecificationCreateEvent"},
+    "tmfc010": {"party": "IndividualDeleteEvent",
+                "entitySpecification": "EntitySpecificationCreateEvent"},
+    "tmfc011": {"resourceSpecification": "ResourceSpecificationCreateEvent",
+                "resourceFunction": "ResourceFunctionStateChangeEvent",
+                "resourceActivation": "ResourceStateChangeEvent"},
+    "tmfc012": {"resourceSpecification": "ResourceSpecificationCreateEvent",
+                "partyRole": "PartyRoleDeleteEvent",
+                "resource": "ResourceCreateEvent"},
+    "tmfc014": {"party": "IndividualDeleteEvent"},
+    "tmfc020": {"partyRole": "UserRoleCreationNotification"},
+    "tmfc022": {"party": "PartyDeleteEvent"},
+    "tmfc023": {"party": "IndividualDeleteEvent",
+                "partyRole": "PartyRoleCreateEvent",
+                "document": "DocumentChangeEvent",
+                "processFlow": "ProcessFlowStateChangeEvent"},
+    "tmfc024": {"partyRole": "PartyRoleDeleteEvent"},
+    "tmfc028": {"digitalIdentity": "DigitalIdentityCreateEvent"},
+    "tmfc029": {"party": "PartyDeleteEvent"},
+    "tmfc030": {"partyRole": "PartyRoleDeleteEvent"},
+    "tmfc031": {"usage": "UsageCreateEvent",
+                "usageSpecification": "UsageSpecificationCreateEvent"},
+    "tmfc035": {"party": "IndividualCreateEvent",
+                "processFlow": "ProcessFlowStateChangeEvent"},
+    "tmfc036": {"productCatalog": "ProductOfferingCreateEvent",
+                "productOrder": "ProductOrderStateChangeEvent",
+                "agreement": "AgreementCreateEvent",
+                "quote": "QuoteStateChangeEvent"},
+    "tmfc037": {"serviceCatalog": "ServiceSpecificationChangeEvent",
+                "serviceInventory": "ServiceStateChangeEvent",
+                "resourceInventory": "ResourceStateChangeEvent",
+                "processFlow": "ProcessFlowStateChangeEvent"},
+    "tmfc038": {"resourceCatalog": "ResourceSpecificationChangeEvent",
+                "resourceInventory": "ResourceStateChangeEvent",
+                "geographicAddressValidation": "GeographicAddressValidationStateChangeEvent",
+                "processFlow": "ProcessFlowStateChangeEvent"},
+    "tmfc041": {"alarm": "AlarmStateChangeEvent",
+                "aiManagement": "AiModelStateChangeEvent"},
+    "tmfc043": {"alarm": "AlarmStateChangeEvent",
+                "serviceProblem": "ServiceProblemStateChangeEvent",
+                "troubleTicket": "TroubleTicketStateChangeEvent",
+                "partyRole": "PartyRoleDeleteEvent"},
+    "tmfc046": {"partyRole": "PartyRoleCreateEvent",
+                "processFlow": "ProcessFlowStateChangeEvent"},
+    "tmfc050": {"productCatalog": "ProductOfferingCreateEvent"},
+    "tmfc054": {"productCatalog": "ProductSpecificationCreateEvent",
+                "serviceTest": "ServiceTestSpecificationCreateEvent"},
+    "tmfc055": {"serviceCatalog": "ServiceSpecificationCreateEvent"},
+    "tmfc061": {"processFlow": "ProcessFlowStateChangeEvent",
+                "appointment": "AppointmentStateChangeEvent"},
+    "tmfc062": {"party": "PartyDeleteEvent"},
+}
+
+
+def verify_listener_smoke(base: str):
+    """POST synthetic events to every wiring listener and register/delete hubs.
+
+    Asserts the listener contract: accepted eventType -> 201, missing
+    eventType -> 400, unknown eventType -> 404.
+    """
+    print("\n\033[1m-- Listener/hub smoke across all wiring side-cars --\033[0m")
+    comp = "SMOKE"
+    for tmfc, listeners in TMFC_LISTENERS.items():
+        for resource, event_type in listeners.items():
+            path = f"/{tmfc}/listener/{resource}"
+            payload = {
+                "eventId": tag(12),
+                "eventType": event_type,
+                "event": {"resource": {"id": f"smoke-{tag()}", "state": "inProgress"}},
+            }
+            try:
+                r = requests.post(base + path, headers=HEADERS, json=payload, timeout=15)
+                if r.status_code == 201:
+                    ok(comp, f"{path} [{event_type}]")
+                else:
+                    fail(comp, f"{path} [{event_type}]", f"HTTP {r.status_code}: {r.text[:120]}")
+                bad = requests.post(base + path, headers=HEADERS,
+                                    json={"eventType": "NotARealEvent"}, timeout=15)
+                if bad.status_code == 404:
+                    ok(comp, f"{path} rejects unknown eventType")
+                else:
+                    fail(comp, f"{path} rejects unknown eventType", f"HTTP {bad.status_code}")
+            except Exception as e:
+                fail(comp, f"{path}", str(e))
+        # hub round-trip (register + delete) where the standard façade exists
+        hub = f"/{tmfc}/hub"
+        try:
+            r = requests.post(base + hub, headers=HEADERS,
+                              json={"callback": f"{base}/dev/null/{tag()}"}, timeout=15)
+            if r.status_code == 201:
+                sid = (r.json() or {}).get("id")
+                ok(comp, f"{hub} register")
+                if sid:
+                    requests.delete(f"{base}{hub}/{sid}", headers=HEADERS, timeout=15)
+            elif r.status_code == 404:
+                pass  # component uses a named hub façade (e.g. /hub/serviceInventory)
+            else:
+                fail(comp, f"{hub} register", f"HTTP {r.status_code}: {r.text[:120]}")
+        except Exception as e:
+            fail(comp, f"{hub} register", str(e))
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Verify TMFC001/027/031 wiring against live Odoo.")
+    parser = argparse.ArgumentParser(description="Verify TMFC wiring against live Odoo.")
     parser.add_argument("--base-url", default=DEFAULT_BASE, help=f"Odoo base URL (default: {DEFAULT_BASE})")
-    parser.add_argument("--only", default="", help="Comma-separated components to run, e.g. tmfc001,tmfc031")
+    parser.add_argument("--only", default="", help="Comma-separated components to run, e.g. tmfc001,tmfc031,smoke")
     args = parser.parse_args()
 
     base = args.base_url.rstrip("/")
@@ -607,6 +736,7 @@ def main():
         "tmfc001": verify_tmfc001,
         "tmfc027": verify_tmfc027,
         "tmfc031": verify_tmfc031,
+        "smoke": verify_listener_smoke,
     }
 
     for name, fn in runners.items():

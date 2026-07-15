@@ -39,6 +39,27 @@ class TMFC039Agreement(models.Model):
         column2="product_spec_id",
         string="TMFC039 Product Specifications",
     )
+    tmfc039_product_offering_ids = fields.Many2many(
+        comodel_name="product.template",
+        relation="tmfc039_agreement_offering_rel",
+        column1="agreement_id",
+        column2="offering_id",
+        string="TMFC039 Product Offerings (TMF620)",
+    )
+    tmfc039_product_ids = fields.Many2many(
+        comodel_name="tmf.product",
+        relation="tmfc039_agreement_product_rel",
+        column1="agreement_id",
+        column2="product_id",
+        string="TMFC039 Products (TMF637)",
+    )
+    tmfc039_document_ids = fields.Many2many(
+        comodel_name="tmf.document",
+        relation="tmfc039_agreement_document_rel",
+        column1="agreement_id",
+        column2="document_id",
+        string="TMFC039 Documents (TMF667)",
+    )
 
     def _tmfc039_resolve_refs(self):
         ctx = {"skip_tmf_wiring": True}
@@ -73,33 +94,59 @@ class TMFC039Agreement(models.Model):
             items = _loads(rec.agreement_item) or []
             if isinstance(items, dict):
                 items = [items]
-            spec_refs = []
+            spec_refs, offering_refs, product_refs = [], [], []
             for it in items:
                 if not isinstance(it, dict):
                     continue
-                candidates = []
                 po = it.get("productOffering")
-                if isinstance(po, dict):
-                    candidates.append(po)
-                elif isinstance(po, list):
-                    candidates.extend(po)
+                po_list = [po] if isinstance(po, dict) else (po if isinstance(po, list) else [])
+                for ref in po_list:
+                    if isinstance(ref, dict) and ref.get("id"):
+                        offering_refs.append(str(ref["id"]))
                 ps = it.get("productSpecification")
-                if isinstance(ps, dict):
-                    candidates.append(ps)
-                elif isinstance(ps, list):
-                    candidates.extend(ps)
-                prod = it.get("product")
-                if isinstance(prod, dict):
-                    ps2 = prod.get("productSpecification")
-                    if isinstance(ps2, dict):
-                        candidates.append(ps2)
-                for ref in candidates:
+                ps_list = [ps] if isinstance(ps, dict) else (ps if isinstance(ps, list) else [])
+                for ref in ps_list:
                     if isinstance(ref, dict) and ref.get("id"):
                         spec_refs.append(str(ref["id"]))
+                prod = it.get("product")
+                if isinstance(prod, dict):
+                    if prod.get("id"):
+                        product_refs.append(str(prod["id"]))
+                    ps2 = prod.get("productSpecification")
+                    if isinstance(ps2, dict) and ps2.get("id"):
+                        spec_refs.append(str(ps2["id"]))
             if spec_refs:
                 specs = PSpec.search([("tmf_id", "in", spec_refs)])
                 if specs:
                     updates["tmfc039_product_specification_ids"] = [(6, 0, specs.ids)]
+            if offering_refs:
+                offerings = self.env["product.template"].sudo().search(
+                    [("tmf_id", "in", offering_refs)])
+                if offerings:
+                    updates["tmfc039_product_offering_ids"] = [(6, 0, offerings.ids)]
+            if product_refs:
+                products = self.env["tmf.product"].sudo().search(
+                    [("tmf_id", "in", product_refs)])
+                if products:
+                    updates["tmfc039_product_ids"] = [(6, 0, products.ids)]
+
+            # TMF667 documents referenced from agreement attachments/documents
+            doc_refs = []
+            for attr in ("attachment", "document", "associated_agreement"):
+                if attr in rec._fields:
+                    values = _loads(rec[attr]) or []
+                    if isinstance(values, dict):
+                        values = [values]
+                    for ref in values:
+                        if (isinstance(ref, dict) and ref.get("id")
+                                and (ref.get("@referredType") or ref.get("@type"))
+                                in ("Document", "DocumentRef", "AttachmentRef")):
+                            doc_refs.append(str(ref["id"]))
+            if doc_refs:
+                docs = self.env["tmf.document"].sudo().search(
+                    [("tmf_id", "in", doc_refs)])
+                if docs:
+                    updates["tmfc039_document_ids"] = [(6, 0, docs.ids)]
 
             if updates:
                 rec.with_context(**ctx).write(updates)

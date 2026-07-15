@@ -26,6 +26,20 @@ class TMFC040Usage(models.Model):
         column2="billing_account_id",
         string="TMFC040 Billing Accounts",
     )
+    tmfc040_product_ids = fields.Many2many(
+        comodel_name="tmf.product",
+        relation="tmfc040_usage_product_rel",
+        column1="usage_id",
+        column2="product_id",
+        string="TMFC040 Products (TMF637)",
+    )
+    tmfc040_product_offering_ids = fields.Many2many(
+        comodel_name="product.template",
+        relation="tmfc040_usage_offering_rel",
+        column1="usage_id",
+        column2="offering_id",
+        string="TMFC040 Product Offerings (TMF620)",
+    )
 
     def _tmfc040_resolve_refs(self):
         ctx = {"skip_tmf_wiring": True}
@@ -59,6 +73,31 @@ class TMFC040Usage(models.Model):
                 bas = BA.search([("tmf_id", "in", ba_refs)])
                 if bas:
                     updates["tmfc040_billing_account_ids"] = [(6, 0, bas.ids)]
+
+            # TMF637 product / TMF620 offering refs from usage characteristics
+            product_refs, offering_refs = [], []
+            if "usage_characteristic_ids" in rec._fields:
+                for char in rec.usage_characteristic_ids:
+                    name = (char.name or "").lower()
+                    value = (char.value or "").strip()
+                    if not value:
+                        continue
+                    if name in ("product", "productid", "productref"):
+                        product_refs.append(value)
+                    elif name in ("productoffering", "productofferingid",
+                                  "productofferingref"):
+                        offering_refs.append(value)
+            if product_refs:
+                products = self.env["tmf.product"].sudo().search(
+                    [("tmf_id", "in", product_refs)])
+                if products:
+                    updates["tmfc040_product_ids"] = [(6, 0, products.ids)]
+            if offering_refs:
+                offerings = self.env["product.template"].sudo().search(
+                    [("tmf_id", "in", offering_refs)])
+                if offerings:
+                    updates["tmfc040_product_offering_ids"] = [(6, 0, offerings.ids)]
+
             if updates:
                 rec.with_context(**ctx).write(updates)
         return True

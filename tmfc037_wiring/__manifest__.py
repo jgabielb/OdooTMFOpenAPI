@@ -4,7 +4,11 @@
     "category": "TMF/ODA",
     "author": "Joao Nascimento",
     "license": "LGPL-3",
-    "depends": ['tmf_performance_management', 'tmf_customer', 'tmf_party_role'],
+    "depends": [
+        'tmf_performance_management', 'tmf_customer', 'tmf_party_role',
+        'tmf_service_inventory', 'tmf_resource_inventory',
+        'tmf_service_quality_management', 'tmf_process_flow',
+    ],
     "data": ["security/ir.model.access.csv"],
     "installable": True,
 }

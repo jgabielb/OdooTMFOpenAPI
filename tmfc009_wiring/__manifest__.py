@@ -14,6 +14,12 @@
         "tmf_customer",
         "tmf_party_role",
         "tmf_service_catalog",
+        "tmf_service_inventory",   # tmf.service (TMF638)
+        "tmf_resource_inventory",  # stock.lot resources (TMF639)
+        "tmf_resource_catalog",    # tmf.resource.specification (TMF634)
+        "tmf_geographic_address",  # TMF673
+        "tmf_geographic_site",     # TMF674
+        "tmf_geographic_location", # TMF675
     ],
     "data": [
         "security/ir.model.access.csv",

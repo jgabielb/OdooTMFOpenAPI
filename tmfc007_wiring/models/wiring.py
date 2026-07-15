@@ -7,6 +7,20 @@ from odoo import api, fields, models
 _logger = logging.getLogger(__name__)
 
 
+def _resolve_ids(env, model, items, id_field="tmf_id"):
+    """Batch-search model by tmf_id for all item dicts. Returns list of record IDs."""
+    ref_ids = []
+    for item in (items or []):
+        if not isinstance(item, dict):
+            continue
+        ref_id = str(item.get("id") or "").strip()
+        if ref_id:
+            ref_ids.append(ref_id)
+    if not ref_ids:
+        return []
+    return env[model].sudo().search([(id_field, "in", ref_ids)]).ids
+
+
 # Event-type constants derived from TMFC007 YAML
 TMFC007_RESOURCE_ORDER_EVENTS = {
     "ResourceOrderStateChangeEvent",
@@ -146,6 +160,39 @@ class TMFC007ServiceOrderWiring(models.Model):
         ),
     )
 
+    # ------------------------------------------------------------------
+    # TMF646 / TMF653 / TMF640 / TMF673-675 dependency wiring
+    # ------------------------------------------------------------------
+
+    tmfc007_appointment_ids = fields.Many2many(
+        "tmf.appointment", "tmfc007_service_order_appointment_rel",
+        "service_order_id", "appointment_id", string="Appointments (TMF646)",
+        help="Resolved from serviceOrderItem[*].appointment refs.",
+    )
+    tmfc007_service_test_ids = fields.Many2many(
+        "tmf.service.test", "tmfc007_service_order_service_test_rel",
+        "service_order_id", "service_test_id", string="Service Tests (TMF653)",
+        help="ServiceTests whose relatedService points at a Service of this order.",
+    )
+    tmfc007_monitor_ids = fields.Many2many(
+        "tmf640.monitor", "tmfc007_service_order_monitor_rel",
+        "service_order_id", "monitor_id", string="Activation Monitors (TMF640)",
+        help="TMF640 monitors tracking activation of this order (event-driven linkage).",
+    )
+    tmfc007_place_ref_json = fields.Json(
+        default=list, string="Place refs JSON (TMF673/674/675)",
+        help="Raw place refs extracted from serviceOrderItem[*].service.place.",
+    )
+    tmfc007_geographic_address_id = fields.Many2one(
+        "tmf.geographic.address", string="Geographic Address (TMF673)",
+        index=True, ondelete="set null")
+    tmfc007_geographic_site_id = fields.Many2one(
+        "tmf.geographic.site", string="Geographic Site (TMF674)",
+        index=True, ondelete="set null")
+    tmfc007_geographic_location_id = fields.Many2one(
+        "tmf.geographic.location", string="Geographic Location (TMF675)",
+        index=True, ondelete="set null")
+
     def _tmfc007_notify_state_transitions(self, old_state_map, old_cancel_map):
         """Publish TMF641 state-change and cancelServiceOrder events.
 
@@ -273,15 +320,68 @@ class TMFC007ServiceOrderWiring(models.Model):
                 items = [items]
 
             service_refs = []
+            appointment_refs = []
+            place_refs = []
             for item in items:
                 if not isinstance(item, dict):
                     continue
                 svc = item.get("service") or {}
                 if isinstance(svc, dict) and (svc.get("id") or svc.get("href")):
                     service_refs.append(svc)
+                    places = svc.get("place") or []
+                    if isinstance(places, dict):
+                        places = [places]
+                    place_refs.extend(p for p in places if isinstance(p, dict))
+                appt = item.get("appointment")
+                if isinstance(appt, dict):
+                    appointment_refs.append(appt)
+                elif isinstance(appt, list):
+                    appointment_refs.extend(a for a in appt if isinstance(a, dict))
 
             # Persist raw refs for traceability
-            updates = {"service_ref_json": service_refs}
+            updates = {
+                "service_ref_json": service_refs,
+                "tmfc007_place_ref_json": place_refs,
+            }
+
+            # TMF646 appointments
+            appt_ids = _resolve_ids(self.env, "tmf.appointment", appointment_refs) \
+                if appointment_refs else []
+            updates["tmfc007_appointment_ids"] = [(6, 0, appt_ids)] if appt_ids else [(5, 0, 0)]
+
+            # TMF673/674/675 place refs → first match per geographic model
+            geo_map = {
+                ("GeographicAddress", "GeographicAddressRef"):
+                    ("tmfc007_geographic_address_id", "tmf.geographic.address"),
+                ("GeographicSite", "GeographicSiteRef"):
+                    ("tmfc007_geographic_site_id", "tmf.geographic.site"),
+                ("GeographicLocation", "GeographicLocationRef"):
+                    ("tmfc007_geographic_location_id", "tmf.geographic.location"),
+            }
+            for types, (geo_field, geo_model) in geo_map.items():
+                geo_ids = [str(p.get("id") or "").strip() for p in place_refs
+                           if p.get("@type") in types and p.get("id")]
+                match = (self.env[geo_model].sudo().search([("tmf_id", "in", geo_ids)], limit=1)
+                         if geo_ids else self.env[geo_model].sudo())
+                updates[geo_field] = match.id if match else False
+
+            # TMF653 service tests: reverse lookup via relatedService refs
+            svc_ref_ids = {str(r.get("id") or "").strip() for r in service_refs if r.get("id")}
+            if svc_ref_ids:
+                tests = self.env["tmf.service.test"].sudo().search(
+                    [("related_service_json", "!=", False)])
+                test_ids = []
+                for test in tests:
+                    try:
+                        related = json.loads(test.related_service_json or "[]")
+                    except Exception:
+                        related = []
+                    if isinstance(related, dict):
+                        related = [related]
+                    if any(str((r or {}).get("id") or "").strip() in svc_ref_ids
+                           for r in related if isinstance(r, dict)):
+                        test_ids.append(test.id)
+                updates["tmfc007_service_test_ids"] = [(6, 0, test_ids)]
 
             # Resolve relational links
             ref_ids = []

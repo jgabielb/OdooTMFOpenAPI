@@ -40,17 +40,31 @@ class TMFC037ServicePerformanceManagement(models.Model):
         "tmf.party.role", "tmfc037_party_role_rel", "rec_id", "party_role_id",
         string="TMFC037 Party Roles",
     )
+    tmfc037_service_ids = fields.Many2many(
+        "tmf.service", "tmfc037_service_rel", "rec_id", "service_id",
+        string="TMFC037 Monitored Services (TMF638)",
+    )
+    tmfc037_resource_ids = fields.Many2many(
+        "stock.lot", "tmfc037_resource_rel", "rec_id", "resource_id",
+        string="TMFC037 Monitored Resources (TMF639)",
+    )
+    tmfc037_slo_ids = fields.Many2many(
+        "tmf.service.level.objective", "tmfc037_slo_rel", "rec_id", "slo_id",
+        string="TMFC037 Service Level Objectives (TMF657)",
+    )
+    tmfc037_sls_ids = fields.Many2many(
+        "tmf.service.level.specification", "tmfc037_sls_rel", "rec_id", "sls_id",
+        string="TMFC037 Service Level Specifications (TMF657)",
+    )
 
     def _tmfc037_resolve_refs(self):
         ctx = {"skip_tmf_wiring": True}
         Partner = self.env["res.partner"].sudo()
         PartyRole = self.env["tmf.party.role"].sudo()
         for rec in self:
-            items = _loads(rec.payload_json) or []
-            if isinstance(items, dict):
-                # payload_json can be a full object; look for relatedParty key
-                items = items.get("relatedParty") or []
-            party_refs, role_refs = _collect(items)
+            payload = _loads(rec.payload_json) or {}
+            items = payload.get("relatedParty") if isinstance(payload, dict) else payload
+            party_refs, role_refs = _collect(items or [])
             updates = {}
             if party_refs:
                 p = Partner.search([("tmf_id", "in", party_refs)])
@@ -60,6 +74,35 @@ class TMFC037ServicePerformanceManagement(models.Model):
                 r = PartyRole.search([("tmf_id", "in", role_refs)])
                 if r:
                     updates["tmfc037_party_role_ids"] = [(6, 0, r.ids)]
+
+            def _refs_of(*keys):
+                refs = []
+                if not isinstance(payload, dict):
+                    return refs
+                for key in keys:
+                    value = payload.get(key)
+                    if isinstance(value, dict):
+                        refs.append(value)
+                    elif isinstance(value, list):
+                        refs.extend(v for v in value if isinstance(v, dict))
+                return [str(r.get("id")).strip() for r in refs if r.get("id")]
+
+            def _rebuild(field_name, model, ids):
+                if not ids:
+                    return
+                found = self.env[model].sudo().search([("tmf_id", "in", ids)])
+                if found and set(found.ids) != set(rec[field_name].ids):
+                    updates[field_name] = [(6, 0, found.ids)]
+
+            _rebuild("tmfc037_service_ids", "tmf.service",
+                     _refs_of("service", "serviceRef", "monitoredService"))
+            _rebuild("tmfc037_resource_ids", "stock.lot",
+                     _refs_of("resource", "resourceRef", "monitoredResource"))
+            _rebuild("tmfc037_slo_ids", "tmf.service.level.objective",
+                     _refs_of("serviceLevelObjective"))
+            _rebuild("tmfc037_sls_ids", "tmf.service.level.specification",
+                     _refs_of("serviceLevelSpecification"))
+
             if updates:
                 rec.with_context(**ctx).write(updates)
         return True
@@ -97,3 +140,42 @@ class TMFC037WiringTools(models.AbstractModel):
     @api.model
     def _handle_party_role_event(self, payload):
         return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_service_catalog_event(self, payload):
+        """TMF633 serviceSpecification change events: re-resolve refs."""
+        return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_service_inventory_event(self, payload):
+        """TMF638 service C/AVC/state/D events: re-resolve monitored services."""
+        return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_resource_inventory_event(self, payload):
+        """TMF639 resource C/AVC/state/D events: re-resolve monitored resources."""
+        return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_process_flow_event(self, payload):
+        """TMF701 flow events: sync local flow state by tmf_id."""
+        resource = payload or {}
+        event = resource.get("event")
+        if isinstance(event, dict):
+            for value in event.values():
+                if isinstance(value, dict) and value.get("id"):
+                    resource = value
+                    break
+        ref_id = str(resource.get("id") or "").strip()
+        state = resource.get("state")
+        if not ref_id or not state:
+            return False
+        for model in ("tmf.process.flow", "tmf.task.flow"):
+            rec = self.env[model].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+            if rec:
+                try:
+                    rec.with_context(skip_tmf_wiring=True).write({"state": state})
+                except Exception:
+                    pass
+                break
+        return True

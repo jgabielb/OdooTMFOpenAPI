@@ -237,12 +237,20 @@ class TMFWork(models.Model):
                 vals[field_name] = _dumps(data.get(key))
         return vals
 
+    def _tmf_event_api_name(self):
+        """TMF697 WorkOrder/CancelWorkOrder records publish under their own API name."""
+        self.ensure_one()
+        return {
+            "WorkOrder": "workOrder",
+            "CancelWorkOrder": "cancelWorkOrder",
+        }.get(self.tmf_type_value or "", "work")
+
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
         recs._sync_native_links()
         for rec in recs:
-            self._notify("work", "create", rec)
+            self._notify(rec._tmf_event_api_name(), "create", rec)
         return recs
 
     def write(self, vals):
@@ -251,18 +259,19 @@ class TMFWork(models.Model):
         if "related_party_json" in vals or "partner_id" in vals or "project_task_id" in vals or "name" in vals:
             self._sync_native_links()
         for rec in self:
-            self._notify("work", "update", rec)
+            api_name = rec._tmf_event_api_name()
+            self._notify(api_name, "update", rec)
             if state_changed:
-                self._notify("work", "state_change", rec)
+                self._notify(api_name, "state_change", rec)
         return res
 
     def unlink(self):
-        payloads = [rec.to_tmf_json() for rec in self]
+        payloads = [(rec._tmf_event_api_name(), rec.to_tmf_json()) for rec in self]
         res = super().unlink()
-        for payload in payloads:
+        for api_name, payload in payloads:
             try:
                 self.env["tmf.hub.subscription"]._notify_subscribers(
-                    api_name="work",
+                    api_name=api_name,
                     event_type="delete",
                     resource_json=payload,
                 )

@@ -243,6 +243,22 @@ class TMFOrderingController(TMFBaseController):
                 return self._error(422, "CREDIT_BLOCK_ACTIVE",
                                    f"Party {partner.id} is credit-blocked")
 
+            # Relocation feasibility pre-flight: reject before order creation.
+            for _item in (body.get('productOrderItem') or []):
+                if (_item.get('action') or 'add').lower() == 'modify' and 'place' in _item:
+                    _tref = (_item.get('product') or {}).get('id')
+                    if _tref:
+                        Service = request.env['tmf.service'].sudo()
+                        _svc = Service.search([('tmf_id', '=', str(_tref))], limit=1) \
+                            or (Service.browse(int(_tref)) if str(_tref).isdigit() else Service.browse())
+                        if _svc and _svc.exists():
+                            feas = getattr(_svc, 'relocation_feasibility', 'allowed') or 'allowed'
+                            if feas == 'denied':
+                                return self._error(
+                                    422, "Unprocessable Entity",
+                                    f"Relocation feasibility denied for service {_tref}"
+                                )
+
             order_vals = {
                 'partner_id': partner.id,
                 'description': body.get('description') or (quote.description if quote else 'Order via TMF API'),
@@ -286,6 +302,83 @@ class TMFOrderingController(TMFBaseController):
                               if str(new_offering_id).isdigit() else ProdSpec)
                         if new_spec:
                             svc.write({'product_specification_id': new_spec.id})
+                    # Device exchange: swap supportingResource on the service.
+                    if 'supportingResource' in item:
+                        sr_list = item.get('supportingResource') or []
+                        if sr_list:
+                            new_rid = str((sr_list[0] or {}).get('id') or '').strip()
+                            if new_rid:
+                                Lot = request.env['stock.lot'].sudo()
+                                new_lot = Lot.search([('tmf_id', '=', new_rid)], limit=1) \
+                                    or (Lot.browse(int(new_rid)) if new_rid.isdigit() else Lot.browse())
+                                if new_lot and new_lot.exists():
+                                    old_lot = svc.resource_id
+                                    svc.write({'resource_id': new_lot.id})
+                                    # Release old lot back to available
+                                    if old_lot and old_lot.exists() and 'resource_status' in old_lot._fields:
+                                        try:
+                                            old_lot.write({'resource_status': 'available'})
+                                        except Exception:
+                                            pass
+                                    # Claim new lot
+                                    if 'resource_status' in new_lot._fields:
+                                        try:
+                                            new_lot.write({'resource_status': 'reserved'})
+                                        except Exception:
+                                            pass
+                                    # Warranty check: if warranty expired (or absent), add fee line
+                                    from odoo import fields as _fields
+                                    warranty = getattr(new_lot, 'warranty_end_date', None)
+                                    in_warranty = warranty and warranty >= _fields.Date.today()
+                                    if not in_warranty:
+                                        fee_prod = fallback_odoo_prod
+                                        SOL = request.env['sale.order.line'].sudo()
+                                        fee_vals = {
+                                            'order_id': order.id,
+                                            'product_id': fee_prod.id,
+                                            'product_uom_qty': 1,
+                                            'name': '[exchange-fee] out-of-warranty device swap',
+                                        }
+                                        if 'price_unit' in SOL._fields:
+                                            fee_vals['price_unit'] = getattr(fee_prod, 'list_price', 50.0) or 50.0
+                                        SOL.create(fee_vals)
+                        else:
+                            # Empty list = detach resource
+                            old_lot = svc.resource_id
+                            svc.write({'resource_id': False})
+                            if old_lot and old_lot.exists() and 'resource_status' in old_lot._fields:
+                                try:
+                                    old_lot.write({'resource_status': 'available'})
+                                except Exception:
+                                    pass
+
+                    # Owner transfer: update service partner_id when relatedParty changes.
+                    if 'relatedParty' in item:
+                        rp_list = item.get('relatedParty') or []
+                        if rp_list:
+                            new_pid = str((rp_list[0] or {}).get('id') or '').strip()
+                            if new_pid:
+                                Partner = request.env['res.partner'].sudo()
+                                new_partner = Partner.search([('tmf_id', '=', new_pid)], limit=1) \
+                                    or (Partner.browse(int(new_pid)) if new_pid.isdigit() else Partner.browse())
+                                if new_partner and new_partner.exists():
+                                    svc.write({'partner_id': new_partner.id})
+
+                    # Address change: update service place when place is in the item.
+                    if 'place' in item and 'place_json' in svc._fields:
+                        svc.write({'place_json': json.dumps(item.get('place') or [])})
+
+                    # Promotion apply / swap / remove via modify order.
+                    # Presence of the 'promotion' key is the signal — empty list = remove.
+                    if 'promotion' in item and 'applied_promotion_tmf_id' in svc._fields:
+                        promo_list = item['promotion'] or []
+                        if promo_list:
+                            promo_ref = promo_list[0] if isinstance(promo_list, list) else promo_list
+                            promo_tmf_id = str((promo_ref or {}).get('id') or '').strip()
+                            if promo_tmf_id:
+                                svc.write({'applied_promotion_tmf_id': promo_tmf_id})
+                        else:
+                            svc.write({'applied_promotion_tmf_id': False})
                     # Drop a trace order line so billing/audit can see the modify
                     odoo_prod = self._resolve_order_line_product(item, fallback_odoo_prod)
                     SOL = request.env['sale.order.line'].sudo()
@@ -347,6 +440,44 @@ class TMFOrderingController(TMFBaseController):
                     vals['price_unit'] = getattr(odoo_prod, 'list_price', 0.0) or 0.0
 
                 SOL.create(vals)
+
+                # SVA: if the item carries a productRelationship isChildOf,
+                # create the child service immediately linked to the parent.
+                parent_service = None
+                for rel in (item.get('product') or {}).get('productRelationship') or []:
+                    if rel.get('relationshipType') == 'isChildOf':
+                        parent_tmf_id = str(
+                            (rel.get('product') or {}).get('id') or ''
+                        ).strip()
+                        if parent_tmf_id:
+                            Svc = request.env['tmf.service'].sudo()
+                            parent_service = Svc.search(
+                                [('tmf_id', '=', parent_tmf_id)], limit=1
+                            )
+                            if not parent_service and parent_tmf_id.isdigit():
+                                candidate = Svc.browse(int(parent_tmf_id))
+                                parent_service = candidate if candidate.exists() else None
+                        break
+
+                if parent_service:
+                    svc_vals = {
+                        'name': f"{odoo_prod.name} (SVA)",
+                        'partner_id': partner.id,
+                        'parent_service_id': parent_service.id,
+                        'state': 'active',
+                        'operating_status': 'running',
+                        'category': 'CFS',
+                        'is_service_enabled': True,
+                        'has_started': True,
+                        'start_mode': '1',
+                        'is_stateful': True,
+                    }
+                    tmpl = odoo_prod.product_tmpl_id
+                    if tmpl and tmpl.product_specification_id:
+                        svc_vals['product_specification_id'] = (
+                            tmpl.product_specification_id.id
+                        )
+                    request.env['tmf.service'].sudo().create(svc_vals)
 
             payload = order.to_tmf_json()
             location = self._absolute_location(payload.get('href'), fallback_id=order.id)

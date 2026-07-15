@@ -29,6 +29,54 @@ RESOURCE_EVENTS = {
     "ResourceCreateEvent", "ResourceAttributeValueChangeEvent",
     "ResourceStateChangeEvent", "ResourceDeleteEvent",
 }
+PARTY_ROLE_EVENTS = {"PartyRoleDeleteEvent"}
+SERVICE_CATALOG_EVENTS = {
+    "ServiceCatalogCreateEvent", "ServiceCatalogChangeEvent", "ServiceCatalogDeleteEvent",
+    "ServiceCategoryCreateEvent", "ServiceCategoryChangeEvent", "ServiceCategoryDeleteEvent",
+    "ServiceCandidateCreateEvent", "ServiceCandidateChangeEvent", "ServiceCandidateDeleteEvent",
+    "ServiceSpecificationCreateEvent", "ServiceSpecificationChangeEvent",
+    "ServiceSpecificationDeleteEvent",
+}
+GEO_EVENTS = {
+    "GeographicAddressValidationStateChangeEvent",
+    "GeographicSiteCreateEvent", "GeographicSiteAttributeValueChangeEvent",
+    "GeographicSiteStatusChangeEvent", "GeographicSiteDeleteEvent",
+    "GeographicLocationCreateEvent", "GeographicLocationAttributeValueChangeEvent",
+    "GeographicLocationDeleteEvent",
+}
+ALARM_EVENTS = {
+    "AlarmCreateEvent", "AlarmAttributeValueChangeEvent",
+    "AlarmStateChangeEvent", "AlarmDeleteEvent",
+    "AckAlarmsCreateEvent", "AckAlarmsStateChangeEvent",
+    "UnAckAlarmsCreateEvent", "UnAckAlarmsStateChangeEvent",
+    "ClearAlarmsCreateEvent", "ClearAlarmsStateChangeEvent",
+    "CommentAlarmsCreateEvent", "CommentAlarmsStateChangeEvent",
+    "GroupAlarmsCreateEvent", "GroupAlarmsStateChangeEvent",
+    "UnGroupAlarmsCreateEvent", "UnGroupAlarmsStateChangeEvent",
+}
+SERVICE_PROBLEM_EVENTS = {
+    "ServiceProblemCreateEvent", "ServiceProblemAttributeValueChangeEvent",
+    "ServiceProblemStateChangeEvent", "ServiceProblemDeleteEvent",
+    "ServiceProblemInformationRequiredEvent",
+    "ProblemAcknowledgementCreateEvent", "ProblemAcknowledgementStateChangeEvent",
+    "ProblemAcknowledgementDeleteEvent",
+    "ProblemGroupCreateEvent", "ProblemGroupStateChangeEvent", "ProblemGroupDeleteEvent",
+    "ProblemUnGroupCreateEvent", "ProblemUnGroupStateChangeEvent",
+    "ProblemUnGroupDeleteEvent",
+}
+TROUBLE_TICKET_EVENTS = {
+    "TroubleTicketCreateEvent", "TroubleTicketAttributeValueChangeEvent",
+    "TroubleTicketStatusChangeEvent", "TroubleTicketStateChangeEvent",
+    "TroubleTicketDeleteEvent", "TroubleTicketResolvedEvent",
+    "TroubleTicketInformationRequiredEvent",
+}
+ENTITY_CATALOG_EVENTS = {
+    "EntityCatalogCreateEvent", "EntityCatalogDeleteEvent",
+    "EntityCatalogItemCreateEvent", "EntityCatalogItemDeleteEvent",
+    "EntitySpecificationCreateEvent", "EntitySpecificationDeleteEvent",
+    "AssociationSpecificationCreateEvent", "AssociationSpecificationDeleteEvent",
+    "AssociationCreateEvent", "AssociationDeleteEvent",
+}
 
 
 class TMFC043ListenerController(http.Controller):
@@ -74,6 +122,48 @@ class TMFC043ListenerController(http.Controller):
                 type="http", auth="public", methods=["POST"], csrf=False)
     def listener_resource(self, **_p):
         return self._dispatch(self._parse_json(), RESOURCE_EVENTS, "_handle_resource_event", "resource")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/partyRole",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_party_role(self, **_p):
+        return self._dispatch(self._parse_json(), PARTY_ROLE_EVENTS,
+                              "_handle_party_event", "partyRole")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/serviceCatalog",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_service_catalog(self, **_p):
+        return self._dispatch(self._parse_json(), SERVICE_CATALOG_EVENTS,
+                              "_handle_service_event", "serviceCatalog")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/geographic",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_geographic(self, **_p):
+        return self._dispatch(self._parse_json(), GEO_EVENTS,
+                              "_handle_resource_event", "geographic")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/alarm",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_alarm(self, **_p):
+        return self._dispatch(self._parse_json(), ALARM_EVENTS,
+                              "_handle_alarm_event", "alarm")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/serviceProblem",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_service_problem(self, **_p):
+        return self._dispatch(self._parse_json(), SERVICE_PROBLEM_EVENTS,
+                              "_handle_service_problem_event", "serviceProblem")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/troubleTicket",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_trouble_ticket(self, **_p):
+        return self._dispatch(self._parse_json(), TROUBLE_TICKET_EVENTS,
+                              "_handle_trouble_ticket_event", "troubleTicket")
+
+    @http.route(f"{TMFC043_LISTENER_BASE}/entityCatalog",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_entity_catalog(self, **_p):
+        return self._dispatch(self._parse_json(), ENTITY_CATALOG_EVENTS,
+                              "_handle_service_event", "entityCatalog")
 
     @http.route(TMFC043_HUB_BASE,
                 type="http", auth="public", methods=["GET", "POST"], csrf=False)

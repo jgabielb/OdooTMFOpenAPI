@@ -34,3 +34,14 @@ class TMFC010ResourceSpecification(models.Model):
         column2="dst_spec_id",
         string="TMFC010 Related Resource Specifications",
     )
+    tmfc010_entity_spec_json = fields.Json(
+        string="TMFC010 EntitySpecification (raw)",
+        help="Raw TMF662 entitySpecification/associationSpecification refs for this resource spec.",
+    )
+    tmfc010_entity_specification_ids = fields.Many2many(
+        comodel_name="tmf.entity.specification",
+        relation="tmfc010_resource_spec_entity_spec_rel",
+        column1="resource_spec_id",
+        column2="entity_spec_id",
+        string="TMFC010 Entity Specifications (TMF662)",
+    )

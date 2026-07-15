@@ -46,6 +46,11 @@ TMFC003_SERVICE_ORDER_EVENTS = {
     "ServiceOrderCreateEvent",
     "ServiceOrderAttributeValueChangeEvent",
     "ServiceOrderDeleteEvent",
+    "ServiceOrderInformationRequiredEvent",
+    "ServiceOrderMilestoneEvent",
+    "ServiceOrderJeopardyEvent",
+    "CancelServiceOrderStateChangeEvent",
+    "CancelServiceOrderInformationRequiredEvent",
 }
 
 TMFC003_RESOURCE_ORDER_EVENTS = {
@@ -53,6 +58,9 @@ TMFC003_RESOURCE_ORDER_EVENTS = {
     "ResourceOrderCreateEvent",
     "ResourceOrderAttributeValueChangeEvent",
     "ResourceOrderDeleteEvent",
+    "ResourceOrderInformationRequiredEvent",
+    "CancelResourceOrderStateChangeEvent",
+    "CancelResourceOrderInformationRequiredEvent",
 }
 
 # Terminal states for child orders
@@ -975,6 +983,13 @@ class TMFC003WiringTools(models.AbstractModel):
             "ServiceOrderCreateEvent": self._reconcile_service_order_create,
             "ServiceOrderAttributeValueChangeEvent": self._reconcile_service_order_attribute_change,
             "ServiceOrderDeleteEvent": self._reconcile_service_order_delete,
+            # milestone/jeopardy/infoRequired/cancel events carry the order
+            # resource; reconcile whatever state the payload exposes
+            "ServiceOrderInformationRequiredEvent": self._reconcile_service_order_attribute_change,
+            "ServiceOrderMilestoneEvent": self._reconcile_service_order_attribute_change,
+            "ServiceOrderJeopardyEvent": self._reconcile_service_order_attribute_change,
+            "CancelServiceOrderStateChangeEvent": self._reconcile_service_order_state_change,
+            "CancelServiceOrderInformationRequiredEvent": self._reconcile_service_order_attribute_change,
         }
         handler = handlers.get(event_name)
         if handler:
@@ -989,6 +1004,9 @@ class TMFC003WiringTools(models.AbstractModel):
             "ResourceOrderCreateEvent": self._reconcile_resource_order_create,
             "ResourceOrderAttributeValueChangeEvent": self._reconcile_resource_order_attribute_change,
             "ResourceOrderDeleteEvent": self._reconcile_resource_order_delete,
+            "ResourceOrderInformationRequiredEvent": self._reconcile_resource_order_attribute_change,
+            "CancelResourceOrderStateChangeEvent": self._reconcile_resource_order_state_change,
+            "CancelResourceOrderInformationRequiredEvent": self._reconcile_resource_order_attribute_change,
         }
         handler = handlers.get(event_name)
         if handler:

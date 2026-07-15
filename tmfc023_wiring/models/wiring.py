@@ -48,6 +48,22 @@ class PartyInteractionTMFC023Wiring(models.Model):
         help="Privacy agreements referenced by this interaction.",
     )
 
+    tmfc023_document_ids = fields.Many2many(
+        "tmf.document", "tmfc023_interaction_document_rel",
+        "interaction_id", "document_id", string="Documents (TMF667)",
+        help="TMF667 Documents referenced by interaction items/attachments.",
+    )
+    tmfc023_communication_message_ids = fields.Many2many(
+        "tmf.communication.message", "tmfc023_interaction_message_rel",
+        "interaction_id", "message_id", string="Communication Messages (TMF681)",
+        help="TMF681 CommunicationMessages related to this interaction.",
+    )
+    tmfc023_entity_specification_ids = fields.Many2many(
+        "tmf.entity.specification", "tmfc023_interaction_entity_spec_rel",
+        "interaction_id", "entity_spec_id", string="Entity Specifications (TMF662)",
+        help="TMF662 EntitySpecifications describing this interaction's items.",
+    )
+
     def _resolve_tmf_refs(self):
         """Resolve DigitalIdentity / PrivacyAgreement refs from related_party.
 
@@ -107,6 +123,43 @@ class PartyInteractionTMFC023Wiring(models.Model):
                     agr_ids.append(hit.id)
             if agr_ids:
                 updates["privacy_agreement_ids"] = [(6, 0, agr_ids)]
+
+            # TMF667 documents / TMF681 messages / TMF662 entity specs are
+            # referenced from interaction items and attachments by @referredType
+            item_refs = []
+            for attr in ("interaction_item", "interaction_item_json", "attachment"):
+                if attr in rec._fields:
+                    item_refs.extend(_as_list(_loads(rec[attr])))
+            item_refs.extend(items)
+
+            def _collect(referred_types, model):
+                ids = []
+                Model = self.env[model].sudo()
+                for ref in item_refs:
+                    if not isinstance(ref, dict):
+                        continue
+                    inner = ref.get("item") if isinstance(ref.get("item"), dict) else ref
+                    if (inner.get("@referredType") or inner.get("@type")) not in referred_types:
+                        continue
+                    rid = str(inner.get("id") or "").strip()
+                    if not rid:
+                        continue
+                    hit = Model.search([("tmf_id", "=", rid)], limit=1)
+                    if hit:
+                        ids.append(hit.id)
+                return ids
+
+            doc_ids = _collect(("Document", "DocumentRef"), "tmf.document")
+            if doc_ids:
+                updates["tmfc023_document_ids"] = [(6, 0, doc_ids)]
+            msg_ids = _collect(("CommunicationMessage", "CommunicationMessageRef"),
+                               "tmf.communication.message")
+            if msg_ids:
+                updates["tmfc023_communication_message_ids"] = [(6, 0, msg_ids)]
+            spec_ids = _collect(("EntitySpecification", "EntitySpecificationRef"),
+                                "tmf.entity.specification")
+            if spec_ids:
+                updates["tmfc023_entity_specification_ids"] = [(6, 0, spec_ids)]
 
             if updates:
                 rec.with_context(**ctx).write(updates)

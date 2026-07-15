@@ -31,6 +31,18 @@ RESOURCE_SPEC_EVENTS = {
     "ResourceSpecificationChangeEvent",
     "ResourceSpecificationDeleteEvent",
 }
+RESOURCE_FUNCTION_EVENTS = {
+    "ResourceFunctionCreateEvent", "ResourceFunctionChangeEvent",
+    "ResourceFunctionAttributeValueChangeEvent", "ResourceFunctionStateChangeEvent",
+    "ResourceFunctionDeleteEvent",
+    "MonitorStateChangeEvent", "HealStateChangeEvent",
+    "ScaleStateChangeEvent", "MigrateStateChangeEvent",
+}
+ACTIVATION_RESOURCE_EVENTS = {
+    "ResourceCreateEvent", "ResourceChangeEvent",
+    "ResourceAttributeValueChangeEvent", "ResourceStateChangeEvent",
+    "MonitorCreateEvent", "MonitorStateChangeEvent",
+}
 
 
 class TMFC011ListenerController(http.Controller):
@@ -76,6 +88,18 @@ class TMFC011ListenerController(http.Controller):
                 type="http", auth="public", methods=["POST"], csrf=False)
     def listener_resource_spec(self, **_p):
         return self._dispatch(self._parse_json(), RESOURCE_SPEC_EVENTS, "_handle_resource_spec_event", "resourceSpecification")
+
+    @http.route(f"{TMFC011_LISTENER_BASE}/resourceFunction",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_resource_function(self, **_p):
+        return self._dispatch(self._parse_json(), RESOURCE_FUNCTION_EVENTS,
+                              "_handle_resource_function_event", "resourceFunction")
+
+    @http.route(f"{TMFC011_LISTENER_BASE}/resourceActivation",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_resource_activation(self, **_p):
+        return self._dispatch(self._parse_json(), ACTIVATION_RESOURCE_EVENTS,
+                              "_handle_activation_resource_event", "resourceActivation")
 
     @http.route(TMFC011_HUB_BASE,
                 type="http", auth="public", methods=["GET", "POST"], csrf=False)

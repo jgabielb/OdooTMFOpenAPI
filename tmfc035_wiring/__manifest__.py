@@ -13,6 +13,7 @@
         "tmf_user_role_permission",
         "tmf_customer",
         "tmf_party_role",
+        "tmf_process_flow",
     ],
     "data": [
         "security/ir.model.access.csv",

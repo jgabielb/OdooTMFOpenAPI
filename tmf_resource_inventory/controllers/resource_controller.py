@@ -6,7 +6,8 @@ import json
 import uuid
 
 
-API_BASE = "/tmf-api/resourceInventoryManagement/v4"
+API_BASE    = "/tmf-api/resourceInventoryManagement/v4"
+API_BASE_V5 = "/tmf-api/resourceInventoryManagement/v5"
 
 
 class TMFResourceController(http.Controller):
@@ -112,7 +113,7 @@ class TMFResourceController(http.Controller):
     # =======================================================
 
     @http.route(
-        f'{API_BASE}/resource',
+        [f'{API_BASE}/resource', f'{API_BASE_V5}/resource'],
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def list_resources(self, **params):
@@ -146,7 +147,8 @@ class TMFResourceController(http.Controller):
         return self._json_response(payload, status=200)
 
     @http.route(
-        f'{API_BASE}/resource/<string:tmf_id>',
+        [f'{API_BASE}/resource/<string:tmf_id>',
+         f'{API_BASE_V5}/resource/<string:tmf_id>'],
         type='http', auth='public', methods=['GET'], csrf=False
     )
     def get_resource(self, tmf_id, **params):
@@ -158,7 +160,10 @@ class TMFResourceController(http.Controller):
         payload = self._apply_fields(self._safe_tmf_json(res), fields_param)
         return self._json_response(payload, status=200)
 
-    @http.route(f'{API_BASE}/resource', type='http', auth='public', methods=['POST'], csrf=False)
+    @http.route(
+        [f'{API_BASE}/resource', f'{API_BASE_V5}/resource'],
+        type='http', auth='public', methods=['POST'], csrf=False
+    )
     def create_resource(self, **params):
         payload = self._parse_json_body()
         if payload is None:
@@ -184,6 +189,8 @@ class TMFResourceController(http.Controller):
 
         if payload.get("resourceStatus"):
             vals["resource_status"] = payload["resourceStatus"]
+        if payload.get("warrantyEndDate"):
+            vals["warranty_end_date"] = payload["warrantyEndDate"]
 
         # Avoid duplicate stock.lot uniqueness crashes on repeated CTK runs:
         # if the same serial/name already exists for the chosen product, reuse it.
@@ -210,7 +217,8 @@ class TMFResourceController(http.Controller):
         return self._json_response(body, status=201, headers=[('Location', location)])
 
     @http.route(
-        f'{API_BASE}/resource/<string:tmf_id>',
+        [f'{API_BASE}/resource/<string:tmf_id>',
+         f'{API_BASE_V5}/resource/<string:tmf_id>'],
         type='http', auth='public', methods=['PATCH'], csrf=False
     )
     def patch_resource(self, tmf_id, **params):
@@ -244,7 +252,8 @@ class TMFResourceController(http.Controller):
         return self._json_response(self._safe_tmf_json(res), status=200)
 
     @http.route(
-        f'{API_BASE}/resource/<string:tmf_id>',
+        [f'{API_BASE}/resource/<string:tmf_id>',
+         f'{API_BASE_V5}/resource/<string:tmf_id>'],
         type='http', auth='public', methods=['DELETE'], csrf=False
     )
     def delete_resource(self, tmf_id, **params):

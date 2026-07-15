@@ -97,3 +97,35 @@ class TMFC054WiringTools(models.AbstractModel):
     @api.model
     def _handle_party_role_event(self, payload):
         return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_product_catalog_event(self, payload):
+        """TMF620 productSpecification create/delete: re-resolve test refs."""
+        TC = self.env["tmf.test.case"].sudo()
+        TC.search([])._tmfc054_resolve_refs()
+        return True
+
+    @api.model
+    def _handle_service_test_event(self, payload):
+        """TMF653 serviceTestSpecification events: sync local spec state."""
+        resource = payload or {}
+        event = resource.get("event")
+        if isinstance(event, dict):
+            for value in event.values():
+                if isinstance(value, dict) and value.get("id"):
+                    resource = value
+                    break
+        ref_id = str(resource.get("id") or "").strip()
+        if not ref_id:
+            return False
+        for model in ("tmf.service.test.specification", "tmf.service.test"):
+            rec = self.env[model].sudo().search([("tmf_id", "=", ref_id)], limit=1)
+            if rec:
+                state = resource.get("state")
+                if state and "state" in rec._fields:
+                    try:
+                        rec.with_context(skip_tmf_wiring=True).write({"state": state})
+                    except Exception:
+                        pass
+                break
+        return True

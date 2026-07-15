@@ -35,7 +35,7 @@ Legend:
 | TMFC028  | PartyManagement                                | ✅ | `tmfc028_wiring` keeps `res.partner` linked to DigitalIdentity / PartyPrivacyAgreement / PartyInteraction through reverse Many2one/One2many relations, with `/tmfc028/listener/{digitalIdentity,partyPrivacyAgreement,partyInteraction}` + `/tmfc028/hub` evidencing subscription completeness (actual record refresh is owned by TMFC020/022/023). CTK green as of 2026-04-14. |
 | TMFC029  | PaymentManagement                              | ✅ | `tmfc029_wiring` adds the missing PaymentManagement side-car on top of the already CTK-green `tmf_payment` / `tmf_payment_method` / `tmf_transfer_balance` addons. `tmf.payment` gains `tmfc029_billing_account_id` (TMF666), `tmfc029_customer_bill_ids` (TMF678) and `tmfc029_related_partner_ids` (TMF632), resolved from `account_json` / `payment_item_json` on create/write. `tmfc029.wiring.tools` handles BillingAccount, CustomerBill and Party events through `/tmfc029/listener/{billingAccount,customerBill,party}`, conservatively re-resolving payments that already reference the affected id, with a `/tmfc029/hub` registration surface for outbound TMF676 events. CTK green as of 2026-04-14. |
 | TMFC030  | BillGeneration                                 | ✅ | `tmfc030_wiring` side-cars `tmf.customer.bill` with `tmfc030_billing_account_json`/`tmfc030_billing_account_id` (TMF666), `tmfc030_related_party_json` + resolved partner/party-role Many2many, and `tmfc030_applied_rate_ids` (TMF681). `/tmfc030/listener/{billingAccount,party,partyRole}` + `/tmfc030/hub` refresh bills on subscribed events. CTK green as of 2026-04-14. |
-| TMFC031  | BillCalculation                                | ⚠️ | `tmfc031_wiring` exists and resolves CustomerBill / AppliedBillingRate refs to BillingAccount, Product, Usage, PartyRole, and ProcessFlow. Concrete side-car wiring is present, but full TMFC031 completeness was not evidenced. |
+| TMFC031  | BillCalculation                                | ✅ | `tmfc031_wiring` resolves CustomerBill / AppliedBillingRate refs to BillingAccount, Product, Usage, PartyRole, and ProcessFlow with rebuild-on-change semantics, and now owns its ODA surface: `/tmfc031/listener/{usage,usageSpecification}` reconcile TMF635 events (re-resolve or prune bill/rate usage links) and `/tmfc031/hub` provides the component hub façade. Root `__init__` now loads models + controllers. |
 | TMFC035  | PermissionsManagement                          | ✅ | `tmfc035_wiring` side-cars `tmf672.permission` with `tmfc035_user_partner_ids`, `tmfc035_granter_partner_ids`, and `tmfc035_party_role_ids` (resolved from `user_json` / `granter_json`) and `tmf672.user.role` with `tmfc035_party_role_ids` (resolved from `involvement_role` name match). `/tmfc035/listener/{party,partyRole}` + `/tmfc035/hub` refresh permissions/user-roles on TMF632/TMF669 events. |
 | TMFC036  | LeadAndOpportunityManagement                   | ✅ | `tmfc036_wiring` side-cars `tmf.sales.lead` with `tmfc036_related_partner_ids` / `tmfc036_party_role_ids` resolved from `related_party`. `/tmfc036/listener/{party,partyRole}` + `/tmfc036/hub` refresh leads on TMF632/TMF669 events. |
 | TMFC037  | ServicePerformanceManagement                   | ✅ | `tmfc037_wiring` side-cars `tmf.performance.management.resource` with `tmfc037_related_partner_ids` / `tmfc037_party_role_ids` resolved from `payload_json.relatedParty`. `/tmfc037/listener/{party,partyRole}` + `/tmfc037/hub` refresh performance records on TMF632/TMF669 events. Shares the base model with TMFC038; discriminated by `resource_type`. |
@@ -53,13 +53,52 @@ Legend:
 
 ## Summary
 
-What is clearly implemented today is a **repeatable side-car wiring pattern** for a subset of TMFCs:
-`tmfc001`, `tmfc002`, `tmfc003`, `tmfc005`, `tmfc006`, `tmfc007`, `tmfc008`, `tmfc009`, `tmfc010`, `tmfc011`, `tmfc012`, `tmfc014`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc024`, `tmfc027`, `tmfc028`, `tmfc029`, `tmfc030`, `tmfc031`, `tmfc035`, `tmfc036`, `tmfc037`, `tmfc038`, `tmfc039`, `tmfc040`, `tmfc041`, `tmfc043`, `tmfc046`, `tmfc050`, `tmfc054`, `tmfc055`, `tmfc061`, `tmfc062` — all 33 TMFCs have ODA wiring side-cars as of 2026-04-15.
+What is clearly implemented today is a **repeatable side-car wiring pattern** for all TMFCs:
+`tmfc001`, `tmfc002`, `tmfc003`, `tmfc005`, `tmfc006`, `tmfc007`, `tmfc008`, `tmfc009`, `tmfc010`, `tmfc011`, `tmfc012`, `tmfc014`, `tmfc020`, `tmfc022`, `tmfc023`, `tmfc024`, `tmfc027`, `tmfc028`, `tmfc029`, `tmfc030`, `tmfc031`, `tmfc035`, `tmfc036`, `tmfc037`, `tmfc038`, `tmfc039`, `tmfc040`, `tmfc041`, `tmfc043`, `tmfc046`, `tmfc050`, `tmfc054`, `tmfc055`, `tmfc061`, `tmfc062` — all 35 TMFC wiring side-cars exist (34 with a local ODA YAML spec + `tmfc062`, whose spec folder is empty upstream).
 
 That pattern typically does one or more of the following:
 - persist raw TMF JSON refs,
-- resolve `tmf_id` references into relational Odoo fields,
+- resolve `tmf_id` references into relational Odoo fields (rebuild-on-change, JSON is source of truth),
 - avoid recursion with `skip_tmf_wiring`,
 - enrich existing TMF base models without changing CTK-visible behavior.
 
-Architecturally, that is the right direction. But most TMFCs in the repo are still at the stage of **"TMF API implementation present"**, not **"ODA component wiring implemented"**. 🏛️
+## Full wiring pass — 2026-07-14
+
+A YAML-driven gap-closure pass brought every spec'd component up to its
+TMFC contract (see `TMFC_WIRING_CHECKLIST.md` "Full wiring pass" section for
+the per-component evidence):
+
+- **Hardening**: base controllers now feature-detect all side-car fields
+  (`tmf_product_catalog` reads *and* writes), the tmfc001 resolver/reconcilers
+  were rewritten to rebuild-on-change semantics, cross-API listeners moved
+  from `tmf_product_catalog` into `tmfc001_wiring` (legacy URLs aliased), the
+  broken Odoo-19 `request.jsonrequest` / dict-return listeners in
+  `tmfc006_wiring`/`tmfc008_wiring` were fixed, and the empty
+  `tmfc002_wiring/__init__.py` (dead addon) was repaired.
+- **New base surfaces**: TMF697 workOrder/cancelWorkOrder API on
+  `tmf_work_management`, TMF649 threshold/thresholdJob on
+  `tmf_performance_management`, TMF769 productTest/productTestSpecification on
+  `tmf_test_case`, TMF633 serviceCategory/serviceCandidate/importJob/exportJob
+  on `tmf_service_catalog`, TMF634 resourceCategory/resourceCandidate/
+  importJob/exportJob on `tmf_resource_catalog`, `CatalogBatchEvent`
+  publication on batch-job completion, TMF638 state-vs-attribute event
+  distinction, and name-synthesis fallbacks in
+  `tmf.hub.subscription._resolve_event_names`.
+- **Listeners**: every YAML `subscribedEvents` source now has an
+  eventType-validated `/tmfcNNN/listener/<resource>` route with a material
+  reconciliation handler (state sync, re-resolution, or prune-on-delete).
+- **Dependent refs**: previously stub components (TMFC002, 009, 010, 011,
+  022, 023, 036, 037, 038, 039, 040, 041, 043, 050, 054, 055, 061) gained
+  JSON+relational dependency wiring for their YAML dependent APIs.
+- **TMF701**: TMFC006/TMFC008 now provision lifecycle process/task flows per
+  serviceSpecification / Service, mirroring TMFC005/TMFC027.
+- **Verification**: `tools/verify_wiring.py --only smoke` exercises every
+  wiring listener (accepted event → 201, unknown eventType → 404) and hub
+  round-trips across all 35 side-cars.
+
+Known justified omissions (documented per DoD): TMF662
+`associationSpecification` resolves as JSON-only (no local model);
+TMFC002's TMF683/687/638/639/760 dependencies remain payload-passthrough
+(no first-class anchor on TMF648 Quote); TMFC008 TMF672 permission checks
+also rely on core Odoo ACLs; `tmfc062_wiring` is maintained as-built
+pending an upstream YAML spec (its ODA documentation folder is empty). 🏛️

@@ -36,6 +36,61 @@ For new TMFC implementations, prefer this side-car approach:
 - avoid recursion with `skip_tmf_wiring`
 - make event handling explicit and testable
 
+### Canonical side-car layout (golden template)
+
+Reference implementations: `tmfc001_wiring` (resolver + reconcilers), `tmfc036_wiring`
+(`_dispatch` listener contract), `tmfc009_wiring` (hub façade).
+
+**File layout**
+```
+tmfcNNN_wiring/
+  __manifest__.py          # author "Joao Nascimento", LGPL-3, category TMF/ODA;
+                           # depends on every tmf_* addon whose models are touched
+  models/wiring.py         # _inherit extensions + tmfcNNN.wiring.tools AbstractModel
+  controllers/listeners.py # /tmfcNNN/listener/<resource> + /tmfcNNN/hub routes
+  security/ir.model.access.csv  # only when the addon adds concrete models
+  views/wiring_views.xml   # optional UI surfacing of resolved links
+```
+
+**Resolver contract** (`_resolve_tmf_refs(changed_keys=None)`)
+- JSON ref fields are the source of truth; relational fields are rebuilt with
+  `[(6, 0, ids)]` from the JSON whenever the JSON field was explicitly written
+  (its key appears in `changed_keys`), even when that clears the relation.
+- Called without `changed_keys` (record creation, bulk reconciliation), empty
+  JSON leaves relational links untouched so manually curated links survive.
+- Always write with `skip_tmf_wiring` in context; `create`/`write` overrides
+  re-trigger resolution only when a wiring JSON key changed and the context
+  flag is absent.
+
+**Listener contract** (`_dispatch` pattern)
+- One route per subscribed source: `POST /tmfcNNN/listener/<resource>`,
+  `type="http"`, `auth="public"` (or `none`), `csrf=False`.
+- Validate the envelope: missing `eventType` → 400; `eventType` outside the
+  YAML-derived allowed set → 404; handler exception → 400 with error body.
+- Thin handlers delegate to `tmfcNNN.wiring.tools` via `sudo()`; handlers must
+  materially update local state (re-resolve on create/change, prune JSON +
+  relational links on delete, touching only records that reference the id).
+- Parse bodies from `request.httprequest.data` — `request.jsonrequest` no
+  longer exists on Odoo 19, and `type="http"` routes must return real
+  responses (`request.make_response`), never bare dicts.
+
+**Hub façade contract**
+- `GET/POST /tmfcNNN/hub` and `GET/DELETE /tmfcNNN/hub/<sid>` backed by
+  `tmf.hub.subscription`; subscription names prefixed `tmfcNNN-` so the façade
+  only lists/deletes its own registrations; `callback` mandatory on POST.
+
+**CTK safety rule for base addons**
+- A base `tmf_*` controller may read/write side-car fields only behind
+  feature detection: `if "<field>" in record._fields:` (see
+  `tmf_product_catalog` and `tmf_service_catalog`). Base addons must install
+  and pass CTK with every `tmfc*_wiring` addon uninstalled.
+
+**Verification contract** (`tools/verify_wiring.py`)
+- Each completed component adds `verify_tmfcNNN(base)`: create upstream
+  records via live TMF APIs → create the primary resource with embedded refs →
+  GET back and assert JSON fidelity → POST synthetic events (incl. delete) to
+  each listener and assert links rebuild/prune.
+
 ### Standard implementation checklist template
 Use this template whenever a TMFC moves into active work:
 
@@ -345,3 +400,80 @@ These are the first TMFCs we should actively track in detail:
 ---
 
 [... remaining sections (backlog, verification strategy) unchanged ...]
+
+---
+
+## Full wiring pass — 2026-07-14 (per-component evidence)
+
+YAML-driven gap closure across all 34 spec'd components. Evidence per component
+(files are the authoritative record; routes are listed as evidence of listener
+coverage). Companion classification: `TMFC_IMPLEMENTATION_STATUS.md`.
+
+### Hardening (applies to all components)
+- CTK safety: `tmf_product_catalog/controllers/catalog_controller.py` feature-detects
+  every side-car field on read and write (`"<field>" in record._fields`).
+- Resolver contract: rebuild-on-change (`changed_keys`) semantics — reference
+  implementation `tmfc001_wiring/models/wiring.py`; applied to tmfc002/027/031
+  resolvers and the newer `_rebuild`-style resolvers everywhere else.
+- Odoo 19: `request.jsonrequest`/dict-return listeners fixed in
+  `tmfc006_wiring` and `tmfc008_wiring`; `tmfc002_wiring` root `__init__` repaired
+  (the addon previously loaded no code at all).
+- Cross-API listeners moved out of base addons: `tmfc001_wiring/controllers/listeners.py`
+  now owns `/tmfc001/listener/*` (+ legacy `/tmf-api/productCatalogManagement/v5/listener/*`
+  aliases) and `/tmfc001/hub`.
+
+### New base API surfaces (WS-1)
+| Gap | Where | Evidence |
+|-----|-------|----------|
+| TMF697 workOrder/cancelWorkOrder | `tmf_work_management/controllers/work_order_controller.py` | `/tmf-api/workOrderingManagement/v4/workOrder` CRUD + cancel task + hub; `tmf.work` typed `WorkOrder`/`CancelWorkOrder` publishes under `workOrder`/`cancelWorkOrder` api names |
+| TMF649 threshold/thresholdJob | `tmf_performance_management/controllers/threshold_controller.py` | `/tmf-api/thresholdManagement/v4/{threshold,thresholdJob}` + hub over `tmf.performance.management.resource` |
+| TMF769 productTest(+Spec) | `tmf_test_case/models/product_test.py` + `controllers/product_test_controller.py` | `/tmf-api/productTestManagement/v4/{productTest,productTestSpecification}` + hub |
+| TMF633 serviceCategory/serviceCandidate/import-exportJob | `tmf_service_catalog/models/catalog_resources.py` + `controllers/catalog_resources_controller.py` | v4 CRUD + events |
+| TMF634 resourceCategory/resourceCandidate/import-exportJob | `tmf_resource_catalog/models/catalog_resources.py` + `controllers/catalog_resources_controller.py` | v5 CRUD + events |
+| CatalogBatchEvent | `tmf_product_catalog/controllers/catalog_controller.py` | published when import/export jobs complete |
+| TMF638 state vs AVC events | `tmf_service_inventory/models/tmf_service.py` | `write()` publishes `state_change` when `state` in vals |
+| Named event fallbacks | `tmf_base/models/tmf_hub_subscription.py` | `_resolve_event_names` synthesizes names for unmapped APIs and infers actions from unmapped TMF event names |
+
+### Per-component gap closure (dependent refs + listeners)
+| TMFC | New refs (JSON→relational) | New/extended listeners |
+|------|---------------------------|------------------------|
+| 001 | TMF662 entitySpec (+assocSpec JSON-only), TMF651 agreementSpecification | `/tmfc001/listener/{serviceSpecification,resourceSpecification,entitySpecification,party,partyRole}` |
+| 002 | Quote-level TMF632/669/620/666/651/679/646 (`tmfc002_*` on `tmf.quote`) | `/tmfc002/listener/{productOfferingQualification,geographicAddressValidation,payment,resourceReservation}` + hub (new controller) |
+| 003 | — | serviceOrder/resourceOrder listeners accept milestone/jeopardy/infoRequired/cancel events |
+| 005 | TMF672 permission (`permission_ref_json`/`permission_ids`) | 7 new delete-event handlers: billingAccount, permission, geoSite, geoLocation, individual, organization, productOrder |
+| 006 | — | TMF701 flow provisioning per serviceSpecification (`_tmfc006_ensure_process_flows`) |
+| 007 | TMF646 appointments, TMF653 serviceTests (reverse lookup), TMF640 monitors, TMF673-675 place | (YAML listeners already present) |
+| 008 | — | TMF701 flow provisioning per Service (`_tmfc008_ensure_process_flows`) |
+| 009 | TMF638 services, TMF639 resources, TMF634 resource specs, TMF673-675 place | (YAML defines no subscribed events) |
+| 010 | TMF662 entity specs | `/tmfc010/listener/entitySpecification` |
+| 011 | TMF639 lots, TMF664 functions, TMF702 activation resources, TMF685 pools, TMF697 work orders | `/tmfc011/listener/{resourceFunction,resourceActivation}` |
+| 012 | — | full TMF634 catalog family, partyRole, self-resource loopback |
+| 020 | — | `UserRoleCreationNotification`/`UserRoleChangeNotification` accepted |
+| 022 | TMF620 offerings, TMF667 documents (from agreementItem) | (YAML defines no subscribed events) |
+| 023 | TMF667 documents, TMF681 messages, TMF662 entity specs | `/tmfc023/listener/{party,partyRole,document,processFlow}` |
+| 027 | — | TMF645 spec-cased event names accepted; resolvers rebuild-on-change |
+| 031 | — | `/tmfc031/listener/{usage,usageSpecification}` + `/tmfc031/hub` (new controller) |
+| 035 | — | `/tmfc035/listener/processFlow` |
+| 036 | TMF620 PO/spec, TMF648 quotes, TMF651 agreements(+specs), TMF622 orders | `/tmfc036/listener/{productCatalog,productOrder,agreement,quote}` |
+| 037 | TMF638 services, TMF639 resources, TMF657 SLO/SLS | `/tmfc037/listener/{serviceCatalog,serviceInventory,resourceInventory,processFlow}` |
+| 038 | TMF639 resources, TMF634 resource specs | `/tmfc038/listener/{resourceCatalog,resourceInventory,geographicAddressValidation,processFlow}` |
+| 039 | TMF620 offerings, TMF637 products, TMF667 documents | (YAML: TMF632 deletes only, already covered) |
+| 040 | TMF637 products + TMF620 offerings (from usage characteristics) | (party/partyRole/billingAccount already covered) |
+| 041 | TMF642 alarms, TMF915 AI sources; publishes TMF751 anomaly events | `/tmfc041/listener/{alarm,aiManagement}` |
+| 043 | — | `/tmfc043/listener/{partyRole,serviceCatalog,geographic,alarm,serviceProblem,troubleTicket,entityCatalog}` |
+| 046 | — | `/tmfc046/listener/processFlow` |
+| 050 | TMF620 offerings/categories, TMF622 orders, TMF663 carts | `/tmfc050/listener/productCatalog` |
+| 054 | (base TMF769 surface via `tmf_test_case`) | `/tmfc054/listener/{productCatalog,serviceTest}` |
+| 055 | — | `/tmfc055/listener/serviceCatalog` |
+| 061 | (TMF697 exposure via `tmf_work_management`; TMF713/714 already present) | `/tmfc061/listener/{processFlow,appointment}` |
+| 062 | maintained as-built — **no upstream YAML spec** (ODA docs folder empty); re-run standard recipe when the spec is published | — |
+
+### Verification
+- `tools/verify_wiring.py --only smoke` posts a representative accepted event to
+  every wiring listener (expects 201), posts an unknown eventType (expects 404),
+  and round-trips each `/tmfcNNN/hub` registration.
+- Full end-to-end runners remain for tmfc001/tmfc027/tmfc031; extend per
+  component using the golden-template verification contract.
+- Note: `oda_component_specs/ODA_COMPONENT_REGISTRY.md` predates this pass and
+  is stale (it marks several delivered components MISSING); use
+  `TMFC_IMPLEMENTATION_STATUS.md` as the source of truth.

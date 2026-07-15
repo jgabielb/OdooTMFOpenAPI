@@ -16,6 +16,13 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+PROCESS_FLOW_EVENTS = {
+    "ProcessFlowCreateEvent", "ProcessFlowStateChangeEvent",
+    "ProcessFlowAttributeValueChangeEvent", "ProcessFlowDeleteEvent",
+    "TaskFlowCreateEvent", "TaskFlowStateChangeEvent",
+    "TaskFlowAttributeValueChangeEvent", "TaskFlowDeleteEvent",
+    "TaskFlowInformationRequiredEvent",
+}
 
 
 class TMFC046ListenerController(http.Controller):
@@ -48,6 +55,10 @@ class TMFC046ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/processFlow", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_process_flow(self, **_p):
+        return self._dispatch(self._parse(), PROCESS_FLOW_EVENTS, "_handle_process_flow_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

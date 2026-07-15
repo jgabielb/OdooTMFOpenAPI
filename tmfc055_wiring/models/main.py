@@ -97,3 +97,10 @@ class TMFC055WiringTools(models.AbstractModel):
     @api.model
     def _handle_party_role_event(self, payload):
         return self._handle_party_event(payload)
+
+    @api.model
+    def _handle_service_catalog_event(self, payload):
+        """TMF633 serviceSpecification create/delete: re-resolve test refs."""
+        Rec = self.env["tmf.service.test"].sudo()
+        Rec.search([])._tmfc055_resolve_refs()
+        return True

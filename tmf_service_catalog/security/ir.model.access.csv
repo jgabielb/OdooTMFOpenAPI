@@ -1,3 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tmf_service_catalog,tmf.service.catalog,model_tmf_service_catalog,base.group_user,1,1,1,1
 access_tmf_service_specification,access_tmf_service_specification,model_tmf_service_specification,,1,1,1,1
+access_tmf_service_category,tmf.service.category,model_tmf_service_category,base.group_user,1,1,1,1
+access_tmf_service_candidate,tmf.service.candidate,model_tmf_service_candidate,base.group_user,1,1,1,1
+access_tmf_service_catalog_import_job,tmf.service.catalog.import.job,model_tmf_service_catalog_import_job,base.group_user,1,1,1,1
+access_tmf_service_catalog_export_job,tmf.service.catalog.export.job,model_tmf_service_catalog_export_job,base.group_user,1,1,1,1

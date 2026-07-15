@@ -18,6 +18,24 @@ RESOURCE_SPEC_EVENTS = {
     "ResourceSpecificationAttributeValueChangeEvent",
     "ResourceSpecificationChangeEvent",
     "ResourceSpecificationDeleteEvent",
+    # TMF634 full catalog family (same reconciliation path; ids that do not
+    # match a locally referenced spec are safely ignored)
+    "ResourceCatalogCreateEvent", "ResourceCatalogChangeEvent",
+    "ResourceCatalogDeleteEvent",
+    "ResourceCategoryCreateEvent", "ResourceCategoryChangeEvent",
+    "ResourceCategoryDeleteEvent",
+    "ResourceCandidateCreateEvent", "ResourceCandidateChangeEvent",
+    "ResourceCandidateDeleteEvent",
+    "ImportJobCreateEvent", "ExportJobCreateEvent",
+}
+PARTY_ROLE_EVENTS = {
+    "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent",
+    "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
+}
+SELF_RESOURCE_EVENTS = {
+    "ResourceCreateEvent", "ResourceChangeEvent",
+    "ResourceAttributeValueChangeEvent", "ResourceStateChangeEvent",
+    "ResourceDeleteEvent",
 }
 PARTY_EVENTS = {
     "PartyCreateEvent", "PartyAttributeValueChangeEvent",
@@ -79,6 +97,20 @@ class TMFC012ListenerController(http.Controller):
                 type="http", auth="public", methods=["POST"], csrf=False)
     def listener_party(self, **_p):
         return self._dispatch(self._parse_json(), PARTY_EVENTS, "_handle_party_event", "party")
+
+    @http.route(f"{TMFC012_LISTENER_BASE}/partyRole",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_party_role(self, **_p):
+        return self._dispatch(self._parse_json(), PARTY_ROLE_EVENTS,
+                              "_handle_party_event", "partyRole")
+
+    @http.route(f"{TMFC012_LISTENER_BASE}/resource",
+                type="http", auth="public", methods=["POST"], csrf=False)
+    def listener_self_resource(self, **_p):
+        # TMF638-style self-subscription (loopback): the local stock.lot is the
+        # source of truth, so reconciliation reuses the spec-ref refresh path.
+        return self._dispatch(self._parse_json(), SELF_RESOURCE_EVENTS,
+                              "_handle_resource_spec_event", "resource")
 
     @http.route(f"{TMFC012_LISTENER_BASE}/geographicAddress",
                 type="http", auth="public", methods=["POST"], csrf=False)

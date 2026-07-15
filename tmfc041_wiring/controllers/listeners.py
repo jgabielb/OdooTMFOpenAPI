@@ -16,6 +16,20 @@ PARTY_EVENTS = {
 PARTY_ROLE_EVENTS = {
     "PartyRoleCreateEvent", "PartyRoleAttributeValueChangeEvent", "PartyRoleStateChangeEvent", "PartyRoleDeleteEvent",
 }
+ALARM_EVENTS = {
+    "AlarmCreateEvent", "AlarmStateChangeEvent", "AlarmDeleteEvent",
+    "AlarmAttributeValueChangeEvent",
+}
+AI_MANAGEMENT_EVENTS = {
+    "AiContractSpecificationCreateEvent", "AiContractSpecificationDeleteEvent",
+    "AiContractSpecificationAttributeValueChangeEvent",
+    "AiModelSpecificationCreateEvent", "AiModelSpecificationDeleteEvent",
+    "AiModelSpecificationAttributeValueChangeEvent",
+    "AiModelCreateEvent", "AiModelStateChangeEvent", "AiModelDeleteEvent",
+    "AiModelAttributeValueChangeEvent",
+    "AiContractCreateEvent", "AiContractStateChangeEvent", "AiContractDeleteEvent",
+    "AiContractAttributeValueChangeEvent",
+}
 
 
 class TMFC041ListenerController(http.Controller):
@@ -48,6 +62,14 @@ class TMFC041ListenerController(http.Controller):
     @http.route(f"{BASE_L}/partyRole", type="http", auth="public", methods=["POST"], csrf=False)
     def l_party_role(self, **_p):
         return self._dispatch(self._parse(), PARTY_ROLE_EVENTS, "_handle_party_role_event")
+
+    @http.route(f"{BASE_L}/alarm", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_alarm(self, **_p):
+        return self._dispatch(self._parse(), ALARM_EVENTS, "_handle_alarm_event")
+
+    @http.route(f"{BASE_L}/aiManagement", type="http", auth="public", methods=["POST"], csrf=False)
+    def l_ai_management(self, **_p):
+        return self._dispatch(self._parse(), AI_MANAGEMENT_EVENTS, "_handle_ai_management_event")
 
     @http.route(BASE_H, type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def hub(self, **_p):

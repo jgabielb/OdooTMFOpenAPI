@@ -14,6 +14,8 @@
         "tmf_customer",
         "tmf_party_role",
         "tmf_billing_management",
+        "tmf_product_inventory",
+        "tmf_product_catalog",
     ],
     "data": [
         "security/ir.model.access.csv",

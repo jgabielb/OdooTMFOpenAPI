@@ -1229,6 +1229,16 @@ class TMFHubSubscription(models.Model):
                 )
                 return
 
+    # Internal action -> TMF event-name suffix, used to synthesize event names
+    # for APIs that have no TMF_EVENT_NAME_MAP entry yet.
+    _ACTION_EVENT_SUFFIX = {
+        'create': 'CreateEvent',
+        'update': 'AttributeValueChangeEvent',
+        'state_change': 'StateChangeEvent',
+        'information_required': 'InformationRequiredEvent',
+        'delete': 'DeleteEvent',
+    }
+
     @api.model
     def _resolve_event_names(self, api_name, input_event_type):
         """
@@ -1237,20 +1247,37 @@ class TMFHubSubscription(models.Model):
         Output: action='create', tmf_string='TroubleTicketCreateEvent'
         """
         mapping = TMF_EVENT_NAME_MAP.get(api_name, {})
-        
+
         # Case 1: Input is already a raw action ('create', 'update')
         if input_event_type in mapping:
             return input_event_type, mapping[input_event_type]
-        
+
         # Case 2: Input is a TMF String ('TroubleTicketCreateEvent') -> Reverse lookup the action
         for action, tmf_string in mapping.items():
             if tmf_string == input_event_type:
                 # Map specific state changes to 'update' for subscription filtering
                 internal_action = 'update' if 'change' in action.lower() else action
                 return internal_action, tmf_string
-                
-        # Case 3: Unknown / Fallback
-        return 'update', input_event_type
+
+        # Case 3a: raw action for an API without a map entry -> synthesize the
+        # TMF event name from the api_name (workOrder/create -> WorkOrderCreateEvent)
+        if input_event_type in self._ACTION_EVENT_SUFFIX:
+            base = (api_name or 'Resource')
+            base = base[0].upper() + base[1:]
+            return input_event_type, base + self._ACTION_EVENT_SUFFIX[input_event_type]
+
+        # Case 3b: explicit TMF event name unknown to the map -> infer the
+        # internal action from the name suffix so subscription filters work
+        name = str(input_event_type or '')
+        if name.endswith('CreateEvent'):
+            return 'create', name
+        if name.endswith('DeleteEvent') or name.endswith('RemoveEvent'):
+            return 'delete', name
+        if name.endswith('StateChangeEvent') or name.endswith('StatusChangeEvent'):
+            return 'state_change', name
+        if name.endswith('InformationRequiredEvent'):
+            return 'information_required', name
+        return 'update', name
 
     @api.model
     def _notify_subscribers(self, api_name, event_type, resource_json):
