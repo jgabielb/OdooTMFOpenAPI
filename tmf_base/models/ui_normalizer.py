@@ -41,21 +41,55 @@ class TMFUiNormalizer(models.AbstractModel):
         "tmf_prepay_balance_management": "billing_revenue",
         "tmf_usage": "billing_revenue",
         "tmf_usage_consumption": "billing_revenue",
+        "tmf_credit_management": "billing_revenue",
         "tmf_recommendation_management": "orders_sales",
         "tmf_quote_management": "orders_sales",
         "tmf_product_ordering": "orders_sales",
         "tmf_shopping_cart": "orders_sales",
+        "tmf_service_qualification": "orders_sales",
+        "tmf_product_offering_qualification": "orders_sales",
         "tmf_base": "webhooks_events",
         "tmf_event": "webhooks_events",
         "tmf_service_activation_configuration": "assurance",
-        "tmf_userinfo": "platform_identity",
+        "tmf_userinfo": "customer_party",
+        "tmf_party_role_product_offering_risk_assessment": "customer_party",
         "tmf_private_optimized_binding": "platform_identity",
         "tmf_open_gateway_operate_onboarding_ordering": "platform_identity",
+        "tmf_digital_identity_management": "platform_identity",
+        "tmf_user_role_permission": "platform_identity",
         "tmf_change_management": "assurance",
         "tmf_service_usage_management": "assurance",
         "tmf_work_management": "assurance",
         "tmf_iot_agent_device_management": "platform_identity",
         "tmf_iot_service_management": "platform_identity",
+        "tmf_resource_role_management": "inventory_resource",
+        "tmf_software_compute_management": "inventory_resource",
+        "tmf_service_inventory": "inventory_resource",
+        "tmf_test_environment": "testing_quality",
+    }
+    # Known-ugly labels left behind by earlier passes; renamed idempotently.
+    # Keyed by (module, current name) — plain names collide (two menus are
+    # both called "Resource", from different modules).
+    _MENU_RENAME_MAP = {
+        ("tmf_change_management", "TMF Assurance Change Management"): "Change Management",
+        ("tmf_change_management", "TMF Change Management"): "Change Management",
+        ("tmf_service_usage_management", "TMF Assurance Service Usage"): "Service Usage",
+        ("tmf_service_usage_management", "TMF Service Usage Assurance"): "Service Usage",
+        ("tmf_work_management", "TMF Assurance Work Management"): "Work Management",
+        ("tmf_work_management", "TMF Work Management"): "Work Management",
+        ("tmf_incident_management", "TMF Incident"): "Incident",
+        ("tmf_customer_bill_management", "TMF Billing"): "Customer Bills",
+        ("tmf_dunning_case_management", "TMF Dunning"): "Dunning",
+        ("tmf_metadata_catalog_management", "TMF Metadata Catalog"): "Metadata Catalog",
+        ("tmf_warranty_management", "TMF Warranty Catalog"): "Warranty",
+        ("tmf_geographic_site", "TMF Geographic"): "Geographic Sites",
+        ("tmf_resource_inventory", "Physical Resources"): "Resource Inventory",
+        ("tmf_resource_activation", "Resource"): "Resource Activation",
+        ("tmf_userinfo", "Customer User Info"): "User Info",
+        ("tmf_open_gateway_operate_onboarding_ordering", "Platform OGW Applications"): "OGW Applications",
+        ("tmf_private_optimized_binding", "Platform Cloud Application"): "Cloud Applications",
+        ("tmf_software_compute_management", "Resource Software And Compute"): "Software & Compute",
+        ("tmf_recommendation_management", "Sales Recommendation Management"): "Recommendations",
     }
     _EXACT_MENU_DOMAIN_MAP = {
         "account management": "billing_revenue",
@@ -93,6 +127,24 @@ class TMFUiNormalizer(models.AbstractModel):
         "work": "assurance",
         "tmf work management": "assurance",
         "tmf assurance work management": "assurance",
+        "work management": "assurance",
+        "change management": "assurance",
+        "customer bills": "billing_revenue",
+        "metadata catalog": "catalog",
+        "geographic sites": "inventory_resource",
+        "resource inventory": "inventory_resource",
+        "resource activation": "inventory_resource",
+        "software & compute": "inventory_resource",
+        "installed services": "inventory_resource",
+        "test resource api": "testing_quality",
+        "security": "platform_identity",
+        "service qualification": "orders_sales",
+        "product offering qualification": "orders_sales",
+        "recommendations": "orders_sales",
+        "credit management": "billing_revenue",
+        "digital identity": "platform_identity",
+        "resource role": "inventory_resource",
+        "resource role spec": "inventory_resource",
     }
     _XMLID_DOMAIN_MAP = {
         "tmf_private_optimized_binding.menu_tmf_cloud_application": "platform_identity",
@@ -142,6 +194,7 @@ class TMFUiNormalizer(models.AbstractModel):
         normalized = normalized.replace("Io T", "IoT")
         normalized = normalized.replace("Open Apis", "Open APIs")
         normalized = normalized.replace("Open AP Is", "Open APIs")
+        normalized = normalized.replace("5 G", "5G")
 
         return normalized or label
 
@@ -162,10 +215,14 @@ class TMFUiNormalizer(models.AbstractModel):
 
         menu_ids = {rec.res_id for rec in menu_imd if rec.res_id}
         action_ids = {rec.res_id for rec in action_imd if rec.res_id}
+        menu_module_map = {rec.res_id: rec.module for rec in menu_imd if rec.res_id}
 
         changed_menus = 0
         for menu in menu_model.browse(list(menu_ids)).exists():
-            normalized = self._normalize_label(menu.name)
+            # explicit renames first (known-ugly labels), then generic cleanup
+            module = menu_module_map.get(menu.id, "")
+            renamed = self._MENU_RENAME_MAP.get((module, menu.name), menu.name)
+            normalized = self._normalize_label(renamed)
             if normalized and normalized != menu.name:
                 menu.write({"name": normalized})
                 changed_menus += 1
@@ -322,33 +379,44 @@ class TMFUiNormalizer(models.AbstractModel):
             }
         )
 
+    @staticmethod
+    def _name_has(name, keywords):
+        """Whole-word/phrase match — 'entity' must NOT match inside 'identity',
+        nor 'work' inside 'network'."""
+        for k in keywords:
+            if re.search(rf"(?<![a-z0-9]){re.escape(k)}(?![a-z0-9])", name):
+                return True
+        return False
+
     @api.model
     def _guess_menu_domain_key(self, menu_name, module_name=None, xmlid_name=None):
+        # Precedence: explicit xmlid > exact menu name > module > keywords.
         if module_name and xmlid_name:
             xmlid = f"{module_name}.{xmlid_name}"
             if xmlid in self._XMLID_DOMAIN_MAP:
                 return self._XMLID_DOMAIN_MAP[xmlid]
 
-        if module_name and module_name in self._MODULE_DOMAIN_MAP:
-            return self._MODULE_DOMAIN_MAP[module_name]
-
         name = (menu_name or "").lower().strip()
         if name in self._EXACT_MENU_DOMAIN_MAP:
             return self._EXACT_MENU_DOMAIN_MAP[name]
 
+        if module_name and module_name in self._MODULE_DOMAIN_MAP:
+            return self._MODULE_DOMAIN_MAP[module_name]
+
         compact = re.sub(r"[^a-z0-9]", "", name)
 
-        if any(k in name for k in ["catalog", "specification", "offering", "product usage", "product", "warranty"]):
+        if self._name_has(name, ["catalog", "specification", "specifications", "offering", "offerings", "product usage", "product", "products", "warranty"]):
             return "catalog"
-        if any(k in name for k in ["customer", "party", "agreement", "role", "interaction", "privacy", "user info"]):
+        if self._name_has(name, ["customer", "customers", "party", "parties", "agreement", "agreements", "role", "roles", "interaction", "privacy", "user info"]):
             return "customer_party"
-        if any(k in name for k in ["order", "quote", "sales", "shopping cart", "promotion", "appointment", "recommendation"]):
+        if self._name_has(name, ["order", "orders", "ordering", "quote", "sales", "shopping cart", "promotion", "appointment", "recommendation", "recommendations"]):
             return "orders_sales"
-        if any(
-            k in name
-            for k in [
+        if self._name_has(
+            name,
+            [
                 "inventory",
                 "resource",
+                "resources",
                 "stock",
                 "shipment",
                 "shipping",
@@ -360,12 +428,12 @@ class TMFUiNormalizer(models.AbstractModel):
                 "association",
                 "software and compute",
                 "user equipment",
-            ]
+            ],
         ):
             return "inventory_resource"
-        if any(
-            k in name
-            for k in [
+        if self._name_has(
+            name,
+            [
                 "alarm",
                 "incident",
                 "trouble",
@@ -375,23 +443,24 @@ class TMFUiNormalizer(models.AbstractModel):
                 "qualification",
                 "performance",
                 "monitor",
+                "monitoring",
                 "change management",
                 "work",
                 "service usage",
                 "tmf640",
-            ]
+            ],
         ):
             return "assurance"
-        if any(k in name for k in ["payment", "bill", "billing", "cost", "revenue", "dunning", "balance", "cdr", "account", "usage", "consumption"]):
+        if self._name_has(name, ["payment", "bill", "bills", "billing", "cost", "revenue", "dunning", "balance", "cdr", "account", "usage", "consumption", "credit"]):
             return "billing_revenue"
-        if any(
-            k in name
-            for k in ["test", "scenario", "execution", "environment", "artifact", "quality", "service level"]
+        if self._name_has(
+            name,
+            ["test", "scenario", "execution", "environment", "artifact", "quality", "service level"],
         ):
             return "testing_quality"
-        if any(
-            k in name
-            for k in [
+        if self._name_has(
+            name,
+            [
                 "identity",
                 "permission",
                 "userinfo",
@@ -404,12 +473,13 @@ class TMFUiNormalizer(models.AbstractModel):
                 "communication",
                 "self care",
                 "network as a service",
-                "installed services",
                 "cloud application",
-            ]
+                "cloud applications",
+                "security",
+            ],
         ):
             return "platform_identity"
-        if any(k in name for k in ["event", "webhook", "hub subscription", "tmf webhook"]):
+        if self._name_has(name, ["event", "webhook", "hub subscription", "tmf webhook", "hub"]):
             return "webhooks_events"
         if any(k in compact for k in ["iot", "opengateway", "5g", "dcs5g"]):
             return "platform_identity"
