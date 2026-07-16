@@ -30,12 +30,12 @@ Goal: stop compliance regressions and turn existing work into declarable evidenc
 Exit criteria: CI pipeline green on the default branch; ODA conformance declarations generated
 for all 34 documented TMFC components; evidence artifacts tracked in git.
 
-- [~] GitHub Actions CI: lint + full addon install + API smoke + pytest suites — evidence: `.github/workflows/ci.yml`, PR `ci/bootstrap`
-- [~] ODA conformance generator (`tools/gen_oda_conformance.py`) joining TMFC spec requirements with SID coverage — evidence: `docs/ODA_CONFORMANCE.md`
+- [~] GitHub Actions CI: lint + full addon install + API smoke + pytest suites — green on branch (run 29532216539: 362/362 smoke steps, 157 tests, 0 failures); [x] once merged to master — evidence: `.github/workflows/ci.yml`, PR #9
+- [x] ODA conformance generator (`tools/gen_oda_conformance.py`) joining TMFC spec requirements with SID coverage — evidence: [ODA_CONFORMANCE.md](ODA_CONFORMANCE.md): 20 declarable / 13 partial / 1 not declarable / 1 waived (2026-07-16)
 - [x] SID ABE → Odoo coverage matrix generator + baseline — evidence: [SID_ABE_COVERAGE_MATRIX.md](SID_ABE_COVERAGE_MATRIX.md), `tools/gen_sid_coverage.py` (2026-07-15)
-- [~] Reconcile stale `oda_component_specs/ODA_COMPONENT_REGISTRY.md` wiring statuses — evidence: registry "Last reconciled" header
-- [~] Root `requirements-dev.txt` aggregating test/tool dependencies
-- [~] Track generated evidence (SID coverage JSON/MD, conformance outputs) in git
+- [x] Reconcile stale `oda_component_specs/ODA_COMPONENT_REGISTRY.md` wiring statuses — evidence: registry "Last reconciled: 2026-07-16" header
+- [x] Root `requirements-dev.txt` aggregating test/tool dependencies — evidence: `requirements-dev.txt` (2026-07-16)
+- [x] Track generated evidence (SID coverage JSON/MD, conformance outputs) in git — evidence: commit eb9d2f7 (2026-07-16)
 - [ ] CI iteration 2: run `mock_oss/oss_simulator.py` in CI and enable the `-m e2e` pytest marker
 - [ ] Move the working clone off OneDrive (sync + .git corruption risk); keep OneDrive for documents only — user action
 
