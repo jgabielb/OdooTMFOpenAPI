@@ -1,0 +1,5607 @@
+{
+  "_comment": "Extracted from the TM Forum ODA component spec YAMLs by tools/gen_oda_conformance.py --extract. Factual requirement data (API ids, SID ABE references); regenerate when specs update.",
+  "schema_version": 1,
+  "specs_source": "TM Forum ODA component specifications (local ODAComponentDocumentation folder)",
+  "components": {
+    "TMFC001": {
+      "name": "ProductCatalogManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.2",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "catalog": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "category": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "exportJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "importJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF671",
+          "name": "promotion-management-api",
+          "required": false,
+          "resources": {
+            "promotion": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "catalog": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "category": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "importJob": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ],
+            "exportJob": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organisation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": false,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": false,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET /id"
+            ],
+            "agreementSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF662",
+          "name": "entity-catalog-management-api",
+          "required": false,
+          "resources": {
+            "entitySpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "associationSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Product_Domain|Product_Offering_Specification_ABE|v25.0",
+        "Product_Domain|Product_Specification_ABE|v25.0",
+        "Product_Domain|Product_Configuration_ABE|ProductConfigSpec_BE|v25.0",
+        "Product_Domain|Loyalty_ABE|Product_Usage_Spec_ABE|v25.0",
+        "Product_Domain|Product_Usage_ABE|Loyalty_Program_Specification_ABE|v25.0",
+        "Business_Partner_Domain|Party_Product_Specification_and_Offering_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.2.20|Product_Catalog_Lifecycle_Management|v24.0",
+        "1.1.19|Loyalty_Program_Management|v24.0",
+        "1.1.19.1|Loyalty_Program_Development_&_Retirement|v24.0",
+        "1.2.7|Product_Specification_&_Offering_Development_&_Retirement|v24.0",
+        "1.2.8.7|Implement_Product_Capacity_Plan|v24.0",
+        "1.6.4|Business_Partner_Offering_Development_&_Retirement|v24.0",
+        "1.2.8|Product_Capacity_Management|v24.0",
+        "1.2.22|Product_Catalog_Content_Management|v24.0",
+        "1.2.21|Product_Catalog_Operational_Readiness_Management|v24.0",
+        "1.2.19|Product_Catalog_Planning_Management|v24.0",
+        "1.2.23|Product_Specification_Management|v24.0",
+        "1.2.8.7.1|Specify_Required_Product_Capacity|v24.0"
+      ],
+      "source_file": "TMFC001-ProductCatalogManagement.yaml"
+    },
+    "TMFC002": {
+      "name": "ProductOrderCaptureAndValidation",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF648",
+          "name": "quote-management-api",
+          "required": false,
+          "resources": {
+            "quote": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF663",
+          "name": "shopping-cart-management-api",
+          "required": false,
+          "resources": {
+            "shoppingCart": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "productCategory": [
+              "GET",
+              "GET /id"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET / id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET / id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF646",
+          "name": "appointment-management-api",
+          "required": false,
+          "resources": {
+            "appointment": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "searchTimeSlot": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": false,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": false,
+          "resources": {
+            "billingAccount": [
+              "GET /id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicAddressValidation": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF676",
+          "name": "payment-management-api",
+          "required": false,
+          "resources": {
+            "payment": [
+              "GET / id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF679",
+          "name": "product-offering-qualification-management-api",
+          "required": false,
+          "resources": {
+            "productOfferingQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF683",
+          "name": "party-interaction-management-api",
+          "required": false,
+          "resources": {
+            "partyInteraction": [
+              "GET / id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF687",
+          "name": "stock-management-api",
+          "required": false,
+          "resources": {
+            "checkProductStock": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "queryProductStock": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "reserveProductStock": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productStock": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "PATCH",
+              "GET",
+              "GET /id"
+            ],
+            "taskFlow": [
+              "POST",
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF716",
+          "name": "resource-reservation",
+          "required": false,
+          "resources": {
+            "resourceReservation": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelResourceReservation": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF760",
+          "name": "product-configuration-management-api",
+          "required": false,
+          "resources": {
+            "checkProductConfiguration": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "queryProductConfiguration": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Customer_Domain|Customer_Product_Order_ABE|SalesQuote_BE|v25.0",
+        "Customer_Domain|Customer_Product_Order_ABE|ShoppingCart_BE|v25.0"
+      ],
+      "etoms": [
+        "1.1.9|Selling|v23.0",
+        "1.1.9.2|Develop_Sales_Proposal|v23.0",
+        "1.1.9.5|Negotiate_Sales/Contract|v23.0",
+        "1.3.3|Customer_Order_Handling|v23.0",
+        "1.3.3.10|Manage_Customer_Order_Placement|v23.0"
+      ],
+      "source_file": "TMFC002-ProductOrderCaptureAndValidation.yaml"
+    },
+    "TMFC003": {
+      "name": "ProductOrderDeliveryOrchestrationAndManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.1.1",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": true,
+          "resources": {
+            "productOrder": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelProductOrder": [
+              "POST",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": true,
+          "resources": {
+            "productOrder": [
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": false,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET / id",
+              "GET"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF641",
+          "name": "service-ordering-management-api",
+          "required": true,
+          "resources": {
+            "serviceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelServiceOrder": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF652",
+          "name": "resource-order-management-api",
+          "required": false,
+          "resources": {
+            "resourceOrder": [
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "sids": [],
+      "etoms": [
+        "1.3.3|Customer_Order_Processing_Management|v23.0",
+        "1.3.3.12|Customer_Order_Fulfilment|v23.0",
+        "1.3.3.12.1|Manage_Customer_Order_Fallout|v23.0",
+        "1.3.3.12.1|Manage_Customer_Order_Delivery|v23.0",
+        "1.3.3.15|Manage_Customer_Order_Completion|v23.0",
+        "1.3.3.16|Manage Customer_Order_Management_Reporting|v23.0",
+        "1.3.3.17|Manage_Customer_Order_Closure|v23.0",
+        "1.2.27.2|Manage Product_Order_Fulfilment|v23.0",
+        "1.2.27.3|Manage Product_Order_Delivery|v23.0",
+        "1.2.27.4|Manage Product_Order_Cancellation|v23.0",
+        "1.2.27.5|Manage Product_Order_Management_Reports|v23.0",
+        "1.4.5|Service_Configuration_&_Activation|v23.0",
+        "1.4.5.6|Issue_Service_Order|v23.0",
+        "1.5.6|Resource_Provisioning|v23.0",
+        "1.5.6.7|Issue_Resource_Order|v23.0",
+        "1.6.8|Business_Partner_Order_Managemenrt|v23.0",
+        "1.6.8.1|Issue_Business_Partner|v23.0"
+      ],
+      "source_file": "TMFC003-ProductOrderDeliveryOrchestrationAndManagement.yaml"
+    },
+    "TMFC005": {
+      "name": "ProductInventory",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.0.4",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": false,
+          "resources": {
+            "productOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": false,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": false,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": false,
+          "resources": {
+            "billingAccount": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "PartyRoleManagement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Product_Domain|Product_and_Offering_Instance_ABE|Product_ABE|v25.0",
+        "Product_Domain|ProductOfferingInstance_ABE|v25.0",
+        "Product_Domain|Loyalty_ABE|Loyalty_Program_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.2.11|Product_Inventory_Management|v24.0",
+        "1.1.19|Loyalty_Program_Management|v24.0",
+        "1.1.19.2|Loyalty_Program_Operation|v24.0",
+        "1.1.19.2.5|Manage_Loyalty_Program_Account|v24.0",
+        "1.1.19.2.7|Provide_Loyalty_Program_Operation_Report|v24.0"
+      ],
+      "source_file": "TMFC005-ProductInventory.yaml"
+    },
+    "TMFC006": {
+      "name": "ServiceCatalogManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": true,
+          "resources": {
+            "catalog": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "category": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "serviceSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "serviceCandidate": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "exportJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "importJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF657",
+          "name": "service-quality-management-api",
+          "required": true,
+          "resources": {
+            "serviceLevelSpecification": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "serviceLevelObjective": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "serviceLevelSpecParameter": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF662",
+          "name": "entity-catalog-management-api",
+          "required": false,
+          "resources": {
+            "entitySpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "associationSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Service_Domain|Service_Specification_ABE|v25.0",
+        "Service_Domain|Service_Performance_ABE|Service_Level_Spec_ABE|v25.0",
+        "Service_Domain|Service_Performance_ABE|Service_Performance_Specification_ABE|v25.0",
+        "Service_Domain|Service_Usage_ABE|ServiceUsageSpec_BE|v25.0",
+        "Service_Domain|Service_Configuration_ABE|ServiceConfigSpec_BE|v25.0"
+      ],
+      "etoms": [
+        "1.4.13|Service_Catalog_Lifecycle_Management|v23.0",
+        "1.4.14|Service_Catalog_Operational_Readiness_Management|v23.0",
+        "1.4.15|Service_Catalog_Content_Management|v23.0",
+        "1.4.16|Service_Catalog_Planning_Management|v23.0",
+        "1.4.19|Service_Specification_Management|v23.0",
+        "1.4.3|Service_Specification_Development_&_Retirement|v23.0",
+        "1.4.3.4|Develop_Detailed_Service_Specifications|v23.0"
+      ],
+      "source_file": "TMFC006-ServiceCatalogManagement.yaml"
+    },
+    "TMFC007": {
+      "name": "ServiceOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "2.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF641",
+          "name": "service-ordering-management-api",
+          "required": true,
+          "resources": {
+            "serviceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelServiceOrder": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": true,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": true,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF640",
+          "name": "service-activation-management-api",
+          "required": false,
+          "resources": {
+            "monitor": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF641",
+          "name": "service-ordering-management-api",
+          "required": false,
+          "resources": {
+            "serviceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelServiceOrder": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF645",
+          "name": "service-qualification-management-api",
+          "required": false,
+          "resources": {
+            "checkServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "queryServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF646",
+          "name": "appointment-management-api",
+          "required": false,
+          "resources": {
+            "appointment": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "searchTimeSlot": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF652",
+          "name": "resource-order-management-api",
+          "required": false,
+          "resources": {
+            "resourceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelResourceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF653",
+          "name": "service-test-management-api",
+          "required": false,
+          "resources": {
+            "serviceTest": [
+              "GET",
+              "GET /id"
+            ],
+            "serviceTestSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicAddressValidation": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF681",
+          "name": "communication-management-api",
+          "required": false,
+          "resources": {
+            "communicationMessage": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF697",
+          "name": "work-order-management-api",
+          "required": false,
+          "resources": {
+            "workOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Service_Domain|Service_Order_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.4.5|Service_Configuration_&_Activation|v21.5",
+        "1.4.5.1|Design_Solution|v21.5",
+        "1.4.5.2|Allocate_Specific_Service_Parameters_to_Services|v21.5",
+        "1.4.5.3|Track_&_Manage_Service_Provisioning|v21.5",
+        "1.4.5.4|Implement,_configure_&_activate_service|v21.5",
+        "1.4.5.6|Issue_Service_Order|v21.5",
+        "1.4.5.7|Report_service_provisioning|v21.5",
+        "1.4.5.8|Close_Service_Order|v21.5",
+        "1.5.6|Resource_Provisioning|v21.5",
+        "1.5.6.7|Issue_Resource_Order|v21.5"
+      ],
+      "source_file": "TMFC007-ServiceOrderManagement.yaml"
+    },
+    "TMFC008": {
+      "name": "ServiceInventory",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": true,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": true,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF641",
+          "name": "service-ordering-management-api",
+          "required": false,
+          "resources": {
+            "serviceOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "PartyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Service_Domain|Service_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.4.4|Service_Support_Readiness|v23.0",
+        "1.4.4.1|Manage_Service_Inventory|v23.0"
+      ],
+      "source_file": "TMFC008-ServiceInventory.yaml"
+    },
+    "TMFC009": {
+      "name": "ServiceQualificationManagement",
+      "functional_block": "Production",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF645",
+          "name": "service-qualification-management-api",
+          "required": true,
+          "resources": {
+            "checkServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "queryServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": true,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "serviceCategory": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [],
+      "etoms": [
+        "1.4.5|Service_Configuration_&_Activation|v23.0"
+      ],
+      "source_file": "TMFC009-ServiceQualificationManagement.yaml"
+    },
+    "TMFC010": {
+      "name": "ResourceCatalogManagement",
+      "functional_block": "Production",
+      "spec_version": "1.3.2",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": true,
+          "resources": {
+            "resourceCatalog": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourceCategory": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourceSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourceCandidate": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "exportJob": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ],
+            "importJob": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": false,
+          "resources": {
+            "resourceCatalog": [
+              "GET",
+              "GET /id"
+            ],
+            "resourceCategory": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourceSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourceCandidate": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "exportJob": [
+              "GET",
+              "POST",
+              "DELETE"
+            ],
+            "importJob": [
+              "GET",
+              "POST",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF662",
+          "name": "entity-catalog-management-api",
+          "required": false,
+          "resources": {
+            "entitySpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "associationSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Resource_Domain|Resource_Specification_ABE|v25.0",
+        "Resource_Domain|Resource_Performance_ABE|ResourcePerformanceSpecification_BE|v25.0",
+        "Resource_Domain|Resource_Usage_ABE|ResourceUsageSpec_BE|v25.0",
+        "Resource_Domain|Resource_Configuration_ABE|ResourceConfigSpec_BE|v25.0"
+      ],
+      "etoms": [
+        "1.5.15|Resource_Catalog_Lifecycle_Management|v23.0",
+        "1.5.16|Resource_Catalog_Operational_Readiness_Management|v23.0",
+        "1.5.17|Resource_Catalog_Content_Management|v23.0",
+        "1.5.18|Resource_Catalog_Planning_Management|v23.0",
+        "1.5.19|Resource_Specification_Management|v23.0",
+        "1.5.3|Resource_Specification_Development_&_Retirement|v23.0",
+        "1.5.3.4|Develop_Detailed_Resource_Specifications|v23.0"
+      ],
+      "source_file": "TMFC010-ResourceCatalogManagement.yaml"
+    },
+    "TMFC011": {
+      "name": "ResourceOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "status": "Pre-production",
+      "exposed_apis": [
+        {
+          "id": "TMF652",
+          "name": "resource-order-management-api",
+          "required": true,
+          "resources": {
+            "resourceOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelResourceOrder": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": true,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": true,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF646",
+          "name": "appointment-management-api",
+          "required": false,
+          "resources": {
+            "workOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF664",
+          "name": "resource-function-activation-management-api",
+          "required": false,
+          "resources": {
+            "resourceFunction": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF685",
+          "name": "resource-pool-management-api",
+          "required": false,
+          "resources": {
+            "resourcePool": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "availabilityCheck": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF702",
+          "name": "resource-activation-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "monitor": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Resource_Domain|Resource_Order_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.5.5|Resource_Order_Management|v23.0",
+        "1.5.5.6|Manage_Resource_Order_Capture|v23.0",
+        "1.5.5.7|Manage_Resource_Work_Order|v23.0",
+        "1.5.5.8|Manage_Resource_Order_Fulfilment|v23.0",
+        "1.5.5.9|Manage_Resource_Order_Picking/Packing|v23.0",
+        "1.5.5.12|Manage_Resource_Order_Tracking|v23.0",
+        "1.5.5.13|Manage_Resource_Order_Closure|v23.0"
+      ],
+      "source_file": "TMFC011-ResourceOrderManagement.yaml"
+    },
+    "TMFC012": {
+      "name": "ResourceInventory",
+      "functional_block": "Production",
+      "spec_version": "2.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": true,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF685",
+          "name": "resource-pool-management-api",
+          "required": false,
+          "resources": {
+            "capacitySpecification": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ],
+            "resourcePoolSpecification": [
+              "POST",
+              "PATCH",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "resourcePool": [
+              "POST",
+              "PATCH",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "availabilityCheck": [
+              "POST",
+              "GET",
+              "GET /id"
+            ],
+            "push": [
+              "POST",
+              "GET",
+              "GET /id"
+            ],
+            "extract": [
+              "POST",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF716",
+          "name": "resource-reservation",
+          "required": false,
+          "resources": {
+            "resourceReservation": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH",
+              "DELETE"
+            ],
+            "cancelResourceReservation": [
+              "POST",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF634",
+          "name": "resource-catalog-management-api",
+          "required": true,
+          "resources": {
+            "resourceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Resource_Domain|Resource_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.5.4|Resource_Support_Readiness|v23.0",
+        "1.5.4.5|Manage_Resource_Inventory|v23.0"
+      ],
+      "source_file": "TMFC012-ResourceInventory.yaml"
+    },
+    "TMFC014": {
+      "name": "LocationManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.1",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": true,
+          "resources": {
+            "geographicAddressValidation": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": true,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": true,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [],
+      "sids": [],
+      "etoms": [],
+      "source_file": "TMFC014-LocationManagement.yaml"
+    },
+    "TMFC020": {
+      "name": "DigitalIdentityManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET/id",
+              "POST",
+              "DELETE/id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET/id",
+              "PATCH/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF720",
+          "name": "digital-identity-management-api",
+          "required": true,
+          "resources": {
+            "digitalIdentity": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ],
+            "roles": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET/id"
+            ],
+            "organization": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "partyRole": [
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Shared_Domain|Digital_Identity_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC020-DigitalIdentityManagement.yaml"
+    },
+    "TMFC022": {
+      "name": "PartyPrivacyManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF644",
+          "name": "privacy-management-api",
+          "required": true,
+          "resources": {
+            "partyPrivacyProfileSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE"
+            ],
+            "partyPrivacyProfile": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE"
+            ],
+            "partyPrivacyAgreement": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF667",
+          "name": "document-management-api",
+          "required": false,
+          "resources": {
+            "document": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Party_Domain|Party_Privacy_ABE|Party_Privacy_Profile_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC022-PartyPrivacyManagement.yaml"
+    },
+    "TMFC023": {
+      "name": "PartyInteractionManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.2",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF683",
+          "name": "party-interaction-management-api",
+          "required": true,
+          "resources": {
+            "partyInteraction": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF662",
+          "name": "entity-catalog-management-api",
+          "required": false,
+          "resources": {
+            "entitySpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "entityCategory": [
+              "GET",
+              "GET /id"
+            ],
+            "entityCatalog": [
+              "GET",
+              "GET /id"
+            ],
+            "entityCatalogItem": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF667",
+          "name": "document-management-api",
+          "required": false,
+          "resources": {
+            "document": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF681",
+          "name": "communication-management-api",
+          "required": false,
+          "resources": {
+            "communicationMessage": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Shared_Domain|Communication_Interaction_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.3.5|Customer_Interaction_Management|v24.0",
+        "1.3.5.1|Create_Customer_Interaction|v24.0",
+        "1.3.5.2|Update_Customer_Interaction|v24.0",
+        "1.3.5.3|Close_Customer_Interaction|v24.0",
+        "1.3.5.4|Log_Customer_Interaction|v24.0",
+        "1.3.5.6|Track_and_Manage_Customer_Interaction|v24.0",
+        "1.3.5.7|Report_Customer_interaction|v24.0",
+        "1.6.9|Business_Partner_Interaction_Management|v24.0",
+        "1.6.9.1|Log_Business_Partner_Interaction|v24.0",
+        "1.6.9.3|Track_and_Manage_Business_Partner_Interaction|v24.0",
+        "1.6.9.5|Analyze_&_Report_Business_Partner_Interactions|v24.0"
+      ],
+      "source_file": "TMFC023-PartyInteractionManagement.yaml"
+    },
+    "TMFC024": {
+      "name": "BillingAccountManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.1.1",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": true,
+          "resources": {
+            "billingAccount": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "billingCycleSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "billFormat": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "billPresentationMedia": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "PartyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF670",
+          "name": "payment-method-management-api",
+          "required": false,
+          "resources": {
+            "paymentMethod": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF676",
+          "name": "payment-management-api",
+          "required": false,
+          "resources": {
+            "payment": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Customer_Domain|Customer_Billing_Account_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.3.10|Customer_Bill_Payments_&_Receivables_Management|v23.0",
+        "1.3.10.1|Manage_Customer_Billing_Account|v23.0"
+      ],
+      "source_file": "TMFC024-BillingAccountManagement.yaml"
+    },
+    "TMFC027": {
+      "name": "ProductConfigurator",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.1",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF679",
+          "name": "product-offering-qualification-management-api",
+          "required": true,
+          "resources": {
+            "productOfferingQualification": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "GET",
+              "get /id",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF760",
+          "name": "product-configuration-management-api",
+          "required": true,
+          "resources": {
+            "checkProductConfiguration": [
+              "GET",
+              "GET/id",
+              "POST"
+            ],
+            "queryProductConfiguration": [
+              "GET",
+              "GET/id",
+              "POST"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "catalog": [
+              "GET",
+              "GET /id"
+            ],
+            "category": [
+              "GET",
+              "GET /id"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": true,
+          "resources": {
+            "productOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF645",
+          "name": "service-qualification-management-api",
+          "required": false,
+          "resources": {
+            "checkServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "queryServiceQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": false,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF662",
+          "name": "entity-catalog-management-api",
+          "required": false,
+          "resources": {
+            "entityCatalog": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": false,
+          "resources": {
+            "billingAccount": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF921",
+          "name": "intent-management-api",
+          "required": false,
+          "resources": {
+            "intent": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Product_Domain|Product_Configuration_ABE|ProductConfiguration_BE|v25.0"
+      ],
+      "etoms": [
+        "1.2.5|Product_Domain|Product_Configuration_Management|v25.0",
+        "1.2.5|Product_Domain|Manage_Product_Configuration|v25.0"
+      ],
+      "source_file": "TMFC027-ProductConfigurator.yaml"
+    },
+    "TMFC028": {
+      "name": "PartyManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ],
+            "organization": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET/id",
+              "POST",
+              "DELETE/id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET/id",
+              "PATCH/id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF688",
+          "name": "event-management-api",
+          "required": false,
+          "resources": {
+            "event": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Shared_Domain|Party_ABE|Party_BE|v25.0",
+        "Shared_Domain|Party_ABE|Contact_Medium_ABE|v25.0",
+        "Shared_Domain|Party_ABE|TaxExemptionCertificate_BE|v25.0",
+        "Shared_Domain|Party_ABE|Party_Identification_ABE|v25.0",
+        "Shared_Domain|Party_ABE|Party_Community_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.3.16|Customer_Inventory_Management|v23.0",
+        "1.3.6|Customer_Information_Management|v23.0",
+        "1.3.4|Customer_Relationship_Management|v23.0",
+        "1.3.4.2|Establish_Customer_Relationship|v23.0",
+        "1.3.4.3|Re-establish_Customer_Relationship|v23.0",
+        "1.3.4.4|Terminate_Customer_Relationship|v23.0",
+        "1.6.3|Party_Relationship_Development_&_Retirement|v23.0",
+        "1.6.3.1|Party_Relationship_Management|v23.0",
+        "1.6.3.1.5|Collect_Party_data|v23.0",
+        "1.6.21|Party_Inventory_Management|v23.0",
+        "1.7.7|Human_Resources_Management|v23.0",
+        "1.7.7.2|Develop_the_Workforce|v23.0"
+      ],
+      "source_file": "TMFC028-PartyManagement.yaml"
+    },
+    "TMFC029": {
+      "name": "PaymentManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.2.2",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF670",
+          "name": "payment-method-management-api",
+          "required": true,
+          "resources": {
+            "paymentMethod": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF676",
+          "name": "payment-management-api",
+          "required": true,
+          "resources": {
+            "payment": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "refund": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": false,
+          "resources": {
+            "partyAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "billingAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "settlementAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "financialAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "billingCycleSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "billFormat": [
+              "GET",
+              "GET /id"
+            ],
+            "billPresentationMedia": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddressValidation": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicAddress": [
+              "GET",
+              "GET /id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Shared_Domain|Party_Payment_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.3.10|Customer_Bill_Payments_&_Receivables_Management|v23.0",
+        "1.3.10.2|Manage_Customer_Payments|v23.0",
+        "1.6.16|Business_Partner_Payments_&_Receivables_Management|v23.0",
+        "1.6.16.1|Business_Partner_Payment_Management|v23.0",
+        "1.6.16.1.1|Business_Partner_Payment_Handling|v23.0",
+        "1.6.16.1.2|Business_Partner_Payment_Method_Management|v23.0",
+        "1.6.16.1.3|Business_Partner_Payment_Plan_Administration|v23.0"
+      ],
+      "source_file": "TMFC029-PaymentManagement.yaml"
+    },
+    "TMFC030": {
+      "name": "BillGenerationManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF678",
+          "name": "customer-bill-management-api",
+          "required": true,
+          "resources": {
+            "customerBillOnDemand": [
+              "GET",
+              "POST",
+              "GET /id"
+            ],
+            "customerBill": [
+              "GET",
+              "GET / id",
+              "POST",
+              "PATCH /id"
+            ],
+            "billCycle": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": false,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": true,
+          "resources": {
+            "billingAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "billingCycleSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "billFormat": [
+              "GET",
+              "GET /id"
+            ],
+            "billPresentationMedia": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF667",
+          "name": "document-management-api",
+          "required": false,
+          "resources": {
+            "document": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "PartyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF676",
+          "name": "payment-management-api",
+          "required": false,
+          "resources": {
+            "payment": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "refund": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Customer_Domain|Customer_Bill_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.3.9|Customer_Bill_Invoice_Management|v23.0",
+        "1.3.9.2|Create_Customer_Bill_Invoice|v23.0",
+        "1.3.9.2.1|Render_&_Format_Customer_Invoice|v23.0",
+        "1.3.9.2.2|Deliver_Electronic_Invoice|v23.0",
+        "1.3.9.2.3|Verify_Customer_Invoice_Quality|v23.0",
+        "1.3.9.2.4|Manage_Customer_Invoice_Quality|v23.0",
+        "1.3.9.3|Produce_&_Distribute_Customer_Bill|v23.0",
+        "1.3.9.3.1|Co-ordinate_Billing_Insertion|v23.0",
+        "1.3.9.3.2|Establish_&_Manage_Bill_Production_Cycle|v23.0",
+        "1.3.9.3.3|Deliver_Invoice_Information|v23.0",
+        "1.3.9.4|Pricing,_Discounting,_Adjustments_&_Rebates_Application|v23.0",
+        "1.3.9.4.2|Apply_Pricing,_Discounting,_Adjustments_&_Rebates_to_Customer_Account|v23.0",
+        "1.6.15|BP_Bill/Invoice_Management|v23.0",
+        "1.6.15.2|BP_Bill/Invoice_Control|v23.0",
+        "1.6.15.2.1|Establish_&_Maintain_BP_Bill_Invoice_Format|v23.0",
+        "1.6.15.2.2|Maintain_Bill_Invoice_BP_List|v23.0",
+        "1.6.15.2.3|Define_BP_Billing_Cycle|v23.0",
+        "1.6.15.3.2|Create_BP_Bill/Invoice|v23.0",
+        "1.6.15.3.2|Create_BP_Bill/Invoice|v23.0",
+        "1.6.15.3.3|Distribute_BP_Bill/Invoice|v23.0",
+        "1.6.15.3.4|Manage_BP_Bill/Invoice_Archive|v23.0",
+        "1.6.15.3.5|Receive_BP_Bill/Invoice|v23.0",
+        "1.6.15.3.6|Administer_Commercial_Arrangement_for_BP_Bill/Invoice_Creation_Capability|v23.0"
+      ],
+      "source_file": "TMFC030-BillGeneration.yaml"
+    },
+    "TMFC031": {
+      "name": "BillCalculation",
+      "functional_block": "CoreCommerce",
+      "spec_version": "3.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF678",
+          "name": "customer-bill-management-api",
+          "required": true,
+          "resources": {
+            "appliedCustomerBillingRate": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF635",
+          "name": "usage-management-api",
+          "required": false,
+          "resources": {
+            "usage": [
+              "GET",
+              "GET /id"
+            ],
+            "usageSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": true,
+          "resources": {
+            "BillingAccount": [
+              "GET",
+              "GET /id"
+            ],
+            "BillingCycleSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [],
+      "etoms": [],
+      "source_file": "TMFC031-BillCalculation.yaml"
+    },
+    "TMFC035": {
+      "name": "PermissionsManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.1",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": true,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF672",
+          "name": "user-role-permission-management-api",
+          "required": true,
+          "resources": {
+            "permission": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ],
+            "userRole": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET/id"
+            ],
+            "organization": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Shared_Domain|Permission_ABE|PermissionSpecSet_BE|v25.0",
+        "Shared_Domain|Permission_ABE|PermissionSet_BE|v25.0",
+        "Shared_Domain|Permission_ABE|Permission_BE|v25.0",
+        "Shared_Domain|Party_ABE|PartyRole_BE|v25.0",
+        "Shared_Domain|Party_ABE|PartyRoleSpecification_BE|v25.0",
+        "Shared_Domain|Party_ABE|Party_Organization_ABE|v25.0",
+        "Market_&_Sales_Domain|Market_Sales_Party_Roles_ABE|v25.0",
+        "Service_Domain|Service_Party_Roles_ABE|v25.0",
+        "Resource_Domain|Resource_Party_Roles_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC035-PermissionsManagement.yaml"
+    },
+    "TMFC036": {
+      "name": "LeadAndOpportunityManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF699",
+          "name": "sales-management-api",
+          "required": true,
+          "resources": {
+            "salesLead": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "salesOpportunity": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "productOffering": [
+              "GET",
+              "GET/id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": false,
+          "resources": {
+            "productOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET/id"
+            ],
+            "organization": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF648",
+          "name": "quote-management-api",
+          "required": false,
+          "resources": {
+            "quote": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": false,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET/id"
+            ],
+            "agreementSpecification": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Market_&_Sales_Domain|Sales_Lead_and_Opportunity_ABE|Sales_Lead_ABE|v25.0",
+        "Market_&_Sales_Domain|Sales_Lead_and_Opportunity_ABE|Sales_Opportunity_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.1.11|Contact/Lead/Prospect_Management|v23.0",
+        "1.1.11.1|Manage_Sales_Contact|v23.0",
+        "1.1.11.2|Manage_Sales_Lead|v23.0",
+        "1.1.11.3|Manage_Sales_Prospect|v23.0",
+        "1.1.9|Selling|v23.0",
+        "1.1.9.1|Qualify_Selling_Opportunity|v23.0",
+        "1.1.9.3|Acquire_Sales_Prospect_Data|v23.0",
+        "1.1.7|Market_Sales_Support_&_Readiness|v23.0",
+        "1.1.7.2|Support_Selling|v23.0",
+        "1.1.7.5|Manage_Sales_Accounts|v23.0"
+      ],
+      "source_file": "TMFC036-LeadAndOpportunityManagement.yaml"
+    },
+    "TMFC037": {
+      "name": "ServicePerformanceManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "name": "alarm-management-api",
+          "required": false,
+          "resources": {
+            "alarm": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF649",
+          "name": "performance-thresholding-management-api",
+          "required": true,
+          "resources": {
+            "threshold": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "thresholdJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": true,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF657",
+          "name": "service-quality-management-api",
+          "required": false,
+          "resources": {
+            "serviceLevelObjective": [
+              "GET",
+              "GET/id"
+            ],
+            "serviceLevelSpecification": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET/id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Service_Domain|Service_Performance_ABE | v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Production_ABE|MeasurementProductionJob_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Collection_ABE|AdhocCollection_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Collection_ABE|MeasurementCollectionJob_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Threshold_ABE|v25.0",
+        "Resource_Domain|Resource_Trouble_ABE|Alarm_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC037-ServicePerformanceManagement.yaml"
+    },
+    "TMFC038": {
+      "name": "ResourcePerformanceManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.2.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "name": "alarm-management-api",
+          "required": false,
+          "resources": {
+            "alarm": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF649",
+          "name": "performance-thresholding-management-api",
+          "required": true,
+          "resources": {
+            "threshold": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "thresholdJob": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": true,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddress": [
+              "GET",
+              "GET/id"
+            ],
+            "geographicSubAddress": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF674",
+          "name": "geographic-site-management-api",
+          "required": false,
+          "resources": {
+            "geographicSite": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocation": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF688",
+          "name": "event-management-api",
+          "required": false,
+          "resources": {
+            "event": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Resource_Domain|Resource_Performance_ABE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Production ABE|MeasurementProductionJob_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Collection ABE|AdhocCollection_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Collection ABE|MeasurementCollectionJob_BE|v25.0",
+        "Patterns_Domain|Performance_ABE|Performance_Threshold ABE|v25.0",
+        "Resource_Domain|Resource_Trouble_ABE|Alarm_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC038-ResourcePerformanceManagement.yaml"
+    },
+    "TMFC039": {
+      "name": "AgreementManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF651",
+          "name": "agreement-management-api",
+          "required": true,
+          "resources": {
+            "agreement": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ],
+            "agreementSpecification": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id",
+              "DELETE/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "productOffering": [
+              "GET",
+              "GET/id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET/id"
+            ],
+            "organization": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": false,
+          "resources": {
+            "product": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF667",
+          "name": "document-management-api",
+          "required": false,
+          "resources": {
+            "document": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Patterns_Domain|Agreement_ABE|Agreement_BE|v25.0",
+        "Patterns_Domain|Agreement_ABE|AgreementItem_BE|v25.0",
+        "Patterns_Domain|Agreement_ABE|AgreementTermOrCondition_BE|v25.0",
+        "Patterns_Domain|Agreement_ABE|AgreementAuthorization_BE|v25.0",
+        "Patterns_Domain|Agreement_ABE|AgreementApproval_BE|v25.0"
+      ],
+      "etoms": [
+        "1.6.5|Party_Agreement_Management|v23.0",
+        "1.7.14|Enterprise_Governance|v23.0",
+        "1.7.14.5|Manage_Contract|v23.0"
+      ],
+      "source_file": "TMFC039-AgreementManagement.yaml"
+    },
+    "TMFC040": {
+      "name": "ProductUsageManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF635",
+          "name": "usage-management-api",
+          "required": true,
+          "resources": {
+            "usage": [
+              "GET",
+              "GET/id",
+              "POST",
+              "PATCH/id"
+            ]
+          }
+        },
+        {
+          "id": "TMF677",
+          "name": "usage-consumption-management-api",
+          "required": true,
+          "resources": {
+            "queryUsageConsumption": [
+              "GET",
+              "GET/id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": false,
+          "resources": {
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": true,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": false,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Product_Domain|Product_Usage_ABE|v25.0",
+        "Product_Domain|Product_Offering_Instance_ABE|Product_Price_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.2.16|Product_Usage_Management|v23.0",
+        "1.2.16.1|Product_Usages|v23.0",
+        "1.2.16.1.1|Add_Product_Usage_Data|v23.0",
+        "1.2.16.1.2|Assign_Product_Usage_Price|v23.0",
+        "1.2.16.2|Guide_and_Assign_Product_Usages|v23.0",
+        "1.2.16.2.1|Assign_Product_Usages|v23.0",
+        "1.2.16.2.2|Distribute_Product_Usage|v23.0",
+        "1.2.16.2.3|Guide_Product_Usages|v23.0",
+        "1.2.16.3|Mediate_Product_Usages|v23.0",
+        "1.2.16.3.1|Edit_Product_Usages|v23.0",
+        "1.2.16.3.2|Reformat_Product_Usages|v23.0",
+        "1.2.16.4|Report_Product_Usage_Records|v23.0",
+        "1.2.16.4.1|Generate_Product_Usage_Report|v23.0",
+        "1.2.16.4.2|Investigate_Product_Usage_Related_Problem|v23.0",
+        "1.2.16.4.3|Support_Product_Usage_Related_Process|v23.0",
+        "1.2.17|Product_Rating_&_Rate_Assignment|v23.0",
+        "1.2.17.1|Perform_Rating|v23.0",
+        "1.2.17.2|Aggregate_Items_For_Rate_Assignment|v23.0",
+        "1.2.17.3|Manage_Customer_Assignment_Hierarchy|v23.0",
+        "1.2.17.4|Provide_Advice_of_Rate|v23.0",
+        "1.2.17.5|Apply_Rate_Level_Discounts|v23.0"
+      ],
+      "source_file": "TMFC040-ProductUsageManagement.yaml"
+    },
+    "TMFC041": {
+      "name": "AnomalyManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [],
+      "dependent_apis": [],
+      "sids": [
+        "Patterns_Domain|Anomaly_ABE|Anomaly_Entity_ABE|v25.0",
+        "Patterns_Domain|Anomaly_ABE|Anomaly_Management_Plan_ABE|v25.0",
+        "Patterns_Domain|Anomaly_ABE|Anomaly_Specification_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC041-AnomalyManagement.yaml"
+    },
+    "TMFC043": {
+      "name": "FaultManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "name": "alarm-management-api",
+          "required": true,
+          "resources": {
+            "alarm": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "ackAlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "unAckAlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "clearAlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "commentAlarmlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "groupAlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ],
+            "unGroupAlarm": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF656",
+          "name": "service-problem-management-api",
+          "required": false,
+          "resources": {
+            "serviceProblem": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ],
+            "problemGroup": [
+              "POST"
+            ],
+            "problemUnGroup": [
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [],
+      "sids": [
+        "Resource_Domain|Resource_Trouble_ABE|Resource_Alarm_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC043-FaultManagement.yaml"
+    },
+    "TMFC046": {
+      "name": "WorkforceManagement",
+      "functional_block": "Production",
+      "spec_version": "1.1.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF646",
+          "name": "appointment-management-api",
+          "required": true,
+          "resources": {
+            "appointment": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "searchTimeSlot": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "PartyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Enterprise_Domain|Workforce_ABE|v25.0"
+      ],
+      "etoms": [
+        "1.5.4|Resource_Readiness_&_Support|v23.0",
+        "1.5.4.8|Manage_Field_Workforce|v23.0"
+      ],
+      "source_file": "TMFC046-WorkforceManagement.yaml"
+    },
+    "TMFC050": {
+      "name": "ProductRecommendationManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF680",
+          "name": "recommendation-management-api",
+          "required": true,
+          "resources": {
+            "queryProductRecommendation": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE /id"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "catalog": [
+              "GET",
+              "GET /id"
+            ],
+            "category": [
+              "GET",
+              "GET /id"
+            ],
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "productOffering": [
+              "GET",
+              "GET /id"
+            ],
+            "productOfferingPrice": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF621",
+          "name": "trouble-ticket-management-api",
+          "required": false,
+          "resources": {
+            "troubleTicket": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF622",
+          "name": "product-ordering-management-api",
+          "required": false,
+          "resources": {
+            "productOrder": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF629",
+          "name": "customer-management-api",
+          "required": false,
+          "resources": {
+            "customer": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF635",
+          "name": "usage-management-api",
+          "required": false,
+          "resources": {
+            "usage": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": false,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF663",
+          "name": "shopping-cart-management-api",
+          "required": false,
+          "resources": {
+            "shoppingCart": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF666",
+          "name": "account-management-api",
+          "required": false,
+          "resources": {
+            "billingAccount": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF671",
+          "name": "promotion-management-api",
+          "required": false,
+          "resources": {
+            "promotion": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF673",
+          "name": "geographic-address-management-api",
+          "required": false,
+          "resources": {
+            "geographicAddressManagement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF675",
+          "name": "geographic-location-management-api",
+          "required": false,
+          "resources": {
+            "geographicLocationManagement": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF678",
+          "name": "customer-bill-management-api",
+          "required": false,
+          "resources": {
+            "customerBill": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF679",
+          "name": "product-offering-qualification-management-api",
+          "required": false,
+          "resources": {
+            "productOfferingQualification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [],
+      "etoms": [],
+      "source_file": "TMFC050-ProductRecommendation.yaml"
+    },
+    "TMFC054": {
+      "name": "ProductTestManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF769",
+          "name": "product-test-api",
+          "required": true,
+          "resources": {
+            "productTestSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "productTest": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "name": "product-catalog-management-api",
+          "required": true,
+          "resources": {
+            "productSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organisation": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF637",
+          "name": "product-inventory-management-api",
+          "required": true,
+          "resources": {
+            "product": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": false,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF653",
+          "name": "service-test-management-api",
+          "required": false,
+          "resources": {
+            "serviceTestSpecification": [
+              "GET",
+              "GET /id"
+            ],
+            "serviceTest": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        },
+        {
+          "id": "TMF724",
+          "name": "incident-management-api",
+          "required": false,
+          "resources": {
+            "incident": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Product_Domain|Product_Test_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC054-ProductTestManagement.yaml"
+    },
+    "TMFC055": {
+      "name": "ServiceTestManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF653",
+          "name": "service-test-management-api",
+          "required": true,
+          "resources": {
+            "serviceTest": [
+              "GET",
+              "POST",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "serviceTestSpecification": [
+              "GET",
+              "POST",
+              "GET /id",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "POST",
+              "GET",
+              "GET /id",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "PATCH",
+              "GET",
+              "GET /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF633",
+          "name": "service-catalog-management-api",
+          "required": false,
+          "resources": {
+            "serviceSpecification": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF638",
+          "name": "service-inventory-management-api",
+          "required": true,
+          "resources": {
+            "service": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF639",
+          "name": "resource-inventory-management-api",
+          "required": false,
+          "resources": {
+            "resource": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Service_Domain|Service_Test_ABE|ServiceTest_BE|v25.0",
+        "Service_Domain|Service_Test_ABE|ServiceTestSpec_BE|v25.0"
+      ],
+      "etoms": [
+        "1.4.1|Service_Strategy_Management|v24.5",
+        "1.4.1.8|Service_Test_Strategy|v24.5"
+      ],
+      "source_file": "TMFC055-ServiceTestManagement.yaml"
+    },
+    "TMFC061": {
+      "name": "WorkOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "status": "specified",
+      "exposed_apis": [
+        {
+          "id": "TMF688",
+          "name": "event-management-api",
+          "required": true,
+          "resources": {
+            "listener": [
+              "POST",
+              "DELETE"
+            ],
+            "hub": [
+              "POST",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF697",
+          "name": "work-order-management-api",
+          "required": true,
+          "resources": {
+            "workOrder": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "cancelWorkOrder": [
+              "GET",
+              "GET /id",
+              "POST"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": true,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF713",
+          "name": "work-management",
+          "required": true,
+          "resources": {
+            "work": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ],
+            "workSpecification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        },
+        {
+          "id": "TMF714",
+          "name": "work-qualification-management",
+          "required": true,
+          "resources": {
+            "checkWorkQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE"
+            ],
+            "queryWorkQualification": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "name": "party-management-api",
+          "required": false,
+          "resources": {
+            "individual": [
+              "GET",
+              "GET /id"
+            ],
+            "organization": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF646",
+          "name": "appointment-management-api",
+          "required": true,
+          "resources": {
+            "appointment": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ],
+            "searchTimeSlot": [
+              "GET",
+              "GET /id",
+              "POST",
+              "PATCH /id",
+              "DELETE /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF669",
+          "name": "party-role-management-api",
+          "required": false,
+          "resources": {
+            "partyRole": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF688",
+          "name": "event-management-api",
+          "required": false,
+          "resources": {
+            "event": [
+              "GET",
+              "GET /id"
+            ]
+          }
+        },
+        {
+          "id": "TMF701",
+          "name": "process-flow-management-api",
+          "required": false,
+          "resources": {
+            "processFlow": [
+              "GET",
+              "GET /id",
+              "POST",
+              "DELETE"
+            ],
+            "taskFlow": [
+              "GET",
+              "GET /id",
+              "PATCH"
+            ]
+          }
+        }
+      ],
+      "sids": [
+        "Enterprise_Domain|Workforce_ABE|Work_Specification_ABE|v25.0",
+        "Product_Domain|Project_ABE|Work_Order_ABE|v25.0"
+      ],
+      "etoms": [],
+      "source_file": "TMFC061-WorkOrderManagement.yaml"
+    }
+  }
+}

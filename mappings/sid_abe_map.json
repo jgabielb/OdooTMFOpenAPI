@@ -1,0 +1,193 @@
+{
+  "_comment": "Curated SID -> Odoo overrides for tools/gen_sid_coverage.py. Keys are validated against the GB922 v25.5 workbook and the addon scan on every run. Entity keys: '<ABE Name>/<BE Name>' (bare '<BE Name>' allowed when globally unique). Resolve new entries from docs/sid_abe_coverage.todo.json.",
+  "version": 1,
+  "entity_overrides": {
+    "Service ABE/Service": {
+      "odoo_models": ["tmf.service"],
+      "modules": ["tmf_service_inventory"],
+      "note": "TMF638 service inventory; tmf640.service is activation plumbing"
+    },
+    "Resource ABE/Resource": {
+      "odoo_models": ["tmf.resource"],
+      "modules": ["tmf_resource_inventory"],
+      "note": "TMF639 resource inventory; tmf702.resource is activation plumbing"
+    },
+    "Permission ABE/Permission": {
+      "odoo_models": ["tmf.permission", "tmf672.permission"],
+      "note": "TMF644 privacy permission + TMF672 user role permission"
+    },
+    "Digital Identity ABE/Digitaldentity": {
+      "odoo_models": ["tmf.digital.identity"],
+      "note": "SID v25.5 spells the entity 'Digitaldentity' (typo); TMF720"
+    },
+    "Product Configuration ABE/ProductConfiguration": {
+      "odoo_models": ["tmf.check.product.configuration", "tmf.query.product.configuration"],
+      "note": "TMF760 check/query product configuration operations"
+    },
+    "Business Partner Bill ABE/PartyBillingCycleSpecification": {
+      "odoo_models": ["tmf.billing.cycle.spec"],
+      "note": "name drift: TMF model drops the Party prefix"
+    },
+    "Business Partner Bill ABE/PartyBillPresentationMedia": {
+      "odoo_models": ["tmf.bill.presentation.media"],
+      "note": "name drift: TMF model drops the Party prefix"
+    },
+    "Software Resource Specification ABE/SoftwareResourceSpecification": {
+      "odoo_models": ["tmf.software.compute.resource.specification"],
+      "note": "software/compute management addon"
+    },
+    "Party Revenue Sharing Model ABE/PartyRevenueSharingModel": {
+      "odoo_models": ["tmf.party.rev.sharing.model"],
+      "note": "revenue sharing model management addon"
+    },
+    "Customer Product Order ABE/CustomerProductOrder": {
+      "odoo_models": ["sale.order"],
+      "modules": ["tmf_product_ordering"],
+      "note": "TMF622 product order realized on sale.order (plan.md Phase 4)"
+    },
+    "Customer Product Order ABE/SalesQuote": {
+      "odoo_models": ["tmf.quote", "sale.order"],
+      "note": "TMF648 quote; quotation stage of sale.order"
+    },
+    "Sales Opportunity ABE/SalesOpportunity": {
+      "odoo_models": ["crm.lead"],
+      "note": "CRM opportunity via tmf_sales / tmf_bridge_crm"
+    },
+    "Customer Billing Account ABE/CustomerBillingAccount": {
+      "odoo_models": ["tmf.billing.account"],
+      "note": "TMF666 billing account"
+    },
+    "Customer Payment ABE/CustomerPayment": {
+      "odoo_models": ["tmf.payment", "account.payment"],
+      "note": "TMF676 payment wired to account.payment"
+    },
+    "Customer Problem ABE/CustomerProblem": {
+      "odoo_models": ["tmf.trouble.ticket"],
+      "note": "TMF621 trouble ticket realizes SID CustomerProblem"
+    },
+    "Stock Item ABE/StockItem": {
+      "odoo_models": ["stock.lot"],
+      "modules": ["tmf_resource_inventory"],
+      "note": "TMF687 stock; serialized stock.lot"
+    },
+    "Alarm ABE/ResourceAlarm": {
+      "odoo_models": ["tmf.alarm"],
+      "note": "TMF642 alarm management"
+    }
+  },
+  "abe_overrides": {
+    "Customer Party Roles ABE": {
+      "odoo_models": ["res.partner"],
+      "tmf_apis": ["TMF629"],
+      "coverage": "partial",
+      "note": "Customer identity lives on res.partner (tmf.customer.partner_id)"
+    },
+    "Party ABE": {
+      "odoo_models": ["res.partner"],
+      "tmf_apis": ["TMF632"],
+      "coverage": "partial",
+      "note": "Individual/Organization realized on res.partner"
+    },
+    "Product Offering Specification ABE": {
+      "odoo_models": ["product.template"],
+      "tmf_apis": ["TMF620"],
+      "coverage": "partial",
+      "note": "ProductOffering realized on product.template (plan.md Phase 3)"
+    },
+    "Calendar ABE": {
+      "odoo_models": ["calendar.event"],
+      "tmf_apis": ["TMF646"],
+      "coverage": "partial",
+      "note": "TMF646 appointment wired to calendar.event"
+    },
+    "Customer Bill ABE": {
+      "odoo_models": ["account.move"],
+      "tmf_apis": ["TMF678"],
+      "note": "customer bill wired to account.move"
+    },
+    "Symbology ABE": {
+      "status": "not_applicable",
+      "reason": "GIS map symbology is out of BSS/OSS scope for this stack"
+    },
+    "OpenGisSFS ABE": {
+      "status": "not_applicable",
+      "reason": "OpenGIS simple-feature geometry classes are out of scope; geo data is stored as plain address/coordinate fields"
+    },
+    "Root Business Entities ABE": {
+      "coverage": "full",
+      "note": "realized by tmf.model.mixin (tmf_base): tmf_id/href/lifecycle on every TMF model"
+    },
+    "Characteristic ABE": {
+      "coverage": "full",
+      "note": "characteristic pattern realized as JSON characteristic fields on TMF models"
+    },
+    "Association ABE": {
+      "odoo_models": ["tmf.entity.association"],
+      "coverage": "partial",
+      "note": "generic entity association models (tmf_entity)"
+    },
+    "Trouble Ticket ABE": {
+      "odoo_models": ["tmf.trouble.ticket"],
+      "tmf_apis": ["TMF621"],
+      "coverage": "full"
+    },
+    "Usage ABE": {
+      "tmf_apis": ["TMF635"],
+      "coverage": "partial",
+      "note": "see Usage Entity / Usage Specification ABEs"
+    },
+    "Usage Entity ABE": {
+      "odoo_models": ["tmf.usage"],
+      "tmf_apis": ["TMF635"],
+      "coverage": "full"
+    },
+    "Usage Specification ABE": {
+      "odoo_models": ["tmf.usage.specification"],
+      "tmf_apis": ["TMF635"],
+      "coverage": "full"
+    },
+    "Project ABE": {
+      "odoo_models": ["project.task"],
+      "coverage": "partial",
+      "note": "work bridged to project.task (tmf_bridge_project)"
+    },
+    "Test ABE": {
+      "coverage": "partial",
+      "note": "TMF704/TMF705 test artifacts realized by the tmf_test_* addons"
+    }
+  },
+  "abe_api_hints": {
+    "Product Specification ABE": ["TMF620"],
+    "Product Catalog ABE": ["TMF620"],
+    "Product Offering Price ABE": ["TMF620"],
+    "Service Specification ABE": ["TMF633"],
+    "Service Catalog ABE": ["TMF633"],
+    "Resource Specification ABE": ["TMF634"],
+    "Resource Catalog ABE": ["TMF634"],
+    "Service Order ABE": ["TMF641"],
+    "Resource Order ABE": ["TMF652"],
+    "Customer Product Order ABE": ["TMF622", "TMF648"],
+    "Service Test ABE": ["TMF653"],
+    "Service Problem ABE": ["TMF656"],
+    "Service Level Spec ABE": ["TMF657"],
+    "Service ABE": ["TMF638", "TMF640"],
+    "Resource ABE": ["TMF639", "TMF702"],
+    "Applied Customer Billing Rate ABE": ["TMF678"],
+    "Customer Payment ABE": ["TMF676"],
+    "Payment Method ABE": ["TMF670"],
+    "Customer Billing Account ABE": ["TMF666"],
+    "Geographic Address ABE": ["TMF673"],
+    "Geographic Place ABE": ["TMF674"],
+    "Document ABE": ["TMF667"],
+    "Party Interaction ABE": ["TMF683"],
+    "Sales Lead ABE": ["TMF699"],
+    "Sales Opportunity ABE": ["TMF699"],
+    "Business Partner Party Roles ABE": ["TMF668"],
+    "Party Privacy Profile ABE": ["TMF644"],
+    "Permission ABE": ["TMF644", "TMF672"],
+    "Alarm ABE": ["TMF642"],
+    "Stock Item ABE": ["TMF687"],
+    "Digital Identity ABE": ["TMF720"],
+    "Customer Problem ABE": ["TMF621"]
+  }
+}

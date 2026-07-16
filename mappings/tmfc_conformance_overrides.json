@@ -1,0 +1,23 @@
+{
+  "_comment": "Curated overrides for tools/gen_oda_conformance.py. sid_ref_remaps fix v25.0 spec references against GB922 v25.5 names; api_module_overrides map TMF APIs to repo addons missing from the README table; component_waivers exclude components with documented reasons.",
+  "sid_ref_remaps": {
+    "Product_Domain|ProductOfferingInstance_ABE|v25.0": {
+      "abe": "Product Offering Instance ABE",
+      "_note": "spec omits underscores; same ABE in GB922 v25.5"
+    },
+    "Market_&_Sales_Domain|Market_Sales_Party_Roles_ABE|v25.0": {
+      "abe": "Sales Party Roles ABE",
+      "_note": "v25.0 combined Market & Sales ABE was split in v25.5; Sales side is the relevant one for TMFC035 party roles"
+    }
+  },
+  "api_module_overrides": {
+    "TMF769": "tmf_test_case",
+    "TMF697": "tmf_work_management"
+  },
+  "component_waivers": {
+    "TMFC062": "Component spec folder is empty upstream (no published YAML); wiring implemented as-built per docs/TMFC_IMPLEMENTATION_STATUS.md"
+  },
+  "component_names": {
+    "TMFC062": "ResourceConfigurationandActivation"
+  }
+}
