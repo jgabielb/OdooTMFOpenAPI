@@ -369,7 +369,9 @@ def evaluate_components(
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # newline-normalized so hashes match across Windows (CRLF) and CI (LF) checkouts
+    data = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
 
 
 def render_markdown(
