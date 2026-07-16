@@ -42,6 +42,8 @@ for all 34 documented TMFC components; evidence artifacts tracked in git.
 ### Phase 0 backlog / stretch
 - [ ] Ratchet thresholds for `tools/audit_gaps.py` / `audit_controllers.py` (currently informational)
 - [ ] Normalize addon manifest `version` keys to `19.0.x.y.z` scheme
+- [ ] Fix capitalized-alias route generation in generated controllers: `path.replace("resource", "Resource")` also rewrites the API base (e.g. `/tmf-api/WarrantyManagement/v4/Warranty`), so base-resource aliases 404 (found by the CI smoke gate 2026-07-16)
+- [ ] Restore full CRUD in the TMF638 smoke entry once the in-progress `tmf_service_inventory` supportingResource rework lands (entry reduced to read-only 2026-07-16)
 
 ## Phase 1 — Open API certification
 

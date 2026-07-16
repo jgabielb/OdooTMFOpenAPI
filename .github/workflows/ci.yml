@@ -7,6 +7,12 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# explicit bash shell => GitHub runs steps with `-o pipefail`, so gates piped
+# through `tee` (e.g. the smoke suite) keep their real exit codes
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     runs-on: ubuntu-latest
