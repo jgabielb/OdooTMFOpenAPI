@@ -50,6 +50,14 @@ class TMFServiceCatalogController(http.Controller):
                 return rec
         return env.browse([])
 
+    def _tmfc006_supported_fields(self):
+        fields_map = request.env["tmf.service.catalog"].sudo()._fields
+        return {
+            "service_spec_related_party_json": "service_spec_related_party_json" in fields_map,
+            "service_spec_resource_spec_json": "service_spec_resource_spec_json" in fields_map,
+            "service_spec_entity_spec_json": "service_spec_entity_spec_json" in fields_map,
+        }
+
     # ---------- endpoints ----------
     # LIST
     @http.route([BASE, BASE + "/"], type="http", auth="public", methods=["GET"], csrf=False)

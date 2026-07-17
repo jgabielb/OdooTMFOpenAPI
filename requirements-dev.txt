@@ -1,0 +1,6 @@
+# Development / CI dependencies for OdooTMFOpenAPI tooling and test suites.
+# Runtime addons need only Odoo itself; everything here is tests + generators.
+pytest>=7.4
+requests>=2.31,<3
+openpyxl>=3.1        # tools/gen_sid_coverage.py (local SID regeneration)
+PyYAML>=6            # tools/mapping_engine.py, tools/gen_oda_conformance.py --extract

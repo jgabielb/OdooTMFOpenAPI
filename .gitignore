@@ -21,3 +21,6 @@ deploy/certbot/
 *.key
 *.pfx
 
+# Derived-only generator output (JSON/MD equivalents are tracked)
+docs/sid_abe_coverage.csv
+

@@ -1,0 +1,2723 @@
+{
+  "generator": "tools/gen_oda_conformance.py",
+  "inputs": {
+    "sid_abe_coverage.json": "366687f5fd67bda5471fe75b6d565be2d6aadb60971f93ccbc02da0db3c2231b",
+    "tmfc_conformance_overrides.json": "f568179b806fd06340b639324536e1d5ed9b785931fca48a2e3c36ec12da050c",
+    "tmfc_requirements.json": "cdd7124971ef4cc8240e366e272a99339e982e82ff33dd2a7f2d3233fa90ab6e"
+  },
+  "sid_version": "25.5",
+  "summary": {
+    "declarable": 20,
+    "partial": 13,
+    "not_declarable": 1,
+    "waived": 1
+  },
+  "components": {
+    "TMFC001": {
+      "name": "ProductCatalogManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.2",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF620",
+          "mandatory": true,
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF671",
+          "mandatory": false,
+          "module": "tmf_promotion_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF651",
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF662",
+          "module": "tmf_entity_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Product_Domain|Product_Offering_Specification_ABE|v25.0",
+          "abe": "Product Offering Specification ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Product_Specification_ABE|v25.0",
+          "abe": "Product Specification ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Product_Configuration_ABE|ProductConfigSpec_BE|v25.0",
+          "abe": "Product Configuration ABE",
+          "entity": "ProductConfigSpec",
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Loyalty_ABE|Product_Usage_Spec_ABE|v25.0",
+          "abe": "Loyalty ABE",
+          "entity": null,
+          "status": "na",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Product_Usage_ABE|Loyalty_Program_Specification_ABE|v25.0",
+          "abe": "Loyalty Program Specification ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Business_Partner_Domain|Party_Product_Specification_and_Offering_ABE|v25.0",
+          "abe": "Party Product Specification and Offering ABE",
+          "entity": null,
+          "status": "na",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC002": {
+      "name": "ProductOrderCaptureAndValidation",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF648",
+          "mandatory": false,
+          "module": "tmf_quote_management",
+          "present": true
+        },
+        {
+          "id": "TMF663",
+          "mandatory": false,
+          "module": "tmf_shopping_cart",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF646",
+          "module": "tmf_appointment",
+          "present": true
+        },
+        {
+          "id": "TMF651",
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF676",
+          "module": "tmf_payment",
+          "present": true
+        },
+        {
+          "id": "TMF679",
+          "module": "tmf_product_offering_qualification",
+          "present": true
+        },
+        {
+          "id": "TMF683",
+          "module": "tmf_party_interaction",
+          "present": true
+        },
+        {
+          "id": "TMF687",
+          "module": "tmf_product_stock_relationship",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF716",
+          "module": "tmf_resource_reservation",
+          "present": true
+        },
+        {
+          "id": "TMF760",
+          "module": "tmf_product",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Customer_Domain|Customer_Product_Order_ABE|SalesQuote_BE|v25.0",
+          "abe": "Customer Product Order ABE",
+          "entity": "SalesQuote",
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Customer_Domain|Customer_Product_Order_ABE|ShoppingCart_BE|v25.0",
+          "abe": "Customer Product Order ABE",
+          "entity": "ShoppingCart",
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC003": {
+      "name": "ProductOrderDeliveryOrchestrationAndManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.1.1",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF622",
+          "mandatory": true,
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF622",
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF641",
+          "module": "tmf_service_order",
+          "present": true
+        },
+        {
+          "id": "TMF652",
+          "module": "tmf_resource_order",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [],
+      "problems": []
+    },
+    "TMFC005": {
+      "name": "ProductInventory",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.0.4",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF637",
+          "mandatory": true,
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF622",
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF651",
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Product_Domain|Product_and_Offering_Instance_ABE|Product_ABE|v25.0",
+          "abe": "Product ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|ProductOfferingInstance_ABE|v25.0",
+          "abe": "Product Offering Instance ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "curated remap"
+        },
+        {
+          "ref": "Product_Domain|Loyalty_ABE|Loyalty_Program_ABE|v25.0",
+          "abe": "Loyalty Program ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC006": {
+      "name": "ServiceCatalogManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF633",
+          "mandatory": true,
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF657",
+          "mandatory": true,
+          "module": "tmf_service_quality_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF662",
+          "module": "tmf_entity_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Service_Domain|Service_Specification_ABE|v25.0",
+          "abe": "Service Specification ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Service_Domain|Service_Performance_ABE|Service_Level_Spec_ABE|v25.0",
+          "abe": "Service Level Spec ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Service_Domain|Service_Performance_ABE|Service_Performance_Specification_ABE|v25.0",
+          "abe": "Service Performance Specification ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Service_Domain|Service_Usage_ABE|ServiceUsageSpec_BE|v25.0",
+          "abe": "Service Usage ABE",
+          "entity": null,
+          "status": "na",
+          "detail": "entity 'ServiceUsageSpec' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Service_Domain|Service_Configuration_ABE|ServiceConfigSpec_BE|v25.0",
+          "abe": "Service Configuration ABE",
+          "entity": "ServiceConfigSpec",
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC007": {
+      "name": "ServiceOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "2.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF641",
+          "mandatory": true,
+          "module": "tmf_service_order",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF640",
+          "module": "tmf_service_activation_configuration",
+          "present": true
+        },
+        {
+          "id": "TMF641",
+          "module": "tmf_service_order",
+          "present": true
+        },
+        {
+          "id": "TMF645",
+          "module": "tmf_service_qualification",
+          "present": true
+        },
+        {
+          "id": "TMF646",
+          "module": "tmf_appointment",
+          "present": true
+        },
+        {
+          "id": "TMF652",
+          "module": "tmf_resource_order",
+          "present": true
+        },
+        {
+          "id": "TMF653",
+          "module": "tmf_service_test",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF681",
+          "module": "tmf_communication_message",
+          "present": true
+        },
+        {
+          "id": "TMF697",
+          "module": "tmf_work_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Service_Domain|Service_Order_ABE|v25.0",
+          "abe": "Service Order ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC008": {
+      "name": "ServiceInventory",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF638",
+          "mandatory": true,
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF641",
+          "module": "tmf_service_order",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Service_Domain|Service_ABE|v25.0",
+          "abe": "Service ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC009": {
+      "name": "ServiceQualificationManagement",
+      "functional_block": "Production",
+      "spec_version": "1.1.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF645",
+          "mandatory": true,
+          "module": "tmf_service_qualification",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [],
+      "problems": []
+    },
+    "TMFC010": {
+      "name": "ResourceCatalogManagement",
+      "functional_block": "Production",
+      "spec_version": "1.3.2",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF634",
+          "mandatory": true,
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF662",
+          "module": "tmf_entity_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Resource_Domain|Resource_Specification_ABE|v25.0",
+          "abe": "Resource Specification ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Resource_Domain|Resource_Performance_ABE|ResourcePerformanceSpecification_BE|v25.0",
+          "abe": "Resource Performance ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'ResourcePerformanceSpecification' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Resource_Domain|Resource_Usage_ABE|ResourceUsageSpec_BE|v25.0",
+          "abe": "Resource Usage ABE",
+          "entity": null,
+          "status": "na",
+          "detail": "entity 'ResourceUsageSpec' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Resource_Domain|Resource_Configuration_ABE|ResourceConfigSpec_BE|v25.0",
+          "abe": "Resource Configuration ABE",
+          "entity": "ResourceConfigSpec",
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC011": {
+      "name": "ResourceOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF652",
+          "mandatory": true,
+          "module": "tmf_resource_order",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF646",
+          "module": "tmf_appointment",
+          "present": true
+        },
+        {
+          "id": "TMF664",
+          "module": "tmf_resource_function",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF685",
+          "module": "tmf_resource_pool_management",
+          "present": true
+        },
+        {
+          "id": "TMF702",
+          "module": "tmf_resource_activation",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Resource_Domain|Resource_Order_ABE|v25.0",
+          "abe": "Resource Order ABE",
+          "entity": null,
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC012": {
+      "name": "ResourceInventory",
+      "functional_block": "Production",
+      "spec_version": "2.2.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF639",
+          "mandatory": true,
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF685",
+          "mandatory": false,
+          "module": "tmf_resource_pool_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF716",
+          "mandatory": false,
+          "module": "tmf_resource_reservation",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF634",
+          "module": "tmf_resource_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Resource_Domain|Resource_ABE|v25.0",
+          "abe": "Resource ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC014": {
+      "name": "LocationManagement",
+      "functional_block": "Production",
+      "spec_version": "1.2.1",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF673",
+          "mandatory": true,
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "mandatory": true,
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "mandatory": true,
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [],
+      "sid_requirements": [],
+      "problems": []
+    },
+    "TMFC020": {
+      "name": "DigitalIdentityManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF720",
+          "mandatory": true,
+          "module": "tmf_digital_identity_management",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Shared_Domain|Digital_Identity_ABE|v25.0",
+          "abe": "Digital Identity ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC022": {
+      "name": "PartyPrivacyManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF644",
+          "mandatory": true,
+          "module": "tmf_privacy_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF667",
+          "module": "tmf_document",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Party_Domain|Party_Privacy_ABE|Party_Privacy_Profile_ABE|v25.0",
+          "abe": "Party Privacy Profile ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC023": {
+      "name": "PartyInteractionManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.2",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF683",
+          "mandatory": true,
+          "module": "tmf_party_interaction",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF662",
+          "module": "tmf_entity_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF667",
+          "module": "tmf_document",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF681",
+          "module": "tmf_communication_message",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Shared_Domain|Communication_Interaction_ABE|v25.0",
+          "abe": "Communication Interaction ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC024": {
+      "name": "BillingAccountManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.1.1",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF666",
+          "mandatory": true,
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF670",
+          "module": "tmf_payment_method",
+          "present": true
+        },
+        {
+          "id": "TMF676",
+          "module": "tmf_payment",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Customer_Domain|Customer_Billing_Account_ABE|v25.0",
+          "abe": "Customer Billing Account ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC027": {
+      "name": "ProductConfigurator",
+      "functional_block": "CoreCommerce",
+      "spec_version": "2.1.1",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF679",
+          "mandatory": true,
+          "module": "tmf_product_offering_qualification",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF760",
+          "mandatory": true,
+          "module": "tmf_product",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF622",
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF645",
+          "module": "tmf_service_qualification",
+          "present": true
+        },
+        {
+          "id": "TMF651",
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF662",
+          "module": "tmf_entity_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF921",
+          "module": "tmf_intent_management",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Product_Domain|Product_Configuration_ABE|ProductConfiguration_BE|v25.0",
+          "abe": "Product Configuration ABE",
+          "entity": "ProductConfiguration",
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC028": {
+      "name": "PartyManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.1.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF632",
+          "mandatory": true,
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF688",
+          "module": "tmf_event",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Shared_Domain|Party_ABE|Party_BE|v25.0",
+          "abe": "Party ABE",
+          "entity": "Party",
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|Contact_Medium_ABE|v25.0",
+          "abe": "Contact Medium ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|TaxExemptionCertificate_BE|v25.0",
+          "abe": "Party ABE",
+          "entity": "TaxExemptionCertificate",
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|Party_Identification_ABE|v25.0",
+          "abe": "Party Identification ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|Party_Community_ABE|v25.0",
+          "abe": "Party Community ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC029": {
+      "name": "PaymentManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.2.2",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF670",
+          "mandatory": true,
+          "module": "tmf_payment_method",
+          "present": true
+        },
+        {
+          "id": "TMF676",
+          "mandatory": true,
+          "module": "tmf_payment",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Shared_Domain|Party_Payment_ABE|v25.0",
+          "abe": "Party Payment ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC030": {
+      "name": "BillGenerationManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "2.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF678",
+          "mandatory": true,
+          "module": "tmf_customer_bill_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF667",
+          "module": "tmf_document",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF676",
+          "module": "tmf_payment",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Customer_Domain|Customer_Bill_ABE|v25.0",
+          "abe": "Customer Bill ABE",
+          "entity": null,
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC031": {
+      "name": "BillCalculation",
+      "functional_block": "CoreCommerce",
+      "spec_version": "3.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF678",
+          "mandatory": true,
+          "module": "tmf_customer_bill_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF635",
+          "module": "tmf_usage",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [],
+      "problems": []
+    },
+    "TMFC035": {
+      "name": "PermissionsManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.1",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF669",
+          "mandatory": true,
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF672",
+          "mandatory": true,
+          "module": "tmf_user_role_permission",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Shared_Domain|Permission_ABE|PermissionSpecSet_BE|v25.0",
+          "abe": "Permission ABE",
+          "entity": "PermissionSpecSet",
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Permission_ABE|PermissionSet_BE|v25.0",
+          "abe": "Permission ABE",
+          "entity": "PermissionSet",
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Permission_ABE|Permission_BE|v25.0",
+          "abe": "Permission ABE",
+          "entity": "Permission",
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|PartyRole_BE|v25.0",
+          "abe": "Party ABE",
+          "entity": "PartyRole",
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|PartyRoleSpecification_BE|v25.0",
+          "abe": "Party ABE",
+          "entity": "PartyRoleSpecification",
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Shared_Domain|Party_ABE|Party_Organization_ABE|v25.0",
+          "abe": "Party Organization ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Market_&_Sales_Domain|Market_Sales_Party_Roles_ABE|v25.0",
+          "abe": "Sales Party Roles ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "curated remap"
+        },
+        {
+          "ref": "Service_Domain|Service_Party_Roles_ABE|v25.0",
+          "abe": "Service Party Roles ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Resource_Domain|Resource_Party_Roles_ABE|v25.0",
+          "abe": "Resource Party Roles ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC036": {
+      "name": "LeadAndOpportunityManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.2.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF699",
+          "mandatory": true,
+          "module": "tmf_sales",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF622",
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF648",
+          "module": "tmf_quote_management",
+          "present": true
+        },
+        {
+          "id": "TMF651",
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Market_&_Sales_Domain|Sales_Lead_and_Opportunity_ABE|Sales_Lead_ABE|v25.0",
+          "abe": "Sales Lead ABE",
+          "entity": null,
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Market_&_Sales_Domain|Sales_Lead_and_Opportunity_ABE|Sales_Opportunity_ABE|v25.0",
+          "abe": "Sales Opportunity ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC037": {
+      "name": "ServicePerformanceManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.2.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "mandatory": false,
+          "module": "tmf_alarm",
+          "present": true
+        },
+        {
+          "id": "TMF649",
+          "mandatory": true,
+          "module": "tmf_performance_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF657",
+          "module": "tmf_service_quality_management",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Service_Domain|Service_Performance_ABE | v25.0",
+          "abe": "Service Performance ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Production_ABE|MeasurementProductionJob_BE|v25.0",
+          "abe": "Performance Production ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'MeasurementProductionJob' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Collection_ABE|AdhocCollection_BE|v25.0",
+          "abe": "Performance Collection ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'AdhocCollection' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring_ABE|Performance_Collection_ABE|MeasurementCollectionJob_BE|v25.0",
+          "abe": "Performance Collection ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'MeasurementCollectionJob' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Threshold_ABE|v25.0",
+          "abe": "Performance Threshold ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Resource_Domain|Resource_Trouble_ABE|Alarm_ABE|v25.0",
+          "abe": "Alarm ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC038": {
+      "name": "ResourcePerformanceManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.2.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "mandatory": false,
+          "module": "tmf_alarm",
+          "present": true
+        },
+        {
+          "id": "TMF649",
+          "mandatory": true,
+          "module": "tmf_performance_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF674",
+          "module": "tmf_geographic_site",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF688",
+          "module": "tmf_event",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Resource_Domain|Resource_Performance_ABE|v25.0",
+          "abe": "Resource Performance ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Production ABE|MeasurementProductionJob_BE|v25.0",
+          "abe": "Performance Production ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'MeasurementProductionJob' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Collection ABE|AdhocCollection_BE|v25.0",
+          "abe": "Performance Collection ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'AdhocCollection' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Monitoring ABE|Performance_Collection ABE|MeasurementCollectionJob_BE|v25.0",
+          "abe": "Performance Collection ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": "entity 'MeasurementCollectionJob' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Performance_ABE|Performance_Threshold ABE|v25.0",
+          "abe": "Performance Threshold ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Resource_Domain|Resource_Trouble_ABE|Alarm_ABE|v25.0",
+          "abe": "Alarm ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC039": {
+      "name": "AgreementManagement",
+      "functional_block": "PartyManagement",
+      "spec_version": "1.1.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF651",
+          "mandatory": true,
+          "module": "tmf_agreement",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF667",
+          "module": "tmf_document",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Patterns_Domain|Agreement_ABE|Agreement_BE|v25.0",
+          "abe": "Agreement ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": "entity 'Agreement' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Agreement_ABE|AgreementItem_BE|v25.0",
+          "abe": "Agreement ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": "entity 'AgreementItem' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Agreement_ABE|AgreementTermOrCondition_BE|v25.0",
+          "abe": "Agreement ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": "entity 'AgreementTermOrCondition' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Agreement_ABE|AgreementAuthorization_BE|v25.0",
+          "abe": "Agreement ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": "entity 'AgreementAuthorization' not in GB922 v25.5; ABE-level status used"
+        },
+        {
+          "ref": "Patterns_Domain|Agreement_ABE|AgreementApproval_BE|v25.0",
+          "abe": "Agreement ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": "entity 'AgreementApproval' not in GB922 v25.5; ABE-level status used"
+        }
+      ],
+      "problems": []
+    },
+    "TMFC040": {
+      "name": "ProductUsageManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.1.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF635",
+          "mandatory": true,
+          "module": "tmf_usage",
+          "present": true
+        },
+        {
+          "id": "TMF677",
+          "mandatory": true,
+          "module": "tmf_usage_consumption",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Product_Domain|Product_Usage_ABE|v25.0",
+          "abe": "Product Usage ABE",
+          "entity": null,
+          "status": "na",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Product_Offering_Instance_ABE|Product_Price_ABE|v25.0",
+          "abe": "Product Price ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC041": {
+      "name": "AnomalyManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.1.0",
+      "verdict": "not_declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [],
+      "dependent_apis": [],
+      "sid_requirements": [
+        {
+          "ref": "Patterns_Domain|Anomaly_ABE|Anomaly_Entity_ABE|v25.0",
+          "abe": "Anomaly Entity ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Patterns_Domain|Anomaly_ABE|Anomaly_Management_Plan_ABE|v25.0",
+          "abe": "Anomaly Management Plan ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        },
+        {
+          "ref": "Patterns_Domain|Anomaly_ABE|Anomaly_Specification_ABE|v25.0",
+          "abe": "Anomaly Specification ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC043": {
+      "name": "FaultManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF642",
+          "mandatory": true,
+          "module": "tmf_alarm",
+          "present": true
+        },
+        {
+          "id": "TMF656",
+          "mandatory": false,
+          "module": "tmf_service_problem",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [],
+      "sid_requirements": [
+        {
+          "ref": "Resource_Domain|Resource_Trouble_ABE|Resource_Alarm_ABE|v25.0",
+          "abe": "Resource Trouble ABE",
+          "entity": null,
+          "status": "na",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC046": {
+      "name": "WorkforceManagement",
+      "functional_block": "Production",
+      "spec_version": "1.1.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF646",
+          "mandatory": true,
+          "module": "tmf_appointment",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Enterprise_Domain|Workforce_ABE|v25.0",
+          "abe": "Workforce ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC050": {
+      "name": "ProductRecommendationManagement",
+      "functional_block": "IntelligenceManagement",
+      "spec_version": "1.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF680",
+          "mandatory": true,
+          "module": "tmf_recommendation_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF621",
+          "module": "tmf_trouble_ticket",
+          "present": true
+        },
+        {
+          "id": "TMF622",
+          "module": "tmf_product_ordering",
+          "present": true
+        },
+        {
+          "id": "TMF629",
+          "module": "tmf_customer",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF635",
+          "module": "tmf_usage",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF663",
+          "module": "tmf_shopping_cart",
+          "present": true
+        },
+        {
+          "id": "TMF666",
+          "module": "tmf_account",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF671",
+          "module": "tmf_promotion_management",
+          "present": true
+        },
+        {
+          "id": "TMF673",
+          "module": "tmf_geographic_address",
+          "present": true
+        },
+        {
+          "id": "TMF675",
+          "module": "tmf_geographic_location",
+          "present": true
+        },
+        {
+          "id": "TMF678",
+          "module": "tmf_customer_bill_management",
+          "present": true
+        },
+        {
+          "id": "TMF679",
+          "module": "tmf_product_offering_qualification",
+          "present": true
+        }
+      ],
+      "sid_requirements": [],
+      "problems": []
+    },
+    "TMFC054": {
+      "name": "ProductTestManagement",
+      "functional_block": "CoreCommerce",
+      "spec_version": "1.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF769",
+          "mandatory": true,
+          "module": "tmf_test_case",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF620",
+          "module": "tmf_product_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF637",
+          "module": "tmf_product_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF653",
+          "module": "tmf_service_test",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF724",
+          "module": "tmf_incident_management",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Product_Domain|Product_Test_ABE|v25.0",
+          "abe": "Product Test ABE",
+          "entity": null,
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC055": {
+      "name": "ServiceTestManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "verdict": "declarable",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF653",
+          "mandatory": true,
+          "module": "tmf_service_test",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": false,
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF633",
+          "module": "tmf_service_catalog",
+          "present": true
+        },
+        {
+          "id": "TMF638",
+          "module": "tmf_service_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF639",
+          "module": "tmf_resource_inventory",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Service_Domain|Service_Test_ABE|ServiceTest_BE|v25.0",
+          "abe": "Service Test ABE",
+          "entity": "ServiceTest",
+          "status": "covered",
+          "detail": null
+        },
+        {
+          "ref": "Service_Domain|Service_Test_ABE|ServiceTestSpec_BE|v25.0",
+          "abe": "Service Test ABE",
+          "entity": "ServiceTestSpec",
+          "status": "covered",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC061": {
+      "name": "WorkOrderManagement",
+      "functional_block": "Production",
+      "spec_version": "1.0.0",
+      "verdict": "partial",
+      "waiver": null,
+      "wiring_present": true,
+      "exposed_apis": [
+        {
+          "id": "TMF688",
+          "mandatory": true,
+          "module": "tmf_event",
+          "present": true
+        },
+        {
+          "id": "TMF697",
+          "mandatory": true,
+          "module": "tmf_work_management",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "mandatory": true,
+          "module": "tmf_process_flow",
+          "present": true
+        },
+        {
+          "id": "TMF713",
+          "mandatory": true,
+          "module": "tmf_work_management",
+          "present": true
+        },
+        {
+          "id": "TMF714",
+          "mandatory": true,
+          "module": "tmf_work_qualification",
+          "present": true
+        }
+      ],
+      "dependent_apis": [
+        {
+          "id": "TMF632",
+          "module": "tmf_party",
+          "present": true
+        },
+        {
+          "id": "TMF646",
+          "module": "tmf_appointment",
+          "present": true
+        },
+        {
+          "id": "TMF669",
+          "module": "tmf_party_role",
+          "present": true
+        },
+        {
+          "id": "TMF688",
+          "module": "tmf_event",
+          "present": true
+        },
+        {
+          "id": "TMF701",
+          "module": "tmf_process_flow",
+          "present": true
+        }
+      ],
+      "sid_requirements": [
+        {
+          "ref": "Enterprise_Domain|Workforce_ABE|Work_Specification_ABE|v25.0",
+          "abe": "Work Specification ABE",
+          "entity": null,
+          "status": "partial",
+          "detail": null
+        },
+        {
+          "ref": "Product_Domain|Project_ABE|Work_Order_ABE|v25.0",
+          "abe": "Work Order ABE",
+          "entity": null,
+          "status": "missing",
+          "detail": null
+        }
+      ],
+      "problems": []
+    },
+    "TMFC062": {
+      "name": "ResourceConfigurationandActivation",
+      "functional_block": "",
+      "spec_version": "",
+      "verdict": "waived",
+      "waiver": "Component spec folder is empty upstream (no published YAML); wiring implemented as-built per docs/TMFC_IMPLEMENTATION_STATUS.md",
+      "wiring_present": true,
+      "exposed_apis": [],
+      "dependent_apis": [],
+      "sid_requirements": [],
+      "problems": []
+    }
+  }
+}
