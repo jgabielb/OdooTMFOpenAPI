@@ -4,7 +4,7 @@ Purpose: track the work needed to turn this repository into a **commercial, prod
 TM Forum-compliant BSS stack**. This file is the single tracking point: items are only added,
 checked, or re-scoped by editing it in a PR, so `git log docs/ROADMAP.md` is the audit trail.
 
-Last reviewed: 2026-07-16 · Review cadence: monthly and at every phase gate.
+Last reviewed: 2026-07-17 · Review cadence: monthly and at every phase gate.
 
 Conventions:
 - `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` deferred/waived (reason inline)
@@ -15,7 +15,7 @@ Conventions:
 
 | Phase | Status | Gate criterion | Last change |
 |---|---|---|---|
-| 0 — Now (protect & declare) | ⚠️ in progress | CI green on default branch + ODA conformance docs published | 2026-07-16 |
+| 0 — Now (protect & declare) | ⚠️ gate met; 2 items deferred | CI green on default branch + ODA conformance docs published | 2026-07-17 |
 | 1 — Open API certification | ❌ not started | TM Forum conformance certificates for top-10 APIs | — |
 | 2 — ODA Components & Canvas | ❌ not started | ≥1 component certified/running on ODA Canvas | — |
 | 3 — Production hardening | ❌ not started | Reference deployment passes load + security review | — |
@@ -30,7 +30,7 @@ Goal: stop compliance regressions and turn existing work into declarable evidenc
 Exit criteria: CI pipeline green on the default branch; ODA conformance declarations generated
 for all 34 documented TMFC components; evidence artifacts tracked in git.
 
-- [~] GitHub Actions CI: lint + full addon install + API smoke + pytest suites — green on branch (run 29532216539: 362/362 smoke steps, 157 tests, 0 failures); [x] once merged to master — evidence: `.github/workflows/ci.yml`, PR #9
+- [x] GitHub Actions CI: lint + full addon install + API smoke + pytest suites — green on master (run 29603615370: 362/362 smoke steps, 157 tests, 0 failures) — evidence: `.github/workflows/ci.yml`, PR #9 merged as c948dfb (2026-07-17)
 - [x] ODA conformance generator (`tools/gen_oda_conformance.py`) joining TMFC spec requirements with SID coverage — evidence: [ODA_CONFORMANCE.md](ODA_CONFORMANCE.md): 20 declarable / 13 partial / 1 not declarable / 1 waived (2026-07-16)
 - [x] SID ABE → Odoo coverage matrix generator + baseline — evidence: [SID_ABE_COVERAGE_MATRIX.md](SID_ABE_COVERAGE_MATRIX.md), `tools/gen_sid_coverage.py` (2026-07-15)
 - [x] Reconcile stale `oda_component_specs/ODA_COMPONENT_REGISTRY.md` wiring statuses — evidence: registry "Last reconciled: 2026-07-16" header
@@ -121,3 +121,4 @@ Exit criteria: versioned release with docs, demo, listing, and a support model.
 | 2026-07-16 | CTK excluded from CI phase 0; stays a local Windows task until ported to newman | Launchers are Windows-only, kits are not redistributable in-repo | `tools/run_ctk_batch.py` |
 | 2026-07-16 | TMFC→ABE requirements extracted from local ODA component YAMLs into tracked `mappings/tmfc_requirements.json` | Machine-readable, authoritative, keeps CI stdlib-only | `tools/gen_oda_conformance.py` |
 | 2026-07-16 | `tmf_service_level_objective` excluded from CI install | Depends on Enterprise-only `helpdesk` | `tools/ci/compute_install_list.py` |
+| 2026-07-17 | PR #9 merged — CI now protects master on every push/PR | Phase 0 gate met; regressions to the 100% CTK / conformance evidence now blocked | commit c948dfb |
