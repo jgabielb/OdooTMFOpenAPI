@@ -36,7 +36,8 @@ for all 34 documented TMFC components; evidence artifacts tracked in git.
 - [x] Reconcile stale `oda_component_specs/ODA_COMPONENT_REGISTRY.md` wiring statuses — evidence: registry "Last reconciled: 2026-07-16" header
 - [x] Root `requirements-dev.txt` aggregating test/tool dependencies — evidence: `requirements-dev.txt` (2026-07-16)
 - [x] Track generated evidence (SID coverage JSON/MD, conformance outputs) in git — evidence: commit eb9d2f7 (2026-07-16)
-- [ ] CI iteration 2: run `mock_oss/oss_simulator.py` in CI and enable the `-m e2e` pytest marker
+- [x] Enable the `-m e2e` pytest marker in CI — the sole e2e-marked test (`test_happy_path_e2e`) is self-driving via the TMF API and needs no simulator; full `tests/b2c_e2e` suite now runs — evidence: `.github/workflows/ci.yml`, PR #10 (2026-07-17)
+- [ ] Wire `mock_oss/oss_simulator.py` into CI and un-xfail the invoice-generation gate (`tests/b2c_e2e/test_step7_activation.py::test_completed_order_produces_invoice`): confirm an order → services land in `feasabilityChecked` → simulator (fast poll) advances them to `active` → billing bridge creates a `customerBill`; test must poll-for-bill with a timeout. Timing-dependent — highest flake risk in the suite.
 - [ ] Move the working clone off OneDrive (sync + .git corruption risk); keep OneDrive for documents only — user action
 
 ### Phase 0 backlog / stretch
@@ -122,3 +123,4 @@ Exit criteria: versioned release with docs, demo, listing, and a support model.
 | 2026-07-16 | TMFC→ABE requirements extracted from local ODA component YAMLs into tracked `mappings/tmfc_requirements.json` | Machine-readable, authoritative, keeps CI stdlib-only | `tools/gen_oda_conformance.py` |
 | 2026-07-16 | `tmf_service_level_objective` excluded from CI install | Depends on Enterprise-only `helpdesk` | `tools/ci/compute_install_list.py` |
 | 2026-07-17 | PR #9 merged — CI now protects master on every push/PR | Phase 0 gate met; regressions to the 100% CTK / conformance evidence now blocked | commit c948dfb |
+| 2026-07-17 | Split "CI iteration 2": enabled `-m e2e` (no simulator needed) separately from the OSS-simulator invoice gate | The one e2e-marked test is self-driving; the simulator only matters for the still-xfail invoice test, a timing-dependent task not worth coupling | PR #10, `test_happy_path_e2e.py` |

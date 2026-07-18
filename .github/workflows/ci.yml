@@ -116,9 +116,12 @@ jobs:
         run: python3 tools/tmf_api_smoke.py --config tools/tmf_api_smoke.sample.json | tee smoke-report.txt
       - name: Pytest — root business scenarios
         run: python3 -m pytest tests --ignore=tests/b2c_e2e --ignore=tests/b2c_advanced --junitxml junit-root.xml
-      # iteration 2: start mock_oss/oss_simulator.py in the background and drop the marker filter
-      - name: Pytest — b2c end-to-end (non-e2e markers)
-        run: python3 -m pytest tests/b2c_e2e -m "not e2e" --junitxml junit-b2c-e2e.xml
+      # The only e2e-marked test (test_happy_path_e2e) drives the whole flow
+      # through the TMF API itself and needs no OSS simulator, so the full
+      # suite runs here. Wiring mock_oss/oss_simulator.py is tracked separately
+      # (ROADMAP Phase 0) for the still-xfail invoice-generation gate.
+      - name: Pytest — b2c end-to-end (full suite incl. happy-path)
+        run: python3 -m pytest tests/b2c_e2e --junitxml junit-b2c-e2e.xml
       - name: Pytest — b2c advanced (xfail-tracked contract)
         run: python3 -m pytest tests/b2c_advanced --junitxml junit-b2c-advanced.xml
       - name: Server log scan (informational)
